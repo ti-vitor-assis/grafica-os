@@ -1,0 +1,32 @@
+{
+  "name": "grafica-os",
+  "version": "1.0.0",
+  "description": "Um aplicativo simples para cadastrar clientes e ordens de serviços para uma gráfica.",
+  "main": "main.js",
+  "scripts": {
+    
+    "start": "Electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vitorapassos/grafica-os.git"
+  },
+  "keywords": [
+    "GRAFICA",
+    "ORDEM",
+    "DE",
+    "SERVIÇO",
+    "GERENCIAMENTO",
+    "CLIENTES"
+  ],
+  "author": "Vitor de Assis Passos",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/vitorapassos/grafica-os/issues"
+  },
+  "homepage": "https://github.com/vitorapassos/grafica-os#readme",
+  "dependencies": {
+    "electron": "^36.2.1"
+  }
+}
