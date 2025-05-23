@@ -1,3 +1,85 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+:root {
+    /* Fundo */
+    --color-background: #1E1E2F;
+    --color-panel: #2A2A3D;
+
+    /* Cores principais */
+    --color-primary: #7C3AED;
+    /* Roxo vibrante */
+    --color-secondary: #3B82F6;
+    /* Azul vivo */
+
+    /* Textos */
+    --color-text-primary: #E0E0E0;
+    --color-text-secondary: #A0A0B5;
+
+    /* Feedbacks */
+    --color-error: #EF4444;
+    --color-success: #22C55E;
+}
+
+* {
+    margin: 0px;
+
+}
+
+body {
+    background-color: #1E1E2F;
+}
+
+.container {
+    right: 0px;
+}
+
+.left_side {
+    height: 95vh;
+    width: 25%;
+    background-color: #2A2A3D;
+    border-radius: 5px 0px 5px 0px;
+    align-items: center;
+}
+
+.btnStyle {
+    background-color: #1E1E2F;
+    border: 1px solid #7C3AED;
+    width: 95%;
+    display: flex;
+}
+
+#clientsIcon{
+    width: 100%;
+}
+
+#osIcon{
+    width: 100%;
+}
+
+
+footer {
+    height: 30px;
+    width: 100%;
+    background-color: #2A2A3D;
+    bottom: 0px;
+    position: fixed;
+    display: flex;
+    justify-content: space-between;
+}
+
+footer p {
+    font-size: 1.2em;
+    margin-bottom: 10px;
+    margin-left: 5px;
+    color: #FFF;
+}
+
+footer img {
+    margin-right: 5px;
+    margin-top: 5px;
+    height: 25px;
+    width: 25px;
+}

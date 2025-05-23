@@ -4,9 +4,9 @@
   "description": "Um aplicativo simples para cadastrar clientes e ordens de serviços para uma gráfica.",
   "main": "main.js",
   "scripts": {
-    "dev": "vite",
+    "dev": "echo Nenhum dev configurado",
     "electron": "electron .",
-    "start": "concurrently \"npm run dev\" \"npm run electron\""
+    "start": "Electron ."
   },
   "repository": {
     "type": "git",
@@ -28,11 +28,5 @@
   "homepage": "https://github.com/vitorapassos/grafica-os#readme",
   "dependencies": {
     "electron": "^36.2.1"
-  },
-  "devDependencies": {
-    "autoprefixer": "^10.4.19",
-    "concurrently": "^9.1.2",
-    "postcss": "^8.4.38",
-    "vite": "^6.3.5"
   }
 }
