@@ -37,37 +37,52 @@ body {
 }
 
 .left_side {
-    height: 95vh;
-    width: 25%;
+    height: 93vh;
+    width: 250px;
     background-color: #2A2A3D;
-    border-radius: 5px 0px 5px 0px;
+    border-radius: 5px;
     align-items: center;
+    margin-left: 5px;
+    margin-top: 5px;
 }
 
 .btnStyle {
     background-color: #1E1E2F;
     border: 1px solid #7C3AED;
-    width: 95%;
+    width: 240px;
     display: flex;
 }
 
-#clientsIcon{
-    width: 100%;
+
+.imageColumn {
+    width: 64px;
 }
 
-#osIcon{
-    width: 100%;
+.clientsIcon {
+    width: 64px;
 }
 
+.soIcon {
+    width: 64px;
+}
+
+.menuLabels {
+    margin-left: 10px;
+    margin-top: 6px;
+    font-size: 1.2em;
+}
 
 footer {
     height: 30px;
-    width: 100%;
+    width: 99%;
     background-color: #2A2A3D;
     bottom: 0px;
     position: fixed;
     display: flex;
     justify-content: space-between;
+    margin-left: 5px;
+    margin-bottom: 5px;
+    border-radius: 5px;
 }
 
 footer p {
