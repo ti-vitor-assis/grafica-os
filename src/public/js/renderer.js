@@ -6,40 +6,49 @@
 
 console.log("Processo de renderização")
 
-function obterData() {
-    const data = new Date();
+const ctx = document.getElementById('pieChart').getContext('2d');
 
-    // Opções para formatar a data por extenso
-    const optionsData = {
+document.addEventListener('DOMContentLoaded', () => {
+    const el = document.getElementById('footerRealTime');
+
+    console.log(el)
+    if (!el) return;
+
+    const update = () => {
+      const now = new Date();
+      const date = now.toLocaleDateString('pt-BR', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
         day: 'numeric'
+      });
+      const time = now.toLocaleTimeString('pt-BR');
+      el.textContent = `${date.charAt(0).toUpperCase() + date.slice(1)} - ${time}`;
     };
 
-    // Formata a data
-    let dataFormatada = data.toLocaleDateString('pt-BR', optionsData);
-    dataFormatada = dataFormatada.charAt(0).toUpperCase() + dataFormatada.slice(1);
+    update();               // update immediately
+    setInterval(update, 1000); // update every second
+    
+    console.log(el)
+  });
 
-    // Hora no formato HH:MM:SS
-    const horaFormatada = data.toLocaleTimeString('pt-BR');
 
-    return `${dataFormatada} - ${horaFormatada}`;
-}
 
-function iniciarAtualizacaoHora(idElemento) {
-    function atualizarHora() {
-        const elemento = document.getElementById(idElemento);
-        if (elemento) {
-            elemento.textContent = obterData();
-        }
+new Chart(ctx, {
+  type: 'pie',
+  data: {
+    labels: ['Vermelho', 'Azul', 'Amarelo'],
+    datasets: [{
+      data: [30, 50, 20],
+      backgroundColor: ['#f87171', '#60a5fa', '#facc15'],
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'bottom',
+      }
     }
-
-    atualizarHora(); // executa imediatamente
-    setInterval(atualizarHora, 1000); // atualiza a cada segundo
-}
-
-document.getElementById('dataAtual').innerHTML = obterData()
-iniciarAtualizacaoHora('dataAtual')
-
-
+  }
+});
