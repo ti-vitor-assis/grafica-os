@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 
 <head>
     <meta charset="UTF-8">
@@ -8,12 +8,13 @@
     <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' ">
     -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="../public/css/style.css" rel="stylesheet">
     <title>Bem vindo</title>
 </head>
 
 <body>
-    <section class="base">
+    <div class="base">
 
         <div class="left_side">
             <button class="text-white px-4 py-2 rounded hover:bg-purple-700 transition btn-sm btnStyle mt-1">
@@ -21,7 +22,7 @@
                     <div class="col imageColumn">
                         <img src="../public/img/clientsIcon.png" alt="Clients Icon" class="clientsIcon">
                     </div>
-                    <div class="col ">
+                    <div class="col">
                         <p class="menuLabels">Clientes</p>
                     </div>
                 </div>
@@ -41,7 +42,7 @@
             <button class="text-white px-4 py-2 rounded hover:bg-purple-700 transition btn-sm btnStyle mt-1">
                 <div class="row">
                     <div class="col imageColumn">
-                        <img src="../public/img/serviceOrderIcon.png" alt="Service Order Icon" class="soIcon">
+                        <img src="../public/img/reportsIcon.png" alt="Service Order Icon" class="soIcon">
                     </div>
                     <div class="col ">
                         <p class="menuLabels">Relatórios</p>
@@ -52,19 +53,50 @@
 
         <div class="right_side">
 
+            <section class="right_top">
+                <div class="grafico-container">
+                    <h2 class="titulo text-white">Visão Geral</h2>
+                    <canvas id="pieChart" width="400" height="400"></canvas>
+                </div>
 
-            <div class="grafico-container">
-                <h2 class="titulo text-white">Visão Geral</h2>
-                <canvas id="pieChart" width="400" height="400"></canvas>
-            </div>
+                <div class="delayedservices text-white">
+
+                    <h1 class="font-bold text-center text-xl"> Serviços Atrasados / Próximos do Prazo</h1>
+                    <table class="table-fixed">
+                        <thead>
+                            <tr>
+                                <th width="200px">Cliente</th>
+                                <th width="200px">Prazo</th>
+                                <th width="200px">Opções</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Walter White</td>
+                                <td>29/05/2025</td>
+                                <td><button>Visualizar</button></td>
+                            </tr>
+                            <tr>
+                                <td>Guilherme Rosa</td>
+                                <td>05/06/2025</td>
+                                <td><button>Visualizar</button></td>
+                            </tr>
+                            <tr>
+                                <td>Thiago Moura</td>
+                                <td>10/06/2025</td>
+                                <td><button>Visualizar</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
         </div>
-
+        </section>
 
         <footer>
             <p id="footerRealTime"></p>
             <img src="../public/img/dboffRed.png" alt="Icone banco de dados" id="iconeDB">
         </footer>
-    </section>
+    </div>
     <!--
         <footer class="">
             <p id="dateRealTime" class="text-white"></p>
@@ -74,8 +106,9 @@
 
 
     <!-- SCRIPTS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../public/js/renderer.js"></script>
+    <script src="../public/js/footer.js"></script>
 
 </body>
 

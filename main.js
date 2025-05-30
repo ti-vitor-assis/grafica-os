@@ -7,8 +7,12 @@ console.log("Executando Processo Principal")
 
 const { app, BrowserWindow, nativeTheme, Menu, ipcMain } = require("electron/main")
 
+const path = require("node:path")
+
 let win
 
+
+// INICIO - Janelas
 const createWindow = () => {
     nativeTheme.themeSource = "dark"
     win = new BrowserWindow({
@@ -20,23 +24,52 @@ const createWindow = () => {
     win.loadFile("./src/views/index.html")
 }
 
+let costumerRegistration
+function costumerRegistrationWindow() {
+    const mainWindow = BrowserWindow.getFocusedWindow();
+
+    if (mainWindow) {
+        costumerRegistration = new BrowserWindow({
+            width: 1010,
+            height: 720,
+            autoHideMenuBar: true,
+            resizable: false,
+            minimizable: false,
+            parent: mainWindow,
+            modal: true,
+            webPreferences: {
+                preload: path.join(__dirname, "preload.js"),
+            },
+        });
+    }
+    costumerRegistration.loadFile("./src/views/costumerRegistration.html");
+}
+
+
+// FIM - Janelas
 app.whenReady().then(() => {
     createWindow();
     app.on("activate", () => {
         if (BrowserWindow.getAllWindows().length === 0) {
             createWindow();
-            console.log("Passou pelo if browser")
+            //console.log("Passou pelo if browser")
         }
     })
 });
+
+app.commandLine.appendSwitch("log-level", "3");
 
 const template = [
     {
         label: "Cadastro",
         submenu: [
             {
-                label: "Cadastrar",
-                click: () => cadastroWindow(),
+                label: "Cliente",
+                click: () => costumerRegistrationWindow(),
+            },
+            {
+                label: "OS",
+                click: () => serviceOrderRegistrationWindow(),
             },
             {
                 label: "Sair",
@@ -64,12 +97,37 @@ const template = [
                 click: () => showAllOSReports()
             }
         ]
+    }, {
+        label: "Ferramentas",
+        submenu: [
+            {
+                label: "Zoom+",
+                click: () => showClientReports()
+            },
+            {
+                label: "Zoom-",
+                click: () => showOpenOSReports()
+            },
+            {
+                label: "OS's Fechadas",
+                click: () => showClosedOSReports()
+            },
+            {
+                label: "Recarregar",
+                role: "reload",
+                accelerator: "CTRL+R",
+            },
+            {
+                label: "DevTools",
+                role: "ToggleDevTools",
+            }
+        ],
     },
     {
-        label:"Ajuda",
-        submenu:[
+        label: "Ajuda",
+        submenu: [
             {
-                label:"Repositório",
+                label: "Repositório",
                 click: () => console.log("incluir o redirecionador https://github.com/vitorapassos/grafica-os.git")
             },
             {
