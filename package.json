@@ -28,6 +28,7 @@
   "homepage": "https://github.com/vitorapassos/grafica-os#readme",
   "dependencies": {
     "chart.js": "^4.4.9",
-    "electron": "^36.3.1"
+    "electron": "^36.3.1",
+    "mongoose": "^8.15.1"
   }
 }

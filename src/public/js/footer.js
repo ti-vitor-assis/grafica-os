@@ -4,12 +4,11 @@
  */
 
 
-
 document.addEventListener('DOMContentLoaded', () => {
-    const el = document.getElementById('footerRealTime');
+    const footerRealTime = document.getElementById('footerRealTime');
 
-    console.log(el)
-    if (!el) return;
+    console.log(footerRealTime)
+    if (!footerRealTime) return;
 
     const update = () => {
       const now = new Date();
@@ -20,11 +19,21 @@ document.addEventListener('DOMContentLoaded', () => {
         day: 'numeric'
       });
       const time = now.toLocaleTimeString('pt-BR');
-      el.textContent = `${date.charAt(0).toUpperCase() + date.slice(1)} - ${time}`;
+      footerRealTime.textContent = `${date.charAt(0).toUpperCase() + date.slice(1)} - ${time}`;
     };
 
     update();               // update immediately
     setInterval(update, 1000); // update every second
     
-    console.log(el)
+    console.log(footerRealTime)
   });
+
+  api.dbStatus((event, message)=>{
+
+    console.log(message)
+    if(message === "conectado"){
+      document.getElementById('iconeDB').src = "../public/img/dbonGreen.png"
+    }else{
+      document.getElementById('iconeDB').src = "../public/img/dboffRed.png"
+    }
+  })

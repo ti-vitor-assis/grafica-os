@@ -9,8 +9,9 @@ const { app, BrowserWindow, nativeTheme, Menu, ipcMain } = require("electron/mai
 
 const path = require("node:path")
 
-let win
+const { conectar, desconectar } = require('./database.js')
 
+let win
 
 // INICIO - Janelas
 const createWindow = () => {
@@ -18,7 +19,10 @@ const createWindow = () => {
     win = new BrowserWindow({
         width: 1010,
         height: 720,
-
+        // Preload
+        webPreferences: {
+            preload: path.join(__dirname, "preload.js"),
+        },
     })
     Menu.setApplicationMenu(Menu.buildFromTemplate(template))
     win.loadFile("./src/views/index.html")
@@ -48,13 +52,40 @@ function costumerRegistrationWindow() {
 
 // FIM - Janelas
 app.whenReady().then(() => {
+
+    let errorCode = null
     createWindow();
+    ipcMain.on("db-connect", async (event) => {
+
+        try {
+            await conectar();
+        } catch (error) {
+            errorCode = error.code
+        }
+        console.log(errorCode)
+        if (error === null) {
+            setTimeout(() => {
+                event.reply("db-status", "conectado")
+            }, 500)
+        }
+
+
+    })
     app.on("activate", () => {
         if (BrowserWindow.getAllWindows().length === 0) {
             createWindow();
-            //console.log("Passou pelo if browser")
         }
     })
+});
+
+app.on("window-all-closed", () => {
+    if (process.platform !== "darwin") {
+        app.quit();
+    }
+});
+
+app.on("before-quit", async () => {
+    await desconectar();
 });
 
 app.commandLine.appendSwitch("log-level", "3");
