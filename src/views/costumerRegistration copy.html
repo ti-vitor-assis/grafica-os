@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- VERIFICAR COM PROFESSOR
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' ">
+    -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="../public/css/costumerRegistrationStyle.css" rel="stylesheet">
+    <title>Clientes</title>
+</head>
+
+<body>
+    <div class="base">
+
+        <section class="searchSection">
+            <form action="searchCli">
+                <input type="text" name="searchName" class="inputStyle" id="searchNameInput"
+                    placeholder="  Buscar...                                                                                        🔍︎">
+                <button type="submit" id="searchBtn"> BUSCAR </button>
+            </form>
+            <hr class="blockDivision">
+        </section>
+
+        <section class="registerSection">
+            <section class="blocoCadastro">
+                <h1 id="titulo" class="text-white pt-3">Cadastro de Clientes</h1>
+
+                <form id="frmCli">
+
+                    <!-- ID do cliente (oculto) -->
+                    <input type="text" name="" id="inputIdClient">
+
+                    <div class="row">
+                        <div class="ajustar">
+                            <input type="text" class="inputStyle" id="inputNome" placeholder="  Nome *" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="ajustar">
+                            <input type="text" class="inputStyle" id="inputRG" placeholder="  RG">
+                        </div>
+                        <div class="ajustar">
+                            <input type="text" class="inputStyle" id="inputCPF" onblur="checarCPF()" required
+                                placeholder="  CPF *">
+                        </div>
+                        <div class="ajustar">
+                            <button type="button" class="btnStyle btnBuscar">🔍︎</button>
+                        </div><!-- HAHAHA -->
+
+                        <div class="col-md-2">
+                            <select class="inputStyle" id="inputSexo" required>
+                                <option value=""> Escolha o sexo</option>
+                                <option value="fem">Feminino</option>
+                                <option value="mas">Masculino</option>
+                                <option value="out">Outros</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="date" class="inputStyle" id="inputDataNasc" placeholder="  DD/MM/AAAA"
+                                required>
+                        </div>
+                    </div>
+
+                    <!-- Informações de contato -->
+                    <div class="row">
+                        <div class="ajustar">
+                            <input type="tel" class="inputStyle" id="inputTelefone2" placeholder="  Telefone">
+                        </div>
+                        <div class="ajustar">
+                            <input type="tel" class="inputStyle" id="inputTelefone" required placeholder="  Celular *">
+                        </div>
+                        <div class="ajustar">
+                            <input type="email" class="inputStyle" id="inputEmail" required placeholder="  Email *">
+                        </div>
+                        <div class="ajustar">
+                            <input type="password" class="inputStyle" id="inputSenha" required placeholder="  Senha">
+                        </div>
+                    </div>
+
+                    <!-- Endereço -->
+                    <div class="row">
+                        <div class="ajustar">
+                            <input type="text" class="inputStyle" id="inputCep" placeholder="  CEP *"
+                                onblur="buscarEndereco()" required>
+                        </div>
+
+                        <div class="ajustar">
+                            <input type="text" class="inputStyle" id="inputEndereco" placeholder="  Endereço" required>
+                        </div>
+                        <div class="ajustar">
+                            <input type="text" class="inputStyle" id="inputNum" required placeholder="  Número *">
+                        </div>
+                        <div class="ajustar">
+                            <input type="text" class="inputStyle" id="inputComplemento" placeholder="  Complemento">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="ajustar">
+                            <input type="text" class="inputStyle" id="inputBairro" required placeholder="  Bairro">
+                        </div>
+                        <div class="ajustar">
+                            <input type="text" class="inputStyle" id="inputCidade" required placeholder="  Cidade">
+                        </div>
+                        <div class="ajustar">
+                            <select id="inputEstado" class="inputStyle" required>
+                                <option value=""> Escolha um estado...</option>
+                                <option value="AC">Acre</option>
+                                <option value="AL">Alagoas</option>
+                                <option value="AP">Amapá</option>
+                                <option value="AM">Amazonas</option>
+                                <option value="BA">Bahia</option>
+                                <option value="CE">Ceará</option>
+                                <option value="DF">Distrito Federal</option>
+                                <option value="ES">Espírito Santo</option>
+                                <option value="GO">Goiás</option>
+                                <option value="MA">Maranhão</option>
+                                <option value="MT">Mato Grosso</option>
+                                <option value="MS">Mato Grosso do Sul</option>
+                                <option value="MG">Minas Gerais</option>
+                                <option value="PA">Pará</option>
+                                <option value="PB">Paraíba</option>
+                                <option value="PR">Paraná</option>
+                                <option value="PE">Pernambuco</option>
+                                <option value="PI">Piauí</option>
+                                <option value="RJ">Rio de Janeiro</option>
+                                <option value="RN">Rio Grande do Norte</option>
+                                <option value="RS">Rio Grande do Sul</option>
+                                <option value="RO">Rondônia</option>
+                                <option value="RR">Roraima</option>
+                                <option value="SC">Santa Catarina</option>
+                                <option value="SP">São Paulo</option>
+                                <option value="SE">Sergipe</option>
+                                <option value="TO">Tocantins</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="btnCreate">Cadastrar</button>
+                    <button type="submit" class="btn btn-warning" id="btnUpdate">Editar</button>
+                    <button type="button" class="btn btn-danger" id="btnDelete"
+                        onclick="removeClient()">Excluir</button>
+                    <button type="reset" class="btn" id="btnReset" onclick="resetForm()"></button>
+                </form>
+            </section>
+    </div>
+
+    <footer>
+        <p id="footerRealTime"></p>
+        <img src="../public/img/dboffRed.png" alt="Icone banco de dados" id="iconeDB">
+    </footer>
+    <!-- SCRIPTS -->
+    <script src="../public/js/costumerRegistrationRenderer.js"></script>
+    <script src="../public/js/footer.js"></script>
+</body>
+
+</html>

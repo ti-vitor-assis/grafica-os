@@ -43,27 +43,24 @@ body {
 /* SEARCH SECTION */
 .searchSection {
     width: 985px;
-    height: 45px;
+    height: 70px;
     background-color: var(--color-panel);
     margin: 5px 0px 0px 0px;
     border-radius: 5px;
 }
 
-#searchNameInput {
-    border-radius: 15px;
-    border: none;
-    width: 500px;
+.inputStyle {
     height: 35px;
-    margin: 5px 0px 0px 10px;
+    border-radius: 15px;
     background-color: var(--color-background);
-    caret-color: white;
+    border: 1px solid var(--color-primary);
+    caret-color: var(--color-text-primary);
+    color: var(--color-text-primary);
     padding-left: 20px;
-    border: 1px solid #7C3AED;
-    color: white;
 }
 
-#searchNameInput:-webkit-autofill,
-#searchNameInput:-webkit-autofill:focus {
+.inputStyle:-webkit-autofill,
+.inputStyle:-webkit-autofill:focus {
     border: 1px solid var(--color-secondary) !important;
     -webkit-box-shadow: 0 0 0px 1000px var(--color-background) inset !important;
     box-shadow: 0 0 0px 1000px var(--color-background) inset !important;
@@ -71,9 +68,16 @@ body {
     transition: background-color 9999s ease-out, color 9999s ease-out;
 }
 
-#searchNameInput:focus {
+.inputStyle:focus {
     outline: none;
-    border-color: var(--color-secondary);
+    border: 1px dashed var(--color-secondary);
+}
+
+#searchNameInput {
+    width: 500px;
+    height: 35px;
+    margin: 5px 0px 0px 10px;
+
 }
 
 #searchBtn {
@@ -85,16 +89,20 @@ body {
     color: var(--color-text-primary);
 }
 
+.blockDivision {
+    width: 900px;
+}
+
 /* REGISTER SECTION */
 .registerSection {
+    display: flex;
+    flex-direction: row;
     width: 985px;
-    height: 430px;
+    height: 563px;
     background-color: var(--color-panel);
     margin: 5px 0px 0px 0px;
     border-radius: 5px;
 }
-
-
 
 /* RODAPE */
 

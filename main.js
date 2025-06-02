@@ -63,7 +63,7 @@ app.whenReady().then(() => {
             errorCode = error.code
         }
         console.log(errorCode)
-        if (error === null) {
+        if (errorCode === null) {
             setTimeout(() => {
                 event.reply("db-status", "conectado")
             }, 500)

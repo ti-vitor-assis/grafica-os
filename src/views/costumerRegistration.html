@@ -2,38 +2,167 @@
 <html lang="pt-br">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- VERIFICAR COM PROFESSOR
-    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' ">
-    -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="../public/css/costumerRegistrationStyle.css" rel="stylesheet">
+    <link href="../public/css/costumerRegistrationStyle.css" rel="stylesheet" />
     <title>Clientes</title>
 </head>
 
 <body>
+
     <div class="base">
 
-        <section class="searchSection">
-            <form action="searchCli">
-            <input type="text" name="searchName" class="inputStyle" id="searchNameInput" placeholder="  Buscar...                                                                                                                                                             🔍︎">
-            <button type="submit" id="searchBtn"> BUSCAR </button>
-        </form>
+        <!-- SEARCH SECTION -->
+        <section class="searchSection flex items-center px-4">
+            <form action="searchCli" class="flex items-center gap-4 w-full">
+                <input type="text" name="searchName" class="inputStyle" id="searchNameInput"
+                    placeholder="Buscar... 🔍︎" />
+                <button type="submit" id="searchBtn">BUSCAR</button>
+            </form>
         </section>
 
+        <hr class="blockDivision border-t-2 border-[var(--color-primary)] mx-auto mt-2 opacity-40 rounded" />
 
+        <!-- REGISTER SECTION -->
         <section class="registerSection">
+            <section class="blocoCadastro w-full flex justify-center items-start p-4">
+                <form id="frmCli" class="w-full max-w-[950px] space-y-3">
 
+                    <h1 id="titulo" class="text-[var(--color-text-primary)] text-xl font-semibold pt-1 mb-2">
+                        Cadastro de Clientes
+                    </h1>
+
+                    <!-- ID oculto -->
+                    <input type="text" id="inputIdClient" hidden />
+
+                    <!-- Nome -->
+                    <input type="text" class="inputStyle w-full" id="inputNome" placeholder="  Nome *" required />
+
+                    <!-- RG / CPF / Botão buscar -->
+<div class="flex items-center gap-4">
+  <input type="text" class="inputStyle w-[515px]" id="inputRG" placeholder="  RG" />
+  <input type="text" class="inputStyle w-[455px]" id="inputCPF" onblur="checarCPF()" required placeholder="  CPF *" />
+  <button type="button" class="btnStyle btnBuscar w-[40px] px-2 flex justify-center items-center">
+    🔍︎
+  </button>
+</div>
+
+                    <!-- Sexo / Data de Nascimento -->
+                    <div class="flex flex-wrap gap-4">
+                        <select class="inputStyle flex-1 min-w-[150px]" id="inputSexo" required>
+                            <option value="">Escolha o sexo</option>
+                            <option value="fem">Feminino</option>
+                            <option value="mas">Masculino</option>
+                            <option value="out">Outros</option>
+                        </select>
+                        <input type="date" class="inputStyle flex-1 min-w-[150px]" id="inputDataNasc" required />
+                    </div>
+
+                    <!-- Telefones -->
+                    <div class="flex flex-wrap gap-4">
+                        <input type="tel" class="inputStyle flex-1 min-w-[140px]" id="inputTelefone2"
+                            placeholder="  Telefone" />
+                        <input type="tel" class="inputStyle flex-1 min-w-[140px]" id="inputTelefone" required
+                            placeholder="  Celular *" />
+                    </div>
+
+                    <!-- Email / Senha -->
+                    <div class="flex flex-wrap gap-4">
+                        <input type="email" class="inputStyle flex-1" id="inputEmail" required
+                            placeholder="  Email *" />
+                        <input type="password" class="inputStyle flex-1" id="inputSenha" required
+                            placeholder="  Senha" />
+                    </div>
+
+                    <!-- Endereço 1 -->
+                    <div class="flex flex-wrap gap-4">
+                        <input type="text" class="inputStyle w-1/4 min-w-[120px]" id="inputCep" placeholder="  CEP *"
+                            onblur="buscarEndereco()" required />
+                        <input type="text" class="inputStyle flex-1" id="inputEndereco" placeholder="  Endereço"
+                            required />
+                        <input type="text" class="inputStyle w-1/4 min-w-[100px]" id="inputNum" required
+                            placeholder="  Número *" />
+                    </div>
+
+                    <!-- Endereço 2 -->
+                    <input type="text" class="inputStyle w-full" id="inputComplemento" placeholder="  Complemento" />
+
+                    <!-- Bairro / Cidade -->
+                    <div class="flex flex-wrap gap-4">
+                        <input type="text" class="inputStyle flex-1" id="inputBairro" required
+                            placeholder="  Bairro" />
+                        <input type="text" class="inputStyle flex-1" id="inputCidade" required
+                            placeholder="  Cidade" />
+                    </div>
+
+                    <!-- Estado -->
+                    <select id="inputEstado" class="inputStyle w-full" required>
+                        <option value="">Escolha um estado...</option>
+                        <option value="AC">Acre</option>
+                        <option value="AL">Alagoas</option>
+                        <option value="AP">Amapá</option>
+                        <option value="AM">Amazonas</option>
+                        <option value="BA">Bahia</option>
+                        <option value="CE">Ceará</option>
+                        <option value="DF">Distrito Federal</option>
+                        <option value="ES">Espírito Santo</option>
+                        <option value="GO">Goiás</option>
+                        <option value="MA">Maranhão</option>
+                        <option value="MT">Mato Grosso</option>
+                        <option value="MS">Mato Grosso do Sul</option>
+                        <option value="MG">Minas Gerais</option>
+                        <option value="PA">Pará</option>
+                        <option value="PB">Paraíba</option>
+                        <option value="PR">Paraná</option>
+                        <option value="PE">Pernambuco</option>
+                        <option value="PI">Piauí</option>
+                        <option value="RJ">Rio de Janeiro</option>
+                        <option value="RN">Rio Grande do Norte</option>
+                        <option value="RS">Rio Grande do Sul</option>
+                        <option value="RO">Rondônia</option>
+                        <option value="RR">Roraima</option>
+                        <option value="SC">Santa Catarina</option>
+                        <option value="SP">São Paulo</option>
+                        <option value="SE">Sergipe</option>
+                        <option value="TO">Tocantins</option>
+                    </select>
+
+                    <!-- Botões -->
+                    <div class="flex flex-wrap gap-4 pt-4">
+                        <button type="submit"
+                            class="px-4 py-2 rounded text-white bg-[var(--color-success)] hover:brightness-110"
+                            id="btnCreate">
+                            Cadastrar
+                        </button>
+                        <button type="submit"
+                            class="px-4 py-2 rounded text-white bg-[var(--color-secondary)] hover:brightness-110"
+                            id="btnUpdate">
+                            Editar
+                        </button>
+                        <button type="button"
+                            class="px-4 py-2 rounded text-white bg-[var(--color-error)] hover:brightness-110"
+                            id="btnDelete" onclick="removeClient()">
+                            Excluir
+                        </button>
+                        <button type="reset"
+                            class="px-4 py-2 rounded bg-gray-500 text-white hover:brightness-110"
+                            id="btnReset" onclick="resetForm()">
+                            Limpar
+                        </button>
+                    </div>
+                </form>
+            </section>
         </section>
-
-
     </div>
+
+    <!-- FOOTER -->
     <footer>
         <p id="footerRealTime"></p>
-        <img src="../public/img/dboffRed.png" alt="Icone banco de dados" id="iconeDB">
+        <img src="../public/img/dboffRed.png" alt="Icone banco de dados" id="iconeDB" />
     </footer>
+
     <!-- SCRIPTS -->
     <script src="../public/js/costumerRegistrationRenderer.js"></script>
     <script src="../public/js/footer.js"></script>
