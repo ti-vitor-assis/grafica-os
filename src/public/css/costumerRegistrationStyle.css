@@ -68,12 +68,18 @@ body {
     transition: background-color 9999s ease-out, color 9999s ease-out;
 }
 
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+  }
+
+
+
 .inputStyle:focus {
     outline: none;
     border: 1px dashed var(--color-secondary);
 }
 
-#searchNameInput {
+#searchClientsInput {
     width: 500px;
     height: 35px;
     margin: 5px 0px 0px 10px;
@@ -98,7 +104,7 @@ body {
     display: flex;
     flex-direction: row;
     width: 985px;
-    height: 563px;
+    height: 550px;
     background-color: var(--color-panel);
     margin: 5px 0px 0px 0px;
     border-radius: 5px;
