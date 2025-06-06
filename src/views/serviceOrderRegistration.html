@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="../public/css/serviceOrderRegistrationStyle.css" rel="stylesheet" />
+    <title>Ordem de Serviço</title>
+</head>
+<body>
+  <div class="panel">
+    <h1 class="text-2xl mb-4 font-semibold">Cadastro de Ordem de Serviço</h1>
+
+    <!-- Busca cliente -->
+    <div class="mb-4 flex items-center space-x-2">
+      <input id="searchClientInput" type="text" placeholder="Buscar cliente por nome" class="flex-grow inputStyle" />
+      <button id="btnSearchClient" class="button">Buscar</button>
+    </div>
+
+    <form id="osForm">
+      <div class="mb-4">
+        <label for="clientName" class="block mb-1">Cliente:</label>
+        <input type="text" id="clientName" readonly placeholder="Nome do cliente selecionado" class="inputStyle w-full" />
+      </div>
+
+      <div class="mb-4">
+        <label for="productSelect" class="block mb-1">Adicionar Produto:</label>
+        <div class="flex items-center space-x-2">
+          <select id="productSelect" class="inputStyle w-full"></select>
+          <button type="button" id="btnAddProduct" class="button">Adicionar</button>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table id="productTable">
+          <thead>
+            <tr>
+              <th>Produto</th>
+              <th>Quantidade</th>
+              <th>Valor Unit.</th>
+              <th>Subtotal</th>
+              <th>Remover</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3" class="text-right font-bold">Total:</td>
+              <td id="totalValue">R$ 0,00</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="mt-4 mb-4">
+        <label for="deliveryDate" class="block mb-1">Data de Entrega:</label>
+        <input type="date" id="deliveryDate" class="inputStyle" required />
+      </div>
+
+      <button type="submit" class="button w-full mt-2">Salvar Ordem</button>
+    </form>
+  </div>
+
+  <script src="renderer.js"></script>
+  
+    <!-- FOOTER -->
+    <footer>
+        <p id="footerRealTime"></p>
+        <img src="../public/img/dboffRed.png" alt="Icone banco de dados" id="iconeDB" />
+    </footer>
+
+    <!-- SCRIPTS -->
+    <script src="../public/js/costumerRegistrationRenderer.js"></script>
+    <script src="../public/js/footer.js"></script>
+</body>
+</html>

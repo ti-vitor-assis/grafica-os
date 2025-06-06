@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-background: #1E1E2F;
+  --color-panel: #2A2A3D;
+  --color-primary: #7C3AED;
+  --color-secondary: #3B82F6;
+  --color-text-primary: #E0E0E0;
+  --color-text-secondary: #A0A0B5;
+  --color-error: #EF4444;
+  --color-success: #22C55E;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: Arial, sans-serif;
+}
+
+.panel {
+  background-color: var(--color-panel);
+  border-radius: 8px;
+  padding: 16px;
+  max-width: 980px;
+  margin: 20px auto;
+}
+
+.inputStyle {
+  background-color: var(--color-background);
+  border: 1px solid var(--color-primary);
+  color: var(--color-text-primary);
+  padding: 8px 12px;
+  border-radius: 6px;
+  width: 100%;
+}
+
+.inputStyle:focus {
+  outline: none;
+  border-color: var(--color-secondary);
+  box-shadow: 0 0 5px var(--color-secondary);
+}
+
+.button {
+  background-color: var(--color-background);
+  border: 1px solid var(--color-primary);
+  color: var(--color-text-primary);
+  padding: 8px 16px;
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+}
+
+.button:hover {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+th, td {
+  border: 1px solid var(--color-primary);
+  padding: 8px;
+  text-align: center;
+}
+
+th {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+
+
+
+/* RODAPE */
+
+footer {
+    height: 30px;
+    width: 985px;
+    background-color: #2A2A3D;
+    bottom: 0px;
+    position: fixed;
+    display: flex;
+    justify-content: space-between;
+    margin-left: 5px;
+    margin-bottom: 5px;
+    border-radius: 5px;
+    position: fixed;
+}
+
+footer p {
+    font-size: 0.8em;
+    margin-bottom: 10px;
+    margin-left: 5px;
+    color: #FFF;
+}
+
+footer img {
+    margin-right: 5px;
+    margin-top: 5px;
+    height: 25px;
+    width: 25px;
+}
+
+#footerRealTime {
+    margin-top: 5px;
+    margin-left: 10px;
+}

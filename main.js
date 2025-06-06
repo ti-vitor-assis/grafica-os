@@ -30,6 +30,7 @@ const createWindow = () => {
     win.loadFile("./src/views/index.html")
 }
 
+// Clientes
 let costumerRegistration
 function costumerRegistrationWindow() {
     const mainWindow = BrowserWindow.getFocusedWindow();
@@ -49,6 +50,28 @@ function costumerRegistrationWindow() {
         });
     }
     costumerRegistration.loadFile("./src/views/costumerRegistration.html");
+}
+
+// Ordem de Serviços
+let serviceOrderRegistration
+function serviceOrderRegistrationWindow() {
+    const mainWindow = BrowserWindow.getFocusedWindow();
+
+    if (mainWindow) {
+        costumerRegistration = new BrowserWindow({
+            width: 1010,
+            height: 720,
+            autoHideMenuBar: true,
+            resizable: false,
+            minimizable: false,
+            parent: mainWindow,
+            modal: true,
+            webPreferences: {
+                preload: path.join(__dirname, "preload.js"),
+            },
+        });
+    }
+    costumerRegistration.loadFile("./src/views/serviceOrderRegistration.html");
 }
 
 
@@ -214,6 +237,73 @@ ipcMain.on("validate-search", () => {
     }
   });
 
+  ipcMain.on("search-cpf", async (event, cpfCli) => {
+    // Teste recebimento nome do cliente (passo 2)
+    console.log(cpfCli);
+    try {
+      // Passos 3 e 4 (Busca dos dados do cliente pelo nome)
+      const client = await clienteModel.find({
+        // RegExp (Expressão Regular 'i' -> insensitive(ignorar letras maiúsculas e minúsculas))
+        cpf: new RegExp(cpfCli, "i"),
+      });
+      // Teste da busca do cliente pelo nome (Passos 3 e 4)
+      console.log(client);
+  
+      // Melhoria da experiencia do usuário (se não existir um cliente cadastrado enviar uma mensagem ao usuário questionando se ele deseja cadastrar este novo cliente)
+      // Se o vetor estiver vazio
+      if (client.length === 0) {
+        // Questionar o usuário
+        dialog
+          .showMessageBox({
+            type: "warning",
+            title: "Aviso",
+            message: "Cliente não cadastrado.\nDeseja cadastrar este cliente?",
+            defaultId: 0,
+            buttons: ["SIM", "NÃO"], // [0, 1] defaultId: 0 = Sim
+          })
+          .then((result) => {
+            if (result.response === 0) {
+              // Enviar ao rendererCadCli um pedido para copiar o nome do cliente do campo de busca para o campo nome (evitar que o usuário digite o nome novamente)
+              event.reply("set-cpf");
+            } else {
+              // enviar ao rendererCliente um pedido para limpar os campos (reutilizar a api do preload 'reset-form')
+              event.reply("reset-form");
+            }
+          });
+      } else {
+        // Passo 5: Enviar ao renderizador (rendererCadCli) os dados do cliente
+        // Não esquecer de converter para string
+        event.reply("render-client", JSON.stringify(client));
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  });
+
+  // ==============================
+// ======== CRUD DELETE =========
+
+ipcMain.on("delete-client", async (event, id) => {
+  //console.log(id);
+  // Excuir o registro do banco (passo 3) IMPORTANTE! (confirmar antes da exclusão)
+  // win = Janela Principal
+  const result = await dialog.showMessageBox(win, {
+    type: "warning",
+    title: "Atenção!",
+    message:
+      "Tem certeza que deseja excluir este Cliente?\nEsta ação não podera ser desfeita.",
+    buttons: ["Cancelar", "Excluir"], // É um Vetor indices: [0, 1]
+  });
+  console.log(result);
+  if (result.response === 1) {
+    try {
+      const delClient = await clienteModel.findByIdAndDelete(id);
+      console.log(`deletado ${id}`);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+});
   
 
 
