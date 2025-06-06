@@ -166,6 +166,14 @@ frmCli.addEventListener("submit", async (event) => {
     }
 });
 
+// ======== CRUD DELETE =========
+function removeClient() {
+    //console.log(inputIdClient.value) // teste do passo 1
+    // Passo 2: Envio do id para o main
+    api.deleteClient(inputIdClient.value);
+    
+  }
+
 //
 function formatDate(date) {
     if (!(date instanceof Date)) {

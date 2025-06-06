@@ -299,6 +299,7 @@ ipcMain.on("delete-client", async (event, id) => {
     try {
       const delClient = await clienteModel.findByIdAndDelete(id);
       console.log(`deletado ${id}`);
+      event.reply("reset-form");
     } catch (error) {
       console.log(error);
     }
