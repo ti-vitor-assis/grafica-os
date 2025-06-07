@@ -2,30 +2,38 @@
 <html lang="pt-br">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="../public/css/serviceOrderRegistrationStyle.css" rel="stylesheet" />
-    <title>Ordem de Serviço</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="../public/css/serviceOrderRegistrationStyle.css" rel="stylesheet" />
+  <title>Ordem de Serviço</title>
 </head>
+
 <body>
   <div class="panel">
+
+    <!-- SEARCH SECTION -->
+    <section class="searchSection flex items-center px-4">
+      <form id="frmSearchClient" class="flex items-center gap-4 w-full">
+        <input type="text" name="searchName" class="inputStyle" id="searchClientsInput"
+          placeholder="  Buscar...                                                                                       🔍︎" />
+        <button type="submit" id="searchBtn" onclick="searchClients()" class="inputStyle btnStyle">BUSCAR</button>
+      </form>
+    </section>
+
+    <hr class="blockDivision border-t-2 border-[var(--color-primary)] mx-auto mt-2 opacity-40 rounded" />
+
     <h1 class="text-2xl mb-4 font-semibold">Cadastro de Ordem de Serviço</h1>
 
-    <!-- Busca cliente -->
-    <div class="mb-4 flex items-center space-x-2">
-      <input id="searchClientInput" type="text" placeholder="Buscar cliente por nome" class="flex-grow inputStyle" />
-      <button id="btnSearchClient" class="button">Buscar</button>
-    </div>
+    <form id="osForm" class="">
 
-    <form id="osForm">
-      <div class="mb-4">
-        <label for="clientName" class="block mb-1">Cliente:</label>
-        <input type="text" id="clientName" readonly placeholder="Nome do cliente selecionado" class="inputStyle w-full" />
-      </div>
+      <!-- ID oculto -->
+      <input type="text" id="inputIdClient" class="inputStyle w-full" readonly />
+      <!-- Nome -->
+      <input type="text" class="inputStyle" id="inputNome" placeholder="  Nome *" required readonly />
 
-      <div class="mb-4">
+      <!--<div class="mb-4">
         <label for="productSelect" class="block mb-1">Adicionar Produto:</label>
         <div class="flex items-center space-x-2">
           <select id="productSelect" class="inputStyle w-full"></select>
@@ -53,27 +61,43 @@
             </tr>
           </tfoot>
         </table>
+      </div>-->
+
+
+      <select id="productSelect" name="productSelect" multiple size="5" class="inputStyle w-full">
+        <option value="cartao_visita">Cartão de Visita</option>
+        <option value="folder">Folder</option>
+        <option value="flyer">Flyer</option>
+        <option value="banner">Banner</option>
+        <option value="poster">Poster</option>
+      </select>
+
+      <h3>Produtos selecionados:</h3>
+      <div id="selectedProductsContainer">
+        <!-- Aqui vão aparecer os produtos selecionados com inputs de valor e quantidade -->
       </div>
+
 
       <div class="mt-4 mb-4">
         <label for="deliveryDate" class="block mb-1">Data de Entrega:</label>
         <input type="date" id="deliveryDate" class="inputStyle" required />
       </div>
 
-      <button type="submit" class="button w-full mt-2">Salvar Ordem</button>
+      <button type="submit" class="button w-full mt-2" id="btnCreate">Salvar</button>
+      <button type="submit" class="button w-full mt-2" id="btnUpdate">Editar</button>
+      <button type="submit" class="button w-full mt-2" id="btnDelete">Excluir</button>
     </form>
   </div>
 
-  <script src="renderer.js"></script>
-  
-    <!-- FOOTER -->
-    <footer>
-        <p id="footerRealTime"></p>
-        <img src="../public/img/dboffRed.png" alt="Icone banco de dados" id="iconeDB" />
-    </footer>
+  <!-- FOOTER -->
+  <footer>
+    <p id="footerRealTime"></p>
+    <img src="../public/img/dboffRed.png" alt="Icone banco de dados" id="iconeDB" />
+  </footer>
 
-    <!-- SCRIPTS -->
-    <script src="../public/js/costumerRegistrationRenderer.js"></script>
-    <script src="../public/js/footer.js"></script>
+  <!-- SCRIPTS -->
+  <script src="../public/js/serviceOrderRegistrationRenderer.js"></script>
+  <script src="../public/js/footer.js"></script>
 </body>
+
 </html>

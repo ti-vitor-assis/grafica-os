@@ -23,4 +23,6 @@ contextBridge.exposeInMainWorld("api", {
   setCpf: (args) => ipcRenderer.on("set-cpf", args),
   deleteClient: (id) => ipcRenderer.send("delete-client", id),
   updateClient: (client) => ipcRenderer.send("update-client", client),
+  searchOrder: (clientOrCpf) => ipcRenderer.send("search-order", clientOrCpf),
+  receiveOrder: (args) => ipcRenderer.on("order-result", args),
 });
