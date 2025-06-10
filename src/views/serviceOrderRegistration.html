@@ -18,7 +18,7 @@
       <form id="frmSearchClient" class="flex items-center gap-4 w-full">
         <input type="text" name="searchName" class="inputStyle" id="searchClientsInput"
           placeholder="  Buscar...                                                                                       🔍︎" />
-        <button type="submit" id="searchBtn" onclick="searchClients()" class="inputStyle btnStyle">BUSCAR</button>
+        <button type="submit" id="searchBtn" onclick="searchClients()" class="btns">BUSCAR</button>
       </form>
     </section>
 
@@ -82,10 +82,11 @@
         <label for="deliveryDate" class="block mb-1">Data de Entrega:</label>
         <input type="date" id="deliveryDate" class="inputStyle" required />
       </div>
-
-      <button type="submit" class="button w-full mt-2" id="btnCreate">Salvar</button>
-      <button type="submit" class="button w-full mt-2" id="btnUpdate">Editar</button>
-      <button type="submit" class="button w-full mt-2" id="btnDelete">Excluir</button>
+      <div class="buttonsGroup">
+        <button type="submit" class="button w-full mt-2" id="btnCreate">Salvar</button>
+        <button type="submit" class="button w-full mt-2" id="btnUpdate">Editar</button>
+        <button type="submit" class="button w-full mt-2" id="btnDelete">Excluir</button>
+      </div>
     </form>
   </div>
 

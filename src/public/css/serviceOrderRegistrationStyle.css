@@ -29,11 +29,12 @@ body {
 
 .inputStyle {
   background-color: var(--color-background);
-  border: 1px solid var(--color-primary);
+  border-bottom: 1px solid var(--color-primary);
   color: var(--color-text-primary);
   padding: 8px 12px;
-  border-radius: 6px;
+  border-radius: 15px;
   width: 100%;
+  margin-top: 10px;
 }
 
 .inputStyle:focus {
@@ -50,6 +51,16 @@ body {
   border-radius: 6px;
   transition: background-color 0.3s ease;
 }
+
+.btns {
+  width: 200px;
+  height: 35px;
+  border-radius: 15px;
+  border-bottom: 1px solid var(--color-primary);
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+}
+
 
 .button:hover {
   background-color: var(--color-primary);
