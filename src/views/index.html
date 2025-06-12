@@ -62,32 +62,36 @@
                 <div class="delayedservices text-white">
 
                     <h1 class="font-bold text-center text-xl"> Serviços Atrasados / Próximos do Prazo</h1>
-                    <table class="table-fixed">
-                        <thead>
-                            <tr>
-                                <th width="200px">Cliente</th>
-                                <th width="200px">Prazo</th>
-                                <th width="200px">Opções</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>Walter White</td>
-                                <td>29/05/2025</td>
-                                <td><button>Visualizar</button></td>
-                            </tr>
-                            <tr>
-                                <td>Guilherme Rosa</td>
-                                <td>05/06/2025</td>
-                                <td><button>Visualizar</button></td>
-                            </tr>
-                            <tr>
-                                <td>Thiago Moura</td>
-                                <td>10/06/2025</td>
-                                <td><button>Visualizar</button></td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="shadow-lg rounded-lg overflow-hidden mx-4 md:mx-10">
+                        <table class="w-full table-fixed">
+                            <thead>
+                                <tr class="" style="background-color: var(--color-panel);">
+                                    <th class="w-1/4 py-4 px-6 text-left text-white-600 font-bold uppercase">Name</th>
+                                    <th class="w-1/4 py-4 px-6 text-left text-white-600 font-bold uppercase">Email</th>
+                                    <th class="w-1/4 py-4 px-6 text-left text-white-600 font-bold uppercase">Phone</th>
+                                    <th class="w-1/4 py-4 px-6 text-left text-white-600 font-bold uppercase">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="">
+                                <tr>
+                                    <td class="py-4 px-6 border-b border-gray-200">John Doe</td>
+                                    <td class="py-4 px-6 border-b border-gray-200 truncate">johndoe@gmail.com</td>
+                                    <td class="py-4 px-6 border-b border-gray-200">555-555-5555</td>
+                                    <td class="py-4 px-6 border-b border-gray-200">
+                                        <span class="bg-green-500 text-white py-1 px-2 rounded-full text-xs">ENTREGUE</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="py-4 px-6 border-b border-gray-200">Jane Doe</td>
+                                    <td class="py-4 px-6 border-b border-gray-200 truncate">janedoe@gmail.com</td>
+                                    <td class="py-4 px-6 border-b border-gray-200">555-555-5555</td>
+                                    <td class="py-4 px-6 border-b border-gray-200">
+                                        <span class="bg-red-500 text-white py-1 px-2 rounded-full text-xs">ATRASADO</span>
+                                    </td>
+                                </tr>                               
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
         </div>
         </section>

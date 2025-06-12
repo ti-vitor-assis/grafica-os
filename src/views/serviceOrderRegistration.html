@@ -24,71 +24,22 @@
 
     <hr class="blockDivision border-t-2 border-[var(--color-primary)] mx-auto mt-2 opacity-40 rounded" />
 
-    <h1 class="text-2xl mb-4 font-semibold">Cadastro de Ordem de Serviço</h1>
 
-    <form id="osForm" class="">
+    <section class="osSection">
 
-      <!-- ID oculto -->
-      <input type="text" id="inputIdClient" class="inputStyle w-full" readonly />
-      <!-- Nome -->
-      <input type="text" class="inputStyle" id="inputNome" placeholder="  Nome *" required readonly />
+      <form id="osForm" class="">
 
-      <!--<div class="mb-4">
-        <label for="productSelect" class="block mb-1">Adicionar Produto:</label>
-        <div class="flex items-center space-x-2">
-          <select id="productSelect" class="inputStyle w-full"></select>
-          <button type="button" id="btnAddProduct" class="button">Adicionar</button>
-        </div>
-      </div>
+        <!-- ID oculto -->
+        <input type="text" id="inputIdClient" class="inputStyle w-full" readonly />
+        <!-- Nome -->
+        <input type="text" class="inputStyle" id="inputNome" placeholder="  Nome *" required readonly />
 
-      <div class="table-wrapper">
-        <table id="productTable">
-          <thead>
-            <tr>
-              <th>Produto</th>
-              <th>Quantidade</th>
-              <th>Valor Unit.</th>
-              <th>Subtotal</th>
-              <th>Remover</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-          <tfoot>
-            <tr>
-              <td colspan="3" class="text-right font-bold">Total:</td>
-              <td id="totalValue">R$ 0,00</td>
-              <td></td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>-->
-
-
-      <select id="productSelect" name="productSelect" multiple size="5" class="inputStyle w-full">
-        <option value="cartao_visita">Cartão de Visita</option>
-        <option value="folder">Folder</option>
-        <option value="flyer">Flyer</option>
-        <option value="banner">Banner</option>
-        <option value="poster">Poster</option>
-      </select>
-
-      <h3>Produtos selecionados:</h3>
-      <div id="selectedProductsContainer">
-        <!-- Aqui vão aparecer os produtos selecionados com inputs de valor e quantidade -->
-      </div>
-
-
-      <div class="mt-4 mb-4">
-        <label for="deliveryDate" class="block mb-1">Data de Entrega:</label>
-        <input type="date" id="deliveryDate" class="inputStyle" required />
-      </div>
-      <div class="buttonsGroup">
-        <button type="submit" class="button w-full mt-2" id="btnCreate">Salvar</button>
-        <button type="submit" class="button w-full mt-2" id="btnUpdate">Editar</button>
-        <button type="submit" class="button w-full mt-2" id="btnDelete">Excluir</button>
-      </div>
-    </form>
+      </form>
   </div>
+
+  </section>
+  <h1 class="text-2xl mb-4 font-semibold">Cadastro de Ordem de Serviço</h1>
+
 
   <!-- FOOTER -->
   <footer>

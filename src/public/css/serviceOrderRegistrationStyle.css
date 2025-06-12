@@ -67,6 +67,16 @@ body {
   color: white;
 }
 
+.osSection {
+  display: flex;
+  flex-direction: row;
+  width: 700px;
+  height: 150px;
+  background-color: var(--color-panel);
+  margin: 155px 0px 0px 0px;
+  border-radius: 5px;
+}
+
 .table-wrapper {
   overflow-x: auto;
 }

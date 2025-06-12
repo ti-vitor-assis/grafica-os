@@ -126,6 +126,19 @@ body {
     margin-bottom: 1rem;
 }
 
+th{
+    background-color: var(--color-panel);
+}
+
+
+.middown{
+    width: 100px;
+    height: 100px;
+    background-color: var(--color-error);
+    margin-right: 270px;
+    margin-top: 500px;
+}
+
 
 
 /* RODAPE */
