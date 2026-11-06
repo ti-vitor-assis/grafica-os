@@ -34,48 +34,34 @@ const createWindow = () => {
   win.loadFile("./src/views/index.html")
 }
 
-// Clientes
-let costumerRegistration
-function costumerRegistrationWindow() {
-  const mainWindow = BrowserWindow.getFocusedWindow() || win;
+// Cria uma janela modal (filha da janela principal) com o arquivo HTML informado.
+// Todas as telas de cadastro usam o mesmo tamanho e as mesmas opções.
+function modalWindow(arquivoHtml) {
+  if (!win) return null;
+  const janela = new BrowserWindow({
+    width: 1010,
+    height: 720,
+    autoHideMenuBar: true,
+    resizable: false,
+    minimizable: false,
+    parent: win,
+    modal: true,
+    webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
+    },
+  });
+  janela.loadFile(arquivoHtml);
+  return janela;
+}
 
-  if (mainWindow) {
-    costumerRegistration = new BrowserWindow({
-      width: 1010,
-      height: 720,
-      autoHideMenuBar: true,
-      resizable: false,
-      minimizable: false,
-      parent: mainWindow,
-      modal: true,
-      webPreferences: {
-        preload: path.join(__dirname, "preload.js"),
-      },
-    });
-    costumerRegistration.loadFile("./src/views/costumerRegistration.html");
-  }
+// Clientes
+function costumerRegistrationWindow() {
+  return modalWindow("./src/views/costumerRegistration.html");
 }
 
 // Ordem de Serviços
-let serviceOrderRegistration
 function serviceOrderRegistrationWindow() {
-  const mainWindow = BrowserWindow.getFocusedWindow() || win;
-
-  if (mainWindow) {
-    serviceOrderRegistration = new BrowserWindow({
-      width: 1010,
-      height: 720,
-      autoHideMenuBar: true,
-      resizable: false,
-      minimizable: false,
-      parent: mainWindow,
-      modal: true,
-      webPreferences: {
-        preload: path.join(__dirname, "preload.js"),
-      },
-    });
-    serviceOrderRegistration.loadFile("./src/views/serviceOrderRegistration.html");
-  }
+  return modalWindow("./src/views/serviceOrderRegistration.html");
 }
 
 // Sobre
