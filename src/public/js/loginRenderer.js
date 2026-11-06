@@ -33,6 +33,15 @@ api.dbStatus((event, status) => {
 
 api.receiveLoginInfo((event, info) => {
     erroLogin.textContent = "";
+    // Banco com dados de outro computador e sem a chave deste: só importando
+    if (info.chaveAusente) {
+        subtitulo.textContent = "Falta a chave de segurança deste banco.";
+        erroLogin.textContent = "Peça o arquivo de chave ao administrador (exportado no computador principal) e importe-o.";
+        const botao = document.getElementById("btnConfigBanco");
+        botao.lastChild.textContent = " Importar chave de segurança";
+        botao.hidden = false;
+        return;
+    }
     if (info.primeiroAcesso) {
         subtitulo.textContent = "Bem-vindo! Vamos configurar o sistema.";
         frmPrimeiroAcesso.hidden = false;

@@ -47,6 +47,31 @@ function salvarUrlBanco(url) {
   gravar(config);
 }
 
+// Chaves de criptografia dos documentos (CPF/CNPJ): guardadas do mesmo
+// jeito que a string de conexão, criptografadas pelo Windows
+function lerChaves() {
+  const { chaves } = ler();
+  if (!chaves || !chaves.valor) return null;
+  try {
+    const texto = chaves.criptografado
+      ? safeStorage.decryptString(Buffer.from(chaves.valor, "base64"))
+      : chaves.valor;
+    return JSON.parse(texto);
+  } catch (error) {
+    console.log("Não foi possível ler as chaves de criptografia:", error.message);
+    return null;
+  }
+}
+
+function salvarChaves(novas) {
+  const config = ler();
+  const texto = JSON.stringify(novas);
+  config.chaves = safeStorage.isEncryptionAvailable()
+    ? { criptografado: true, valor: safeStorage.encryptString(texto).toString("base64") }
+    : { criptografado: false, valor: texto };
+  gravar(config);
+}
+
 // Preferências simples (ex.: tema claro/escuro)
 function lerPreferencia(chave, padrao) {
   const config = ler();
@@ -64,4 +89,6 @@ function mascararUrl(url) {
   return url ? url.replace(/\/\/([^:/@]+):([^@]+)@/, "//$1:••••@") : "";
 }
 
-module.exports = { lerUrlBanco, salvarUrlBanco, lerPreferencia, salvarPreferencia, mascararUrl };
+module.exports = {
+  lerUrlBanco, salvarUrlBanco, lerChaves, salvarChaves, lerPreferencia, salvarPreferencia, mascararUrl,
+};

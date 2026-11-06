@@ -18,11 +18,19 @@ const RAIZ = path.resolve(__dirname, "..", "..");
 const PASTA_CENARIOS = path.join(__dirname, "cenarios");
 const TEMPO_LIMITE = 180000;
 
-function rodarCenario(arquivo, uriBanco) {
+async function rodarCenario(arquivo, uriBanco) {
+    // Um cenário pode preparar o banco antes de o app abrir
+    // (module.exports.prepararBanco) e pedir variáveis de ambiente (module.exports.env)
+    const cenario = require(arquivo);
+    let envPreparo = {};
+    if (cenario.prepararBanco) {
+        const mongoose = require("mongoose");
+        await mongoose.connect(uriBanco);
+        envPreparo = (await cenario.prepararBanco()) || {};
+        await mongoose.disconnect();
+    }
     return new Promise((resolve) => {
-        // Um cenário pode pedir variáveis de ambiente próprias (module.exports.env)
-        const extra = require(arquivo).env || {};
-        const env = { ...process.env, ...extra, APP_DIR: RAIZ, MONGO_URL: uriBanco, E2E_CENARIO: arquivo };
+        const env = { ...process.env, ...(cenario.env || {}), ...envPreparo, APP_DIR: RAIZ, MONGO_URL: uriBanco, E2E_CENARIO: arquivo };
         // O VS Code e alguns terminais definem esta variável, que faria o
         // Electron rodar como Node puro
         delete env.ELECTRON_RUN_AS_NODE;

@@ -30,6 +30,9 @@ const { htmlOrcamento } = require('./src/print/quoteTemplate.js')
 const { htmlRelatorio } = require('./src/print/reportTemplate.js')
 const relatorios = require('./src/reports/relatorios.js')
 const { limparEntrada } = require('./src/seguranca/entrada.js')
+const cripto = require('./src/seguranca/cripto.js')
+const arquivoChave = require('./src/seguranca/arquivoChave.js')
+const configuracaoModel = require('./src/model/Configuracao.js')
 
 let win
 
@@ -334,7 +337,8 @@ function dbConfigWindow() {
 // configuração ou banco fora do ar). Com o banco funcionando, só o admin.
 function podeConfigurarBanco() {
   if (usuarioLogado) return pode("configuracao")
-  return !estaConectado()
+  // Sem ninguém logado: só com o banco fora do ar ou faltando a chave
+  return !estaConectado() || estadoChaves === "ausente"
 }
 
 ipcOn("open-db-config", (event) => {
@@ -348,7 +352,108 @@ ipcOn("db-config-info", (event) => {
     origemAmbiente: urlDoAmbiente,
     urlAtual: urlDoAmbiente ? "" : configuracao.mascararUrl(salva),
     conectado: estaConectado(),
+    chaves: {
+      estado: estadoChaves,
+      podeExportar: estadoChaves === "ok" && pode("configuracao"),
+      podeImportar: estadoChaves === "ausente" || pode("configuracao"),
+    },
   })
+})
+
+// ===== Chaves de criptografia dos documentos (CPF/CNPJ) =====
+// "ok": este computador tem as chaves deste banco
+// "ausente": o banco já tem dados de outro computador e as chaves daqui
+//            não batem (é preciso importar o arquivo de chave)
+// "pendente": ainda não conectou
+let estadoChaves = "pendente"
+let preparoChaves = null
+
+function prepararChaves() {
+  if (!preparoChaves) {
+    preparoChaves = verificarChaves().catch((erro) => {
+      console.log("Erro ao verificar as chaves:", erro.message)
+      preparoChaves = null
+    })
+  }
+  return preparoChaves
+}
+
+async function verificarChaves() {
+  const locais = configuracao.lerChaves()
+  cripto.definirChaves(locais)
+  const registro = await configuracaoModel.findById("impressaoChaves")
+
+  if (!registro) {
+    // Banco novo (ou de antes da criptografia): este computador define as chaves
+    if (!locais) {
+      const novas = cripto.gerarChaves()
+      configuracao.salvarChaves(novas)
+      cripto.definirChaves(novas)
+    }
+    try {
+      await configuracaoModel.create({ _id: "impressaoChaves", valor: cripto.impressaoChaves() })
+    } catch (erro) {
+      // Outro computador gravou ao mesmo tempo: confere de novo
+      if (erro.code === 11000) return verificarChaves()
+      throw erro
+    }
+    estadoChaves = "ok"
+    return
+  }
+
+  if (locais && registro.valor === cripto.impressaoChaves()) {
+    estadoChaves = "ok"
+  } else {
+    // Não usa chaves que não são deste banco (gravaria dados que os outros
+    // computadores não conseguiriam ler)
+    cripto.definirChaves(null)
+    estadoChaves = "ausente"
+  }
+}
+
+const MENSAGEM_CHAVE_AUSENTE =
+  "Este computador ainda não tem a chave de segurança deste banco. " +
+  "Importe o arquivo de chave em \"Configurar banco de dados\"."
+
+// Exporta as chaves num arquivo protegido por senha (só administrador)
+ipcComPermissao("export-key", "configuracao", async (event, senha) => {
+  const janela = BrowserWindow.fromWebContents(event.sender)
+  try {
+    if (estadoChaves !== "ok") throw new Error("As chaves deste computador não estão configuradas.")
+    const conteudo = arquivoChave.criarArquivo(configuracao.lerChaves(), cripto.impressaoChaves(), senha)
+    const { canceled, filePath } = await dialog.showSaveDialog(janela, {
+      title: "Salvar arquivo de chave",
+      defaultPath: path.join(app.getPath("documents"), "grafica-os-chave.json"),
+      filters: [{ name: "Chave do Gráfica OS", extensions: ["json"] }],
+    })
+    if (canceled || !filePath) return event.reply("key-result", { ok: false, cancelado: true })
+    require("node:fs").writeFileSync(filePath, conteudo)
+    event.reply("key-result", { ok: true, mensagem: "Arquivo de chave salvo. Guarde-o em local seguro, junto com a senha." })
+  } catch (erro) {
+    event.reply("key-result", { ok: false, mensagem: erro.message })
+  }
+})
+
+// Importa as chaves de outro computador da gráfica
+ipcOn("import-key", async (event, pedido) => {
+  if (!(estadoChaves === "ausente" || pode("configuracao"))) return avisoSemPermissao(event)
+  try {
+    const { chaves } = arquivoChave.lerArquivo(String(pedido.conteudo || ""), pedido.senha)
+    const anteriores = configuracao.lerChaves()
+    cripto.definirChaves(chaves)
+    const registro = await configuracaoModel.findById("impressaoChaves")
+    if (registro && registro.valor !== cripto.impressaoChaves()) {
+      cripto.definirChaves(estadoChaves === "ok" ? anteriores : null)
+      throw new Error("Este arquivo de chave é de outro banco de dados.")
+    }
+    configuracao.salvarChaves(chaves)
+    preparoChaves = null
+    await prepararChaves()
+    event.reply("key-result", { ok: true, importada: true, mensagem: "Chave importada. Este computador já pode usar o sistema." })
+    if (!usuarioLogado && janelaLogin) janelaLogin.reload()
+  } catch (erro) {
+    event.reply("key-result", { ok: false, mensagem: erro.message })
+  }
 })
 
 ipcOn("db-config-test", async (event, url) => {
@@ -369,6 +474,9 @@ ipcOn("db-config-save", async (event, url) => {
   await desconectar()
   definirUrl(url)
   await conectar()
+  // Banco novo: confere de novo se as chaves deste computador servem para ele
+  preparoChaves = null
+  await prepararChaves()
 
   // Banco novo = usuários novos: volta para o login (ou abre o login)
   if (usuarioLogado) {
@@ -409,6 +517,7 @@ app.whenReady().then(() => {
   // para atualizar o ícone do rodapé
   ipcOn("db-connect", async (event) => {
     const ok = await conectar();
+    if (ok) await prepararChaves();
     setTimeout(() => {
       event.reply("db-status", ok ? "conectado" : "desconectado")
     }, 500)
@@ -438,7 +547,8 @@ app.on("before-quit", async () => {
 ipcOn("login-info", async (event) => {
   try {
     const total = await usuarioModel.countDocuments();
-    event.reply("login-info", { primeiroAcesso: total === 0 });
+    await prepararChaves();
+    event.reply("login-info", { primeiroAcesso: total === 0, chaveAusente: estadoChaves === "ausente" });
   } catch (error) {
     console.log(error);
     event.reply("login-error", "Não foi possível acessar o banco de dados.");
@@ -486,6 +596,10 @@ function mensagemBloqueio(ate) {
 
 ipcOn("login", async (event, dados) => {
   try {
+    if (estadoChaves !== "ok") {
+      event.reply("login-error", MENSAGEM_CHAVE_AUSENTE);
+      return;
+    }
     const login = String(dados.login || "").trim().toLowerCase();
     const usuario = await usuarioModel.findOne({ login });
 
@@ -533,6 +647,10 @@ ipcOn("create-first-admin", async (event, dados) => {
   try {
     if ((await usuarioModel.countDocuments()) > 0) {
       event.reply("login-error", "O administrador já foi criado. Faça login.");
+      return;
+    }
+    if (estadoChaves !== "ok") {
+      event.reply("login-error", MENSAGEM_CHAVE_AUSENTE);
       return;
     }
     const usuario = new usuarioModel({ nome: dados.nome, login: dados.login, perfil: "administrador" });

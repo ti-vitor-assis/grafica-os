@@ -71,6 +71,67 @@
                 </button>
             </div>
         </form>
+        <!-- ===== Chave de segurança (criptografia de CPF/CNPJ) ===== -->
+        <section id="cartaoChave" class="card" hidden>
+            <div class="card-cabecalho">
+                <span class="tela-icone !w-9 !h-9"><i data-icone="cadeado" data-tamanho="18"></i></span>
+                <div>
+                    <h2>Chave de segurança</h2>
+                    <p>Protege os CPFs e CNPJs no banco. Todos os computadores da gráfica precisam da mesma chave.</p>
+                </div>
+            </div>
+            <div class="card-corpo flex flex-col gap-4">
+                <div id="avisoChaveAusente" class="alerta alerta-aviso" hidden>
+                    <i data-icone="alerta"></i>
+                    <span>Este banco já tem dados de outro computador. Importe o arquivo de chave exportado lá pelo
+                        administrador.</span>
+                </div>
+
+                <!-- Exportar (administrador, no computador que já tem a chave) -->
+                <form id="frmExportar" class="flex flex-col gap-3" hidden>
+                    <p class="text-sm texto-mutado m-0">Gere um arquivo para instalar o sistema em outro computador.
+                        Ele é protegido pela senha abaixo: guarde os dois em local seguro.</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="campo">
+                            <label for="inputSenhaExportar">Senha do arquivo</label>
+                            <input type="password" id="inputSenhaExportar" class="input" minlength="8" required
+                                autocomplete="new-password" placeholder="mínimo 8 caracteres" />
+                        </div>
+                        <div class="campo">
+                            <label for="inputSenhaExportar2">Confirme a senha</label>
+                            <input type="password" id="inputSenhaExportar2" class="input" minlength="8" required
+                                autocomplete="new-password" />
+                        </div>
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="submit" class="btn btn-secundario">
+                            <i data-icone="saida" data-tamanho="16"></i> Exportar chave
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Importar (computador novo) -->
+                <form id="frmImportar" class="flex flex-col gap-3" hidden>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="campo">
+                            <label for="inputArquivoChave">Arquivo de chave</label>
+                            <input type="file" id="inputArquivoChave" class="input !pt-[6px]" accept=".json" required />
+                        </div>
+                        <div class="campo">
+                            <label for="inputSenhaImportar">Senha do arquivo</label>
+                            <input type="password" id="inputSenhaImportar" class="input" required autocomplete="off" />
+                        </div>
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="submit" class="btn btn-primario">
+                            <i data-icone="entrada" data-tamanho="16"></i> Importar chave
+                        </button>
+                    </div>
+                </form>
+
+                <p id="resultadoChave" class="text-sm m-0 min-h-[20px]"></p>
+            </div>
+        </section>
     </main>
 
     <footer class="statusbar"></footer>

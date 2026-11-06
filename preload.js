@@ -54,6 +54,9 @@ contextBridge.exposeInMainWorld("api", {
   testDbConfig: (url) => ipcRenderer.send("db-config-test", url),
   saveDbConfig: (url) => ipcRenderer.send("db-config-save", url),
   dbConfigResult: (args) => ipcRenderer.on("db-config-result", args),
+  exportKey: (senha) => ipcRenderer.send("export-key", senha),
+  importKey: (pedido) => ipcRenderer.send("import-key", pedido),
+  keyResult: (args) => ipcRenderer.on("key-result", args),
 
   // Login e sessão
   loginInfo: () => ipcRenderer.send("login-info"),

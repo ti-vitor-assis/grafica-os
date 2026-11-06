@@ -25,6 +25,7 @@ function ocupado(sim, texto) {
 
 api.dbConfigInfo();
 api.receiveDbConfigInfo((event, info) => {
+    mostrarCartaoChave(info.chaves);
     if (info.origemAmbiente) {
         el("avisoAmbiente").hidden = false;
         [inputUrl, el("btnLocal"), el("btnTestar"), el("btnSalvar")].forEach((e) => (e.disabled = true));
@@ -68,4 +69,44 @@ el("frmBanco").addEventListener("submit", (event) => {
 api.dbConfigResult((event, r) => {
     ocupado(false);
     mostrarResultado(r.ok ? "Conexão funcionando! Clique em \"Salvar e conectar\"." : r.erro, r.ok);
+});
+
+// ===== Chave de segurança =====
+function mostrarCartaoChave(chaves) {
+    if (!chaves) return;
+    el("cartaoChave").hidden = !(chaves.podeExportar || chaves.podeImportar);
+    el("avisoChaveAusente").hidden = chaves.estado !== "ausente";
+    el("frmExportar").hidden = !chaves.podeExportar;
+    el("frmImportar").hidden = !chaves.podeImportar;
+}
+
+function mostrarResultadoChave(texto, ok) {
+    el("resultadoChave").textContent = texto;
+    el("resultadoChave").className = `text-sm m-0 min-h-[20px] ${ok ? "texto-sucesso" : "texto-perigo"}`;
+}
+
+el("frmExportar").addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (el("inputSenhaExportar").value !== el("inputSenhaExportar2").value) {
+        return mostrarResultadoChave("As senhas não conferem.", false);
+    }
+    api.exportKey(el("inputSenhaExportar").value);
+});
+
+el("frmImportar").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const arquivo = el("inputArquivoChave").files[0];
+    if (!arquivo) return mostrarResultadoChave("Escolha o arquivo de chave.", false);
+    api.importKey({ conteudo: await arquivo.text(), senha: el("inputSenhaImportar").value });
+});
+
+api.keyResult((event, r) => {
+    if (r.cancelado) return;
+    mostrarResultadoChave(r.mensagem, r.ok);
+    if (r.ok) {
+        el("inputSenhaExportar").value = "";
+        el("inputSenhaExportar2").value = "";
+        el("inputSenhaImportar").value = "";
+        if (r.importada) api.dbConfigInfo();
+    }
 });
