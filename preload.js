@@ -34,6 +34,12 @@ contextBridge.exposeInMainWorld("api", {
   getSession: () => ipcRenderer.send("get-session"),
   receiveSession: (args) => ipcRenderer.on("session", args),
 
+  // Usuários (administrador)
+  listUsers: () => ipcRenderer.send("list-users"),
+  receiveUsers: (args) => ipcRenderer.on("users-list", args),
+  createUser: (dados) => ipcRenderer.send("create-user", dados),
+  updateUser: (dados) => ipcRenderer.send("update-user", dados),
+
   // Abrir janelas a partir da tela inicial ('clientes', 'os' ou 'produtos')
   openWindow: (nome) => ipcRenderer.send("open-window", nome),
 

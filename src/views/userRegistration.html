@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Só scripts/estilos do próprio app (esta tela não tem onclick) -->
+    <meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:" />
+    <link href="../public/css/costumerRegistrationStyle.css" rel="stylesheet" />
+    <link href="../public/css/tailwind.css" rel="stylesheet" />
+    <title>Usuários</title>
+</head>
+
+<body class="text-[var(--color-text-primary)]">
+
+    <section class="m-[5px] mb-[45px] rounded-[5px] bg-[var(--color-panel)] flex h-[505px]">
+
+        <!-- Formulário -->
+        <section class="w-[480px] p-5">
+            <form id="frmUsuario" class="space-y-3">
+                <h1 class="text-xl font-semibold mb-2">
+                    Usuário <span id="tituloModo" class="text-[var(--color-text-secondary)]">(novo)</span>
+                </h1>
+
+                <input type="text" id="inputIdUsuario" hidden />
+                <input type="text" id="inputNome" class="inputStyle w-full" placeholder="  Nome *" required />
+                <input type="text" id="inputLogin" class="inputStyle w-full" placeholder="  Login * (ex.: ana.silva)"
+                    autocomplete="off" required />
+
+                <select id="inputPerfil" class="inputStyle w-full">
+                    <option value="atendente">Atendente: clientes, orçamentos, OS e relatórios</option>
+                    <option value="produção">Produção: somente OS</option>
+                    <option value="administrador">Administrador: acesso total</option>
+                </select>
+
+                <input type="password" id="inputSenha" class="inputStyle w-full" autocomplete="new-password"
+                    minlength="6" placeholder="  Senha * (mínimo 6 caracteres)" />
+                <input type="password" id="inputConfirma" class="inputStyle w-full" autocomplete="new-password"
+                    minlength="6" placeholder="  Confirme a senha" />
+
+                <label class="flex items-center gap-2">
+                    <input type="checkbox" id="inputAtivo" class="w-4 h-4 accent-[var(--color-primary)]" checked />
+                    Ativo (pode entrar no sistema)
+                </label>
+
+                <div class="flex gap-3 pt-2">
+                    <button type="submit" id="btnSalvar"
+                        class="inputStyle px-4 py-1 rounded text-white hover:brightness-110">Cadastrar</button>
+                    <button type="button" id="btnLimpar"
+                        class="inputStyle px-4 py-1 rounded text-white hover:brightness-110">Limpar</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Lista de usuários -->
+        <section class="flex-1 p-5 pl-0">
+            <div class="h-full rounded-[5px] bg-[var(--color-background)] p-3 flex flex-col">
+                <h2 class="font-semibold mb-2">Usuários cadastrados</h2>
+                <ul id="listaUsuarios" class="overflow-y-auto space-y-2"></ul>
+            </div>
+        </section>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="!w-[870px]">
+        <p id="footerRealTime"></p>
+        <img src="../public/img/dboffRed.png" alt="Icone banco de dados" id="iconeDB" />
+    </footer>
+
+    <!-- SCRIPTS -->
+    <script src="../public/js/userRegistrationRenderer.js"></script>
+    <script src="../public/js/footer.js"></script>
+</body>
+
+</html>

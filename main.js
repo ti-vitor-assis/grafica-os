@@ -140,6 +140,11 @@ function quoteRegistrationWindow() {
   return modalWindow("./src/views/quoteRegistration.html");
 }
 
+// Usuários (só administrador)
+function userRegistrationWindow() {
+  return modalWindow("./src/views/userRegistration.html", { width: 900, height: 600 });
+}
+
 // Relatórios (tipo = relatório já selecionado ao abrir, ex.: "entregues")
 function reportsWindow(tipo) {
   return modalWindow("./src/views/reports.html", {
@@ -158,6 +163,7 @@ const janelasPorNome = {
   produtos: productRegistrationWindow,
   orcamentos: quoteRegistrationWindow,
   relatorios: () => reportsWindow(),
+  usuarios: userRegistrationWindow,
 };
 ipcMain.on("open-window", (event, nome) => {
   const abrir = janelasPorNome[nome];
@@ -939,6 +945,100 @@ ipcComPermissao("delete-order", "excluir", async (event, id) => {
 
 
 // =============================
+// ========= USUÁRIOS ==========
+
+function enviarUsuarios(event) {
+  return usuarioModel
+    .find()
+    .sort({ nome: 1 })
+    .then((lista) => event.reply("users-list", JSON.stringify(lista.map((u) => u.publico()))));
+}
+
+ipcComPermissao("list-users", "usuarios", async (event) => {
+  try {
+    await enviarUsuarios(event);
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+// Mensagem de erro legível (validação, login repetido ou senha curta)
+function avisoErroUsuario(janela, error) {
+  let detalhe;
+  if (error.code === 11000) detalhe = "Já existe um usuário com esse login.";
+  else if (error.errors) detalhe = Object.values(error.errors).map((e) => `• ${e.message}`).join("\n");
+  else detalhe = error.message;
+  return dialog.showMessageBox(janela, {
+    type: "error",
+    title: "Atenção!",
+    message: "Não foi possível salvar o usuário.",
+    detail: detalhe,
+    buttons: ["OK"],
+  });
+}
+
+ipcComPermissao("create-user", "usuarios", async (event, dados) => {
+  const janela = BrowserWindow.fromWebContents(event.sender);
+  try {
+    const usuario = new usuarioModel({
+      nome: dados.nome,
+      login: dados.login,
+      perfil: dados.perfil,
+      ativo: dados.ativo !== false,
+    });
+    await usuario.definirSenha(dados.senha);
+    await usuario.save();
+    await dialog.showMessageBox(janela, {
+      type: "info",
+      title: "Aviso",
+      message: `Usuário "${usuario.login}" criado com sucesso.`,
+      buttons: ["OK"],
+    });
+    event.reply("reset-form");
+  } catch (error) {
+    console.log(error);
+    avisoErroUsuario(janela, error);
+  }
+});
+
+ipcComPermissao("update-user", "usuarios", async (event, dados) => {
+  const janela = BrowserWindow.fromWebContents(event.sender);
+  try {
+    const usuario = await usuarioModel.findById(dados._id);
+    if (!usuario) return;
+    const proprio = String(usuario._id) === usuarioLogado._id;
+
+    // Regras para não ficar sem acesso ao sistema
+    if (proprio && (dados.ativo === false || dados.perfil !== "administrador")) {
+      throw new Error("Você não pode desativar o seu próprio usuário nem tirar o seu perfil de administrador.");
+    }
+    const deixaDeSerAdminAtivo =
+      usuario.perfil === "administrador" && usuario.ativo && (dados.perfil !== "administrador" || dados.ativo === false);
+    if (deixaDeSerAdminAtivo) {
+      const outrosAdmins = await usuarioModel.countDocuments({ perfil: "administrador", ativo: true, _id: { $ne: usuario._id } });
+      if (outrosAdmins === 0) throw new Error("O sistema precisa ter pelo menos um administrador ativo.");
+    }
+
+    usuario.set({ nome: dados.nome, login: dados.login, perfil: dados.perfil, ativo: dados.ativo !== false });
+    // Senha em branco = mantém a atual
+    if (dados.senha) await usuario.definirSenha(dados.senha);
+    await usuario.save();
+    if (proprio) usuarioLogado = usuario.publico();
+
+    await dialog.showMessageBox(janela, {
+      type: "info",
+      title: "Aviso",
+      message: `Usuário "${usuario.login}" atualizado com sucesso.`,
+      buttons: ["OK"],
+    });
+    event.reply("reset-form");
+  } catch (error) {
+    console.log(error);
+    avisoErroUsuario(janela, error);
+  }
+});
+
+// =============================
 // ======== ORÇAMENTOS =========
 
 async function dadosOrcamento(q) {
@@ -1255,6 +1355,11 @@ const template = [
         label: "Produto",
         permissao: "produtos",
         click: () => productRegistrationWindow(),
+      },
+      {
+        label: "Usuários",
+        permissao: "usuarios",
+        click: () => userRegistrationWindow(),
       },
       {
         type: "separator"
