@@ -5,9 +5,11 @@
 
 console.log("Executando Processo Principal")
 
-const { app, BrowserWindow, nativeTheme, Menu, ipcMain, dialog } = require("electron/main")
+const { app, BrowserWindow, nativeTheme, Menu, ipcMain, dialog, shell } = require("electron/main")
 
 const path = require("node:path")
+
+const packageInfo = require("./package.json")
 
 const { conectar, desconectar } = require('./database.js')
 
@@ -75,6 +77,20 @@ function serviceOrderRegistrationWindow() {
   }
 }
 
+// Sobre
+function aboutWindow() {
+  dialog.showMessageBox(BrowserWindow.getFocusedWindow() || win, {
+    type: "info",
+    title: "Sobre",
+    message: "Gráfica OS",
+    detail:
+      `${packageInfo.description}\n\n` +
+      `Versão: ${packageInfo.version}\n` +
+      `Autor: ${packageInfo.author}\n` +
+      `Licença: ${packageInfo.license}`,
+    buttons: ["OK"],
+  });
+}
 
 // FIM - Janelas
 app.whenReady().then(() => {
@@ -494,45 +510,32 @@ const template = [
         click: () => serviceOrderRegistrationWindow(),
       },
       {
+        type: "separator"
+      },
+      {
         label: "Sair",
-        click: () => console.log("close()")
+        accelerator: "Alt+F4",
+        click: () => app.quit()
       }
     ]
   },
   {
-    label: "Relatórios",
-    submenu: [
-      {
-        label: "Clientes",
-        click: () => showClientReports()
-      },
-      {
-        label: "OS's Abertas",
-        click: () => showOpenOSReports()
-      },
-      {
-        label: "OS's Fechadas",
-        click: () => showClosedOSReports()
-      },
-      {
-        label: "Todas OS",
-        click: () => showAllOSReports()
-      }
-    ]
-  }, {
     label: "Ferramentas",
     submenu: [
       {
         label: "Zoom+",
-        click: () => showClientReports()
+        role: "zoomIn",
       },
       {
         label: "Zoom-",
-        click: () => showOpenOSReports()
+        role: "zoomOut",
       },
       {
-        label: "OS's Fechadas",
-        click: () => showClosedOSReports()
+        label: "Restaurar zoom",
+        role: "resetZoom",
+      },
+      {
+        type: "separator"
       },
       {
         label: "Recarregar",
@@ -550,7 +553,7 @@ const template = [
     submenu: [
       {
         label: "Repositório",
-        click: () => console.log("incluir o redirecionador https://github.com/vitorapassos/grafica-os.git")
+        click: () => shell.openExternal(packageInfo.homepage)
       },
       {
         label: "Sobre",
