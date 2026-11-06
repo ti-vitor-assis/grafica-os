@@ -9,7 +9,7 @@ const serviceOrderSchema = new Schema({
     produtos: [{
         produto: {
             type: Types.ObjectId,
-            ref: 'Produto',
+            ref: 'Product',
             required: true
         },
         quantidade: {
