@@ -7,144 +7,205 @@
     <!-- Só scripts/estilos do próprio app (esta tela não tem onclick) -->
     <meta http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:" />
-    <link href="../public/css/costumerRegistrationStyle.css" rel="stylesheet" />
+    <link href="../public/css/app.css" rel="stylesheet" />
     <link href="../public/css/tailwind.css" rel="stylesheet" />
     <title>Estoque de insumos</title>
 </head>
 
-<body class="text-[var(--color-text-primary)]">
+<body class="tela">
+    <header class="tela-cabecalho">
+        <div class="tela-titulo">
+            <span class="tela-icone"><i data-icone="estoque" data-tamanho="20"></i></span>
+            <div>
+                <h1>Estoque de insumos</h1>
+                <p>Papéis, tintas, lonas e outros materiais</p>
+            </div>
+        </div>
+        <form id="frmSearchSupply" class="busca">
+            <div class="busca-campo">
+                <i data-icone="busca" data-tamanho="16"></i>
+                <input type="search" id="searchSupplyInput" class="input" placeholder="Buscar por nome ou categoria" />
+            </div>
+            <button type="submit" class="btn btn-secundario">Buscar</button>
+        </form>
+    </header>
 
-    <div class="base">
+    <main class="tela-conteudo">
+        <div class="layout-form-lista">
+            <div class="flex flex-col gap-5 min-w-0">
 
-        <!-- SEARCH SECTION -->
-        <section class="searchSection flex items-center px-4">
-            <form id="frmSearchSupply" class="flex items-center gap-4 w-full">
-                <input type="text" class="inputStyle w-[500px] mt-[5px] ml-[10px]" id="searchSupplyInput"
-                    placeholder="  Buscar insumo por nome ou categoria... (vazio lista todos)" />
-                <button type="submit" class="btns">BUSCAR</button>
-            </form>
-        </section>
-
-        <hr class="blockDivision border-t-2 border-[var(--color-primary)] mx-auto mt-2 opacity-40 rounded" />
-
-        <section class="registerSection">
-
-            <section class="w-[620px] p-4 space-y-3">
-
-                <!-- Cadastro do insumo -->
-                <form id="frmSupply" class="space-y-2">
-                    <h1 class="text-xl font-semibold">
-                        Insumo <span id="tituloModo" class="text-[var(--color-text-secondary)]">(novo)</span>
-                    </h1>
-                    <input type="text" id="inputIdSupply" hidden />
-
-                    <div class="flex gap-2">
-                        <input type="text" id="inputNome" class="inputStyle flex-1"
-                            placeholder="  Nome * (ex.: Papel couché 300g A3)" required />
-                        <input type="text" id="inputCategoria" list="listaCategorias" class="inputStyle w-[170px]"
-                            placeholder="  Categoria" />
-                        <datalist id="listaCategorias">
-                            <option value="Papel"></option>
-                            <option value="Tinta"></option>
-                            <option value="Lona"></option>
-                            <option value="Vinil"></option>
-                            <option value="Acabamento"></option>
-                            <option value="Embalagem"></option>
-                        </datalist>
+                <!-- ===== Movimentação: a tarefa principal da tela ===== -->
+                <section id="painelMovimento" class="card card-destaque">
+                    <div class="card-cabecalho">
+                        <span class="tela-icone !w-9 !h-9"><i data-icone="ajuste" data-tamanho="18"></i></span>
+                        <div>
+                            <h2>Movimentar estoque</h2>
+                            <p>Dar entrada de compras, baixar o que foi usado ou ajustar após contagem</p>
+                        </div>
                     </div>
 
-                    <div class="flex gap-2 items-center">
-                        <select id="inputUnidade" class="inputStyle w-[130px]">
-                            <option value="folha">folha</option>
-                            <option value="resma">resma</option>
-                            <option value="m²">m²</option>
-                            <option value="metro">metro</option>
-                            <option value="rolo">rolo</option>
-                            <option value="litro">litro</option>
-                            <option value="kg">kg</option>
-                            <option value="unidade" selected>unidade</option>
-                            <option value="caixa">caixa</option>
-                        </select>
-                        <label for="inputMinimo" class="text-sm whitespace-nowrap">Mínimo</label>
-                        <input type="number" id="inputMinimo" min="0" step="any" class="inputStyle w-[100px]"
-                            placeholder="  0" />
-                        <label for="inputCusto" class="text-sm whitespace-nowrap">Custo un. R$</label>
-                        <input type="number" id="inputCusto" min="0" step="0.01" class="inputStyle flex-1 min-w-0"
-                            placeholder="  0,00" />
+                    <!-- Sem insumo selecionado -->
+                    <div id="movVazio" class="vazio">
+                        <i data-icone="seta" data-tamanho="22"></i>
+                        Selecione um insumo na lista ao lado para movimentar o estoque.
                     </div>
 
-                    <div class="flex gap-2 items-center">
-                        <select id="inputFornecedor" class="inputStyle flex-1 min-w-0">
-                            <option value="">Fornecedor (opcional)</option>
-                        </select>
-                        <span id="campoInicial" class="flex items-center gap-2">
-                            <label for="inputInicial" class="text-sm whitespace-nowrap">Estoque inicial</label>
-                            <input type="number" id="inputInicial" min="0" step="any" class="inputStyle w-[100px]"
-                                placeholder="  0" />
-                        </span>
-                        <label class="flex items-center gap-2 text-sm">
-                            <input type="checkbox" id="inputAtivo" class="w-4 h-4 accent-[var(--color-primary)]"
-                                checked />
-                            Ativo
-                        </label>
-                    </div>
+                    <!-- Com insumo selecionado -->
+                    <div id="movConteudo" hidden>
+                        <div class="card-corpo flex flex-col gap-4">
+                            <div class="flex items-end justify-between gap-4 flex-wrap">
+                                <div>
+                                    <span class="rotulo" id="movNomeInsumo"></span>
+                                    <div class="text-3xl font-bold numero" id="estoqueAtual"></div>
+                                </div>
+                                <span id="alertaMinimo"></span>
+                            </div>
 
-                    <div class="flex gap-3">
-                        <button type="submit" id="btnSalvar"
-                            class="inputStyle px-4 py-1 rounded text-white hover:brightness-110">Cadastrar</button>
-                        <button type="button" id="btnDelete" data-permissao="excluir"
-                            class="inputStyle px-4 py-1 rounded text-white hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed">Excluir</button>
-                        <button type="button" id="btnLimpar"
-                            class="inputStyle px-2 py-1 rounded text-white hover:brightness-110">Limpar</button>
-                    </div>
-                </form>
+                            <form id="frmMovimento" class="flex flex-col gap-3">
+                                <div class="segmentado" role="radiogroup" aria-label="Tipo de movimentação">
+                                    <label><input type="radio" name="tipoMov" value="entrada" checked /><span><i data-icone="entrada" data-tamanho="16"></i> Entrada</span></label>
+                                    <label><input type="radio" name="tipoMov" value="saída" /><span><i data-icone="saida" data-tamanho="16"></i> Saída</span></label>
+                                    <label><input type="radio" name="tipoMov" value="ajuste" /><span><i data-icone="ajuste" data-tamanho="16"></i> Ajuste (contagem)</span></label>
+                                </div>
+                                <p id="explicacaoTipo" class="ajuda m-0"></p>
 
-                <!-- Movimentação (aparece com um insumo selecionado) -->
-                <section id="painelMovimento" class="rounded-[10px] bg-[var(--color-background)] p-3 space-y-2" hidden>
-                    <div class="flex items-baseline justify-between">
-                        <p>Estoque atual: <b id="estoqueAtual" class="text-lg"></b></p>
-                        <span id="alertaMinimo" class="text-sm"></span>
-                    </div>
-                    <form id="frmMovimento" class="flex gap-2">
-                        <select id="inputTipo" class="inputStyle w-[150px]">
-                            <option value="entrada">Entrada</option>
-                            <option value="saída">Saída</option>
-                            <option value="ajuste" title="Informe a quantidade contada; ela vira o novo saldo">Ajuste</option>
-                        </select>
-                        <input type="number" id="inputQtdMov" min="0" step="any" class="inputStyle w-[100px]"
-                            placeholder="  Qtd" required />
-                        <input type="text" id="inputMotivo" class="inputStyle flex-1 min-w-0"
-                            placeholder="  Motivo (ex.: NF 123, OS 45)" />
-                        <button type="submit" class="btns !w-[100px]">Registrar</button>
-                    </form>
-                    <div class="h-[105px] overflow-y-auto">
-                        <table class="w-full text-sm">
-                            <tbody id="tabelaMovimentos"></tbody>
-                        </table>
+                                <div class="grid grid-cols-12 gap-3 items-end">
+                                    <div class="campo col-span-3">
+                                        <label for="inputQtdMov" id="rotuloQtd">Quantidade <span class="obrigatorio">*</span></label>
+                                        <input type="number" id="inputQtdMov" class="input" min="0" step="any" required />
+                                    </div>
+                                    <div class="campo col-span-6">
+                                        <label for="inputMotivo">Motivo</label>
+                                        <input type="text" id="inputMotivo" class="input" placeholder="ex.: NF 123, OS 45, contagem mensal" />
+                                    </div>
+                                    <div class="col-span-3">
+                                        <button type="submit" id="btnRegistrar" class="btn btn-primario w-full"></button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div class="px-5 pb-5">
+                            <p class="secao-titulo">Últimas movimentações</p>
+                            <div class="tabela-container max-h-[190px]">
+                                <table class="tabela">
+                                    <thead>
+                                        <tr>
+                                            <th>Data</th>
+                                            <th>Tipo</th>
+                                            <th class="num">Qtd</th>
+                                            <th class="num">Saldo</th>
+                                            <th>Motivo</th>
+                                            <th>Usuário</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabelaMovimentos"></tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </section>
-            </section>
 
-            <!-- Lista de insumos -->
-            <section class="flex-1 p-4 pl-0">
-                <div class="h-full rounded-[5px] bg-[var(--color-background)] p-3 flex flex-col">
-                    <h2 class="font-semibold mb-2">Insumos</h2>
-                    <p id="semResultados" class="text-[var(--color-text-secondary)] text-sm" hidden>
-                        Nenhum insumo encontrado.
-                    </p>
-                    <ul id="listaResultados" class="overflow-y-auto space-y-2"></ul>
+                <!-- ===== Cadastro do insumo ===== -->
+                <form id="frmSupply" class="card">
+                    <div class="card-cabecalho">
+                        <div>
+                            <h2>Dados do insumo <span id="tituloModo" class="texto-mutado font-normal">(novo)</span></h2>
+                            <p>Cadastro e estoque mínimo para o alerta de compra</p>
+                        </div>
+                    </div>
+                    <div class="card-corpo">
+                        <input type="text" id="inputIdSupply" hidden />
+                        <div class="grid grid-cols-12 gap-x-4 gap-y-3">
+                            <div class="campo col-span-8">
+                                <label for="inputNome">Nome <span class="obrigatorio">*</span></label>
+                                <input type="text" id="inputNome" class="input" placeholder="ex.: Papel couché 300g A3" required />
+                            </div>
+                            <div class="campo col-span-4">
+                                <label for="inputCategoria">Categoria</label>
+                                <input type="text" id="inputCategoria" list="listaCategorias" class="input" />
+                                <datalist id="listaCategorias">
+                                    <option value="Papel"></option>
+                                    <option value="Tinta"></option>
+                                    <option value="Lona"></option>
+                                    <option value="Vinil"></option>
+                                    <option value="Acabamento"></option>
+                                    <option value="Embalagem"></option>
+                                </datalist>
+                            </div>
+                            <div class="campo col-span-3">
+                                <label for="inputUnidade">Unidade</label>
+                                <select id="inputUnidade" class="select">
+                                    <option value="folha">folha</option>
+                                    <option value="resma">resma</option>
+                                    <option value="m²">m²</option>
+                                    <option value="metro">metro</option>
+                                    <option value="rolo">rolo</option>
+                                    <option value="litro">litro</option>
+                                    <option value="kg">kg</option>
+                                    <option value="unidade" selected>unidade</option>
+                                    <option value="caixa">caixa</option>
+                                </select>
+                            </div>
+                            <div class="campo col-span-3">
+                                <label for="inputMinimo">Estoque mínimo</label>
+                                <input type="number" id="inputMinimo" class="input" min="0" step="any" placeholder="0" />
+                            </div>
+                            <div class="campo col-span-3">
+                                <label for="inputCusto">Custo unitário</label>
+                                <div class="input-grupo">
+                                    <span class="prefixo">R$</span>
+                                    <input type="number" id="inputCusto" class="input" min="0" step="0.01" placeholder="0,00" />
+                                </div>
+                            </div>
+                            <div class="campo col-span-3" id="campoInicial">
+                                <label for="inputInicial">Estoque inicial</label>
+                                <input type="number" id="inputInicial" class="input" min="0" step="any" placeholder="0" />
+                            </div>
+                            <div class="campo col-span-9">
+                                <label for="inputFornecedor">Fornecedor</label>
+                                <select id="inputFornecedor" class="select">
+                                    <option value="">Nenhum</option>
+                                </select>
+                            </div>
+                            <div class="col-span-3 flex items-end pb-2">
+                                <label class="checkbox"><input type="checkbox" id="inputAtivo" checked /> Ativo</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-acoes">
+                        <button type="button" id="btnDelete" data-permissao="excluir" class="btn btn-perigo some-desabilitado">
+                            <i data-icone="lixeira" data-tamanho="16"></i> Excluir
+                        </button>
+                        <span class="espacador"></span>
+                        <button type="button" id="btnLimpar" class="btn btn-secundario">
+                            <i data-icone="mais" data-tamanho="16"></i> Novo insumo
+                        </button>
+                        <button type="submit" id="btnSalvar" class="btn btn-primario">
+                            <i data-icone="salvar" data-tamanho="16"></i> <span id="textoSalvar">Cadastrar insumo</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- ===== Lista de insumos ===== -->
+            <aside class="card lista-lateral">
+                <div class="card-cabecalho">
+                    <div>
+                        <h2>Insumos</h2>
+                        <p id="contagemInsumos">Clique em um insumo para movimentar</p>
+                    </div>
                 </div>
-            </section>
-        </section>
-    </div>
+                <p id="semResultados" class="vazio" hidden>Nenhum insumo encontrado.</p>
+                <ul id="listaResultados" class="lista"></ul>
+            </aside>
+        </div>
+    </main>
 
-    <!-- FOOTER -->
-    <footer>
-        <p id="footerRealTime"></p>
-        <img src="../public/img/dboffRed.png" alt="Icone banco de dados" id="iconeDB" />
-    </footer>
+    <footer class="statusbar"></footer>
 
     <!-- SCRIPTS -->
+    <script src="../public/js/icones.js"></script>
     <script src="../public/js/stockRenderer.js"></script>
     <script src="../public/js/footer.js"></script>
 </body>
