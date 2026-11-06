@@ -121,6 +121,7 @@ contextBridge.exposeInMainWorld("api", {
   printOrder: (id) => ipcRenderer.send("print-order", id),
   // filtro: { numero } ou { clienteId }
   searchOrder: (filtro) => ipcRenderer.send("search-order", filtro),
+  openOrder: (numero) => ipcRenderer.send("open-order", numero),
   receiveOrder: (args) => ipcRenderer.on("order-result", args),
   listProducts: () => ipcRenderer.send("list-products"),
   receiveProducts: (args) => ipcRenderer.on("products-list", args),

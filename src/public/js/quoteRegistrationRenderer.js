@@ -23,6 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
     btnUpdate.disabled = true;
     btnRefuse.disabled = true;
     btnConvert.disabled = true;
+    btnDuplicate.disabled = true;
     btnPrint.disabled = true;
     btnCreate.disabled = false;
 
@@ -97,21 +98,86 @@ function carregarOrcamento(q) {
     etiquetaStatus.textContent = s;
     etiquetaStatus.className = classeStatus(s);
 
+    const geradas = (q.osGeradas || []).filter((o) => o && o.numero);
     const textos = {
         pendente: `Aguardando resposta do cliente até ${formatarData(q.validade)}`,
-        vencido: "Validade vencida: atualize a data e salve para reenviar",
-        aprovado: q.osGerada ? `Aprovado: virou a OS nº ${q.osGerada.numero}` : "Aprovado",
-        recusado: "Recusado pelo cliente",
+        vencido: "Validade vencida: dá para aprovar assim mesmo (o sistema compara os preços de hoje)",
+        aprovado: geradas.length > 1 ? `Aprovado: gerou ${geradas.length} OS (pedido repetido)` : "Aprovado: gerou a OS abaixo",
+        recusado: "Recusado pelo cliente. Se ele mudar de ideia, dá para gerar a OS mesmo assim",
     };
     textoSituacao.textContent = textos[s];
+    mostrarOSGeradas(geradas);
 
-    // Só orçamento pendente (vencido ou não) pode ser editado, aprovado ou recusado
+    // Só o pendente pode ser editado ou recusado; qualquer um pode virar OS
     const aberto = q.status === "pendente";
+    const rotulos = {
+        aprovado: "Gerar nova OS (pedido repetido)",
+        recusado: "Cliente aceitou: gerar OS",
+    };
+    rotuloConvert.textContent = rotulos[q.status] || "Aprovado: gerar OS";
     btnCreate.disabled = true;
     btnUpdate.disabled = !aberto;
-    btnConvert.disabled = !aberto;
+    btnConvert.disabled = false;
     btnRefuse.disabled = !aberto;
+    btnDuplicate.disabled = false;
     btnPrint.disabled = false;
+}
+
+// OS geradas pelo orçamento: cada uma abre a tela da OS
+function mostrarOSGeradas(geradas) {
+    const caixa = document.getElementById("osGeradas");
+    caixa.innerHTML = "";
+    caixa.hidden = geradas.length === 0;
+    geradas.forEach((o) => {
+        const botao = document.createElement("button");
+        botao.type = "button";
+        botao.className = classeStatus(o.status) + " cursor-pointer";
+        botao.title = "Abrir esta OS";
+        botao.textContent = `OS nº ${o.numero} · ${o.status}`;
+        botao.addEventListener("click", () => api.openOrder(o.numero));
+        caixa.appendChild(botao);
+    });
+}
+
+// ============================
+// ======== DUPLICAR ==========
+// Novo orçamento (ainda não salvo) com o mesmo cliente e itens, com os
+// preços de hoje; produto inativo mantém o preço antigo.
+function duplicarOrcamento() {
+    const numeroOriginal = numeroQuote.textContent.replace("nº ", "");
+    let inativos = 0;
+    let mudaram = 0;
+    editorItens.definir(editorItens.itens.map((i) => {
+        const atual = editorItens.produtos.find((p) => p._id === i.produto);
+        if (!atual) {
+            inativos++;
+            return i;
+        }
+        if (centavos(atual.valorUnitario) !== centavos(i.valorUnitario)) mudaram++;
+        return { ...i, valorUnitario: Number(atual.valorUnitario) };
+    }));
+
+    inputIdQuote.value = "";
+    numeroQuote.textContent = "(novo)";
+    etiquetaStatus.hidden = true;
+    mostrarOSGeradas([]);
+    const validade = new Date();
+    validade.setDate(validade.getDate() + DIAS_VALIDADE_PADRAO);
+    inputValidade.value = dataParaInput(validade);
+    textoSituacao.textContent = [
+        `Cópia do orçamento nº ${numeroOriginal}, ainda não salva.`,
+        mudaram ? `${mudaram} preço(s) atualizado(s) para os de hoje.` : "Preços iguais aos de hoje.",
+        inativos ? `${inativos} item(ns) de produto inativo mantêm o preço antigo.` : "",
+        "Confira e clique em Criar orçamento.",
+    ].filter(Boolean).join(" ");
+
+    btnCreate.disabled = false;
+    btnUpdate.disabled = true;
+    btnConvert.disabled = true;
+    btnRefuse.disabled = true;
+    btnDuplicate.disabled = true;
+    btnPrint.disabled = true;
+    listaResultados.querySelectorAll(".lista-item").forEach((x) => x.classList.remove("ativo"));
 }
 
 // ============================
@@ -168,5 +234,6 @@ function refuseQuote() {
 // (antes eram onclick no HTML)
 btnRefuse.addEventListener("click", refuseQuote);
 btnConvert.addEventListener("click", convertQuote);
+btnDuplicate.addEventListener("click", duplicarOrcamento);
 btnPrint.addEventListener("click", printQuote);
 btnReset.addEventListener("click", resetForm);

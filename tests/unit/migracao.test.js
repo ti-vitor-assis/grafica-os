@@ -43,11 +43,15 @@ async function bancoAntigo() {
         { _id: repetida, nome: "Maria (duplicada)", cpf: "52998224725" },
     ]);
     const item = [{ produto: new mongoose.Types.ObjectId(), descricao: "Banner", quantidade: 1, valorUnitario: 10, subtotal: 10 }];
+    const os1 = new mongoose.Types.ObjectId();
     await OS.collection.insertMany([
-        { numero: 1, cliente: maria, produtos: item, valorTotal: 10, status: "entregue", prazoFinal: new Date("2025-01-10"), dataCriacao: new Date("2025-01-01") },
+        { _id: os1, numero: 1, cliente: maria, produtos: item, valorTotal: 10, status: "entregue", prazoFinal: new Date("2025-01-10"), dataCriacao: new Date("2025-01-01") },
         { numero: 2, cliente: new mongoose.Types.ObjectId(), produtos: item, valorTotal: 10, status: "aberta", prazoFinal: new Date("2025-01-10") },
     ]);
-    await Quote.collection.insertOne({ numero: 1, cliente: padaria, produtos: item, valorTotal: 10, status: "pendente", validade: new Date("2025-02-01") });
+    await Quote.collection.insertMany([
+        { numero: 1, cliente: padaria, produtos: item, valorTotal: 10, status: "pendente", validade: new Date("2025-02-01") },
+        { numero: 2, cliente: maria, produtos: item, valorTotal: 10, status: "aprovado", validade: new Date("2025-01-05"), osGerada: os1 },
+    ]);
     return { maria, padaria, semCpf, repetida };
 }
 
@@ -55,9 +59,14 @@ describe("Migração 1.0 -> 1.1", () => {
     it("cifra o CPF/CNPJ, tira RG e sexo, troca o índice e copia o cliente nas OS e orçamentos", async () => {
         const ids = await bancoAntigo();
         const r = await migracao.migrar({ pastaBackup: pasta });
-        assert.deepEqual(r.executadas.map((e) => e.nome), ["clientes-documento-cifrado", "copia-cliente-nos-documentos"]);
+        assert.deepEqual(r.executadas.map((e) => e.nome), ["clientes-documento-cifrado", "copia-cliente-nos-documentos", "orcamento-lista-de-os"]);
         assert.deepEqual(r.executadas[0].resultado, { clientes: 4, semDocumento: 1, repetidos: 1 });
-        assert.deepEqual(r.executadas[1].resultado, { ordens: 1, orcamentos: 1 });
+        assert.deepEqual(r.executadas[1].resultado, { ordens: 1, orcamentos: 2 });
+        assert.deepEqual(r.executadas[2].resultado, { orcamentos: 1 });
+        const q2 = await Quote.collection.findOne({ numero: 2 });
+        assert.equal(q2.osGerada, undefined);
+        assert.deepEqual(q2.osGeradas.map(String), [String((await OS.collection.findOne({ numero: 1 }))._id)]);
+        assert.equal(String((await OS.collection.findOne({ numero: 1 })).orcamentoOrigem), String(q2._id), "OS aponta para o orçamento");
 
         const maria = await Cli.collection.findOne({ _id: ids.maria });
         assert.equal(maria.cpf, undefined);
@@ -116,6 +125,6 @@ describe("Migração 1.0 -> 1.1", () => {
 
         await Configuracao.updateOne({ _id: "migracao-trava" }, { $set: { valor: { desde: new Date(Date.now() - 3600e3) } } });
         const r = await migracao.migrar({ pastaBackup: pasta });
-        assert.equal(r.executadas.length, 2);
+        assert.equal(r.executadas.length, 3);
     });
 });

@@ -29,6 +29,10 @@ document.addEventListener("DOMContentLoaded", () => {
     btnCreate.disabled = false;
     inputDataPagamento.value = dataParaInput(new Date());
     searchClient.focus();
+
+    // Aberta por outra tela para mostrar uma OS (ex.: OS geradas de um orçamento)
+    const numero = Number(new URLSearchParams(location.search).get("numero"));
+    if (Number.isInteger(numero) && numero > 0) api.searchOrder({ numero });
 });
 
 // ============================

@@ -27,7 +27,7 @@
     <form id="frmSearchClient" class="busca">
       <div class="busca-campo">
         <i data-icone="busca" data-tamanho="16"></i>
-        <input type="search" id="searchClientsInput" class="input" placeholder="Buscar cliente por nome ou CPF" />
+        <input type="search" id="searchClientsInput" class="input" placeholder="Buscar cliente por nome, CPF ou CNPJ" />
       </div>
       <button type="submit" class="btn btn-secundario">Buscar</button>
     </form>
@@ -51,6 +51,8 @@
             <div>
               <h2>Cliente e condições</h2>
               <p id="textoSituacao">Campos com * são obrigatórios</p>
+              <!-- OS geradas a partir deste orçamento (clique abre a OS) -->
+              <div id="osGeradas" class="flex flex-wrap gap-2 mt-2" hidden></div>
             </div>
           </div>
           <div class="card-corpo grid grid-cols-12 gap-x-4 gap-y-3">
@@ -143,6 +145,10 @@
           <button type="button" id="btnRefuse" class="btn btn-secundario some-desabilitado">
             <i data-icone="fechar" data-tamanho="16"></i> Recusado
           </button>
+          <button type="button" id="btnDuplicate" class="btn btn-secundario some-desabilitado"
+            title="Novo orçamento com os mesmos itens, com os preços de hoje">
+            <i data-icone="orcamento" data-tamanho="16"></i> Duplicar
+          </button>
           <span class="espacador"></span>
           <button type="button" id="btnReset" class="btn btn-secundario btn-icone !w-[38px] !h-[38px]"
             title="Novo orçamento (limpa a tela)" aria-label="Novo orçamento">
@@ -158,7 +164,7 @@
             <i data-icone="salvar" data-tamanho="16"></i> Salvar
           </button>
           <button type="button" id="btnConvert" class="btn btn-sucesso some-desabilitado">
-            <i data-icone="check" data-tamanho="16"></i> Aprovado: gerar OS
+            <i data-icone="check" data-tamanho="16"></i> <span id="rotuloConvert">Aprovado: gerar OS</span>
           </button>
         </div>
       </form>

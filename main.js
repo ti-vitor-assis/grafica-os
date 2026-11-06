@@ -37,6 +37,8 @@ const servicoClientes = require('./src/servicos/clientes.js')
 const lgpd = require('./src/servicos/lgpd.js')
 const auditoria = require('./src/servicos/auditoria.js')
 const migracao = require('./src/servicos/migracao.js')
+const servicoOrcamentos = require('./src/servicos/orcamentos.js')
+const { moeda } = require('./src/print/formatar.js')
 
 let win
 
@@ -217,7 +219,7 @@ function modalWindow(arquivoHtml, opcoes = {}) {
     resizable: true,
     minimizable: false,
     backgroundColor: corDeFundo(),
-    parent: win,
+    parent: opcoes.pai || win,
     modal: true,
     webPreferences: preferenciasJanela(),
   });
@@ -230,10 +232,17 @@ function costumerRegistrationWindow() {
   return modalWindow("./src/views/costumerRegistration.html");
 }
 
-// Ordem de Serviços
-function serviceOrderRegistrationWindow() {
-  return modalWindow("./src/views/serviceOrderRegistration.html");
+// Ordem de Serviços (numero: abre já com essa OS carregada)
+function serviceOrderRegistrationWindow(numero, pai) {
+  return modalWindow("./src/views/serviceOrderRegistration.html", numero ? { query: { numero: String(numero) }, pai } : {});
 }
+
+// Abre uma OS pelo número a partir de outra tela (ex.: OS geradas de um orçamento)
+ipcComPermissao("open-order", "os", (event, numero) => {
+  const n = Number(numero);
+  if (!Number.isInteger(n) || n < 1) return;
+  serviceOrderRegistrationWindow(n, BrowserWindow.fromWebContents(event.sender));
+});
 
 // Produtos e Serviços
 function productRegistrationWindow() {
@@ -1780,7 +1789,7 @@ ipcOn("search-quote", async (event, filtro) => {
     const { modo, consulta, cliente } = await consultaHistorico(filtro);
     const porNumero = modo === "numero";
     const lista = consulta
-      ? await quoteModel.find(consulta).populate("cliente").populate("osGerada", "numero").sort({ numero: -1 })
+      ? await quoteModel.find(consulta).populate("cliente").populate("osGeradas", "numero status").sort({ numero: -1 })
       : [];
 
     if (modo === "documento" && lista.length === 0 && !cliente) {
@@ -1856,56 +1865,80 @@ ipcOn("print-quote", (event, id) => {
 });
 
 // ======= APROVAR (CONVERTER EM OS) =======
+// Qualquer orçamento vira OS, mesmo antigo (ver src/servicos/orcamentos.js):
+// pendente, vencido, recusado (reabre) ou já aprovado (pedido repetido).
 ipcComPermissao("convert-quote", "orcamentos", async (event, id) => {
   const janela = BrowserWindow.fromWebContents(event.sender);
   try {
     const orcamento = await quoteModel.findById(id);
     if (!orcamento) return;
-    if (orcamento.status !== "pendente") return avisoOrcamentoFechado(janela, orcamento);
+    const vencido = quoteModel.estaVencido(orcamento);
+    const modo = servicoOrcamentos.modoConversao(orcamento, vencido);
 
     // Prazo da OS = hoje + prazo de produção do orçamento
     const prazo = new Date();
     prazo.setDate(prazo.getDate() + orcamento.prazoProducaoDias);
     prazo.setHours(12, 0, 0, 0);
 
-    const aviso = quoteModel.estaVencido(orcamento)
-      ? `Atenção: a validade venceu em ${orcamento.validade.toLocaleDateString("pt-BR")}. Confira se os preços ainda valem.\n\n`
-      : "";
+    const produtosAtuais = await productModel.find({ _id: { $in: orcamento.produtos.map((i) => i.produto) } }).select("valorUnitario ativo");
+    const comparacao = servicoOrcamentos.compararPrecos(orcamento.produtos, produtosAtuais);
+    const escolhePreco = servicoOrcamentos.perguntaPrecos(modo) && comparacao.mudou;
+
+    const dataOrc = orcamento.dataCriacao ? orcamento.dataCriacao.toLocaleDateString("pt-BR") : "";
+    const textos = {
+      aprovar: [`Aprovar o orçamento nº ${orcamento.numero} e gerar a Ordem de Serviço?`, ""],
+      "aprovar-vencido": [`Aprovar o orçamento nº ${orcamento.numero} e gerar a Ordem de Serviço?`, `A validade venceu em ${orcamento.validade.toLocaleDateString("pt-BR")}.`],
+      reabrir: [`O orçamento nº ${orcamento.numero} foi recusado. O cliente mudou de ideia?`, "Ele será reaberto como aprovado e a OS será gerada."],
+      repetir: [`Gerar uma nova OS a partir do orçamento nº ${orcamento.numero} (pedido repetido)?`, `Este orçamento já gerou ${orcamento.osGeradas.length} OS.`],
+    };
+    const [pergunta, contexto] = textos[modo];
+    const detalhe = [
+      contexto,
+      dataOrc && `Orçamento de ${dataOrc}.`,
+      escolhePreco ? `Os preços mudaram desde o orçamento:\n${servicoOrcamentos.resumoPrecos(comparacao, moeda)}` : "",
+      !escolhePreco && comparacao.inativos ? servicoOrcamentos.resumoPrecos(comparacao, moeda) : "",
+      `Prazo de entrega da OS: ${prazo.toLocaleDateString("pt-BR")} (${orcamento.prazoProducaoDias} dias).`,
+    ].filter(Boolean).join("\n\n");
+
+    const botoes = escolhePreco
+      ? ["Cancelar", "Manter preços do orçamento", "Usar preços de hoje"]
+      : ["Cancelar", modo === "repetir" ? "Gerar nova OS" : "Aprovar e gerar OS"];
     const confirmacao = await dialog.showMessageBox(janela, {
       type: "question",
-      title: "Aprovar orçamento",
-      message: `Aprovar o orçamento nº ${orcamento.numero} e gerar a Ordem de Serviço?`,
-      detail: `${aviso}Prazo de entrega da OS: ${prazo.toLocaleDateString("pt-BR")} (${orcamento.prazoProducaoDias} dias).`,
-      buttons: ["Cancelar", "Aprovar e gerar OS"],
+      title: modo === "repetir" ? "Pedido repetido" : "Aprovar orçamento",
+      message: pergunta,
+      detail: detalhe,
+      buttons: botoes,
+      defaultId: 1,
+      cancelId: 0,
     });
-    if (confirmacao.response !== 1) return;
+    if (confirmacao.response === 0) return;
+    const usarAtuais = escolhePreco && confirmacao.response === 2;
 
+    const origem = modo === "repetir" ? `Pedido repetido do orçamento nº ${orcamento.numero}` : `Gerada a partir do orçamento nº ${orcamento.numero}`;
     const os = await serviceOrderModel.create({
       cliente: orcamento.cliente,
       // Se o cadastro do cliente não existir mais, a OS herda a cópia do orçamento
       clienteCopia: orcamento.clienteCopia ? orcamento.clienteCopia.toObject() : undefined,
-      produtos: orcamento.produtos.map((i) => ({
-        produto: i.produto,
-        descricao: i.descricao,
-        quantidade: i.quantidade,
-        valorUnitario: i.valorUnitario,
-      })),
+      orcamentoOrigem: orcamento._id,
+      produtos: servicoOrcamentos.itensDaOS(comparacao, usarAtuais),
       prazoFinal: prazo,
       status: "aberta",
-      observacoes: [`Gerada a partir do orçamento nº ${orcamento.numero}.`, orcamento.observacoes]
+      observacoes: [`${origem}${usarAtuais ? " (preços atualizados)" : ""}.`, orcamento.observacoes]
         .filter(Boolean)
         .join("\n"),
     });
     orcamento.status = "aprovado";
-    auditar("orçamento convertido em OS", `orçamento ${orcamento.numero}`, `OS ${os.numero}`);
-    orcamento.osGerada = os._id;
+    orcamento.osGeradas.push(os._id);
     await orcamento.save();
+    auditar(modo === "repetir" ? "pedido repetido de orçamento" : "orçamento convertido em OS", `orçamento ${orcamento.numero}`,
+      [`OS ${os.numero}`, modo === "reabrir" ? "reaberto (estava recusado)" : "", escolhePreco ? (usarAtuais ? "preços de hoje" : "preços do orçamento") : ""].filter(Boolean).join(", "));
     avisarDashboard();
 
     const result = await dialog.showMessageBox(janela, {
       type: "info",
       title: "Aviso",
-      message: `Orçamento nº ${orcamento.numero} aprovado: OS nº ${os.numero} criada.`,
+      message: `OS nº ${os.numero} criada a partir do orçamento nº ${orcamento.numero}.`,
       buttons: ["OK", "Imprimir OS"],
     });
     if (result.response === 1) {

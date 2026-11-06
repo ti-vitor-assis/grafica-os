@@ -50,11 +50,12 @@ const quoteSchema = new Schema({
     observacoes: {
         type: String
     },
-    // OS criada quando o orçamento foi aprovado
-    osGerada: {
+    // OS geradas a partir deste orçamento (mais de uma quando o cliente
+    // repete o pedido)
+    osGeradas: [{
         type: Types.ObjectId,
         ref: 'ServiceOrder'
-    }
+    }]
 }, { versionKey: false });
 
 quoteSchema.pre('validate', function () {

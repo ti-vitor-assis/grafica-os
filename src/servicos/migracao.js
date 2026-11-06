@@ -95,10 +95,28 @@ async function copiarClienteNosDocumentos() {
     return resultado;
 }
 
+// Orçamentos: "osGerada" (uma OS) vira "osGeradas" (lista), e a OS passa
+// a apontar para o orçamento de origem
+async function precisaListaOS() {
+    return (await Quote.collection.countDocuments({ osGerada: { $exists: true } })) > 0;
+}
+
+async function listaDeOSNosOrcamentos() {
+    let orcamentos = 0;
+    for await (const q of Quote.collection.find({ osGerada: { $exists: true } })) {
+        const $set = { osGeradas: q.osGerada ? [q.osGerada] : [] };
+        await Quote.collection.updateOne({ _id: q._id }, { $set, $unset: { osGerada: "" } });
+        if (q.osGerada) await ServiceOrder.collection.updateOne({ _id: q.osGerada }, { $set: { orcamentoOrigem: q._id } });
+        orcamentos++;
+    }
+    return { orcamentos };
+}
+
 // Ordem importa: a cópia usa o documento já cifrado
 const ETAPAS = [
     { nome: "clientes-documento-cifrado", precisa: precisaCifrarClientes, executar: cifrarClientes, apagaDados: true },
     { nome: "copia-cliente-nos-documentos", precisa: precisaCopiaCliente, executar: copiarClienteNosDocumentos },
+    { nome: "orcamento-lista-de-os", precisa: precisaListaOS, executar: listaDeOSNosOrcamentos },
 ];
 
 // ===== Backup =====

@@ -74,6 +74,11 @@ const serviceOrderSchema = new Schema({
     observacoes: {
         type: String
     },
+    // Orçamento de onde a OS veio (se veio de um)
+    orcamentoOrigem: {
+        type: Types.ObjectId,
+        ref: 'Quote'
+    },
     // Preenchida automaticamente quando o status muda para "entregue"
     dataEntregaReal: {
         type: Date
