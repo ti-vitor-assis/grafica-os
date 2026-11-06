@@ -214,117 +214,78 @@ function resetForm() {
 // ============================
 // ======== CRUD READ =========
 
+// Se o texto buscado só tiver números (com ou sem pontuação de CPF), busca por CPF
 function searchClients() {
-    if (searchClient.value / searchClient.value === 1) {
-        searchCpf()
+    const termo = searchClient.value.trim();
+    if (/^[\d.\-\s]+$/.test(termo)) {
+        searchCpf();
     } else {
-        searchName(searchClient)
+        searchName();
     }
 }
 
 function searchCpf() {
-    // console.log("Teste botão buscar")
-    // Passo 1:  Capturar o nome a ser pesquisado
-    let cpfCli = document.getElementById("searchClientsInput").value; // Teste do passo 1
-    //console.log(cliName);
+    // Passo 1: Capturar o CPF a ser pesquisado
+    let cpfCli = searchClient.value.trim();
     // Validação de campo obrigatório
     if (cpfCli === "") {
         // Enviar ao main um pedido para alertar o usuário
         api.validateSearch();
     } else {
-        // Passo 2: Enviar o nome do cliente ao main
+        // Passo 2: Enviar o CPF ao main (a resposta chega em api.renderClient, abaixo)
         api.searchCpf(cpfCli);
-        // Passo 5: Receber os dados do cliente
-        api.renderClient((event, client) => {
-            // Teste de recebimento dos dados do cliente
-            //console.log(client);
-            // Passo 6: Renderização  dos dados do cliente - não esquecer de converter os dados de STRING para JSON
-            const clientData = JSON.parse(client);
-            arrayClient = clientData;
-
-            // Uso do ForEach para percorrer o vetor e extrair os dados
-            arrayClient.forEach((c) => {
-                inputIdClient.value = c._id;
-                inputNome.value = c.nome;
-                inputRG.value = c.rg;
-                inputCPF.value = c.cpf;
-                inputSexo.value = c.sexo;
-                inputDataNasc.value = formatDate(c.dataNascimento);
-                inputTelefone.value = c.telefone;
-                inputTelefone2.value = c.telefone2;
-                inputEmail.value = c.email;
-                inputSenha.value = c.senha;
-                inputCep.value = c.cep;
-                inputEndereco.value = c.endereco;
-                inputNum.value = c.numero;
-                inputComplemento.value = c.complemento;
-                inputBairro.value = c.bairro;
-                inputCidade.value = c.cidade;
-                inputEstado.value = c.estado;
-                // restaurar tecla Enter
-                restaurarEnter();
-                // desativar o botão adicionar
-                // Desativar botões editar e excluir
-                btnCreate.disabled = true;
-                // Ativaros botões editar e excluir
-                btnUpdate.disabled = false;
-                btnDelete.disabled = false;
-            });
-        });
     }
 }
 
 function searchName() {
-    // console.log("Teste botão buscar")
-    // Passo 1:  Capturar o nome a ser pesquisado
-    let cliName = document.getElementById("searchClientsInput").value; // Teste do passo 1
-    //console.log(cliName);
+    // Passo 1: Capturar o nome a ser pesquisado
+    let cliName = searchClient.value.trim();
     // Validação de campo obrigatório
     if (cliName === "") {
         // Enviar ao main um pedido para alertar o usuário
         api.validateSearch();
     } else {
-        // Passo 2: Enviar o nome do cliente ao main
+        // Passo 2: Enviar o nome do cliente ao main (a resposta chega em api.renderClient, abaixo)
         api.searchName(cliName);
-        // Passo 5: Receber os dados do cliente
-        api.renderClient((event, client) => {
-            // Teste de recebimento dos dados do cliente
-            //console.log(client);
-            // Passo 6: Renderização  dos dados do cliente - não esquecer de converter os dados de STRING para JSON
-            const clientData = JSON.parse(client);
-            arrayClient = clientData;
-
-            // Uso do ForEach para percorrer o vetor e extrair os dados
-            arrayClient.forEach((c) => {
-                inputIdClient.value = c._id;
-                inputNome.value = c.nome;
-                inputRG.value = c.rg;
-                inputCPF.value = c.cpf;
-                inputSexo.value = c.sexo;
-                inputDataNasc.value = formatDate(c.dataNascimento);
-                inputTelefone.value = c.telefone;
-                inputTelefone2.value = c.telefone2;
-                inputEmail.value = c.email;
-                inputSenha.value = c.senha;
-                inputCep.value = c.cep;
-                inputEndereco.value = c.endereco;
-                inputNum.value = c.numero;
-                inputComplemento.value = c.complemento;
-                inputBairro.value = c.bairro;
-                inputCidade.value = c.cidade;
-                inputEstado.value = c.estado;
-                // restaurar tecla Enter
-                restaurarEnter();
-                // desativar o botão adicionar
-                // Desativar botões editar e excluir
-                btnCreate.disabled = true;
-                // Ativaros botões editar e excluir
-                btnUpdate.disabled = false;
-                btnDelete.disabled = false;
-            });
-        });
     }
 }
+
+// Passo 5: Receber os dados do cliente
+// IMPORTANTE: o listener é registrado UMA vez só. Se fosse registrado dentro
+// da função de busca, cada nova busca acumularia mais um listener.
+api.renderClient((event, client) => {
+    // Passo 6: Renderização dos dados do cliente - não esquecer de converter os dados de STRING para JSON
+    const clientData = JSON.parse(client);
+    arrayClient = clientData;
+
+    // Uso do ForEach para percorrer o vetor e extrair os dados
+    arrayClient.forEach((c) => {
+        inputIdClient.value = c._id;
+        inputNome.value = c.nome;
+        inputRG.value = c.rg;
+        inputCPF.value = c.cpf;
+        inputSexo.value = c.sexo;
+        inputDataNasc.value = formatDate(c.dataNascimento);
+        inputTelefone.value = c.telefone;
+        inputTelefone2.value = c.telefone2;
+        inputEmail.value = c.email;
+        inputSenha.value = c.senha;
+        inputCep.value = c.cep;
+        inputEndereco.value = c.endereco;
+        inputNum.value = c.numero;
+        inputComplemento.value = c.complemento;
+        inputBairro.value = c.bairro;
+        inputCidade.value = c.cidade;
+        inputEstado.value = c.estado;
+        // restaurar tecla Enter
+        restaurarEnter();
+        // Desativar o botão adicionar
+        btnCreate.disabled = true;
+        // Ativar os botões editar e excluir
+        btnUpdate.disabled = false;
+        btnDelete.disabled = false;
+    });
+});
 
 // setar o nome do cliente o nome do cliente para fazer um novo cadastro se a busca retornar que o cliente
 api.setName((args) => {
