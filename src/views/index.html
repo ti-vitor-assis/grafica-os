@@ -109,7 +109,11 @@
             <section class="right_top">
                 <div class="grafico-container">
                     <h2 class="titulo text-white">Visão Geral</h2>
-                    <canvas id="pieChart" width="400" height="400"></canvas>
+                    <!-- O canvas fica dentro de uma div: é a div que some quando não há OS
+                         (o Chart.js força display: block no canvas, anulando o "hidden") -->
+                    <div id="areaGrafico">
+                        <canvas id="pieChart" width="400" height="400"></canvas>
+                    </div>
                     <p id="semOS" class="text-sm text-[var(--color-text-secondary)] px-2" hidden>
                         Nenhuma OS em andamento ou entregue ainda.
                     </p>

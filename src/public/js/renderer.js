@@ -81,8 +81,9 @@ api.receiveDashboard((event, dados) => {
   grafico.data.datasets[0].data = [atrasadas, entregues, pendentes]
   grafico.update()
   const vazio = atrasadas + entregues + pendentes === 0
-  canvas.hidden = vazio
+  document.getElementById("areaGrafico").style.display = vazio ? "none" : "block"
   semOS.hidden = !vazio
+  if (!vazio) grafico.resize()
 
   // Tabela de prazos
   tabelaPrazos.innerHTML = ""
