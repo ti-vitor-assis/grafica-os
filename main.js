@@ -201,8 +201,10 @@ function userRegistrationWindow() {
 // Relatórios (tipo = relatório já selecionado ao abrir, ex.: "entregues")
 function reportsWindow(tipo) {
   return modalWindow("./src/views/reports.html", {
-    width: 760,
-    height: 590,
+    width: 960,
+    height: 700,
+    minWidth: 760,
+    minHeight: 560,
     query: tipo ? { tipo } : {},
   });
 }

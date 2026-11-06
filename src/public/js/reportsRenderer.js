@@ -30,7 +30,9 @@ const tipoSelecionado = () => opcoes.find((o) => o.checked);
 
 // O período só vale para alguns relatórios; nos outros fica desabilitado
 function atualizarPeriodo() {
-    campoPeriodo.disabled = !tipoSelecionado().hasAttribute("data-periodo");
+    const semPeriodo = !tipoSelecionado().hasAttribute("data-periodo");
+    campoPeriodo.disabled = semPeriodo;
+    document.getElementById("avisoPeriodo").hidden = !semPeriodo;
 }
 opcoes.forEach((o) => o.addEventListener("change", atualizarPeriodo));
 atualizarPeriodo();

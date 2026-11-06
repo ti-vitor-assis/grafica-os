@@ -4,96 +4,116 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- Só scripts/estilos do próprio app; conexão externa apenas com o ViaCEP (busca de CEP).
-         'unsafe-inline' em script-src é necessário por causa dos onclick="" nas telas -->
+    <!-- Só scripts/estilos do próprio app (esta tela não tem onclick) -->
     <meta http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://viacep.com.br" />
-    <link href="../public/css/costumerRegistrationStyle.css" rel="stylesheet" />
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:" />
+    <link href="../public/css/app.css" rel="stylesheet" />
     <link href="../public/css/tailwind.css" rel="stylesheet" />
     <title>Relatórios</title>
 </head>
 
-<body class="text-[var(--color-text-primary)]">
+<body class="tela">
+    <header class="tela-cabecalho">
+        <div class="tela-titulo">
+            <span class="tela-icone"><i data-icone="relatorio" data-tamanho="20"></i></span>
+            <div>
+                <h1>Relatórios</h1>
+                <p>Escolha o relatório e o período; o resultado sai em PDF</p>
+            </div>
+        </div>
+    </header>
 
-    <section class="m-[5px] mb-[45px] rounded-[5px] bg-[var(--color-panel)] p-5">
-        <h1 class="text-xl font-semibold mb-4">Relatórios</h1>
+    <main class="tela-conteudo">
+        <form id="frmRelatorio" class="flex flex-col gap-5">
 
-        <form id="frmRelatorio" class="space-y-4">
+            <section>
+                <p class="secao-titulo">Atendimento e produção</p>
+                <div class="grade-opcoes">
+                    <label class="opcao">
+                        <input type="radio" name="tipo" value="clientes" />
+                        <span class="opcao-icone"><i data-icone="clientes"></i></span>
+                        <span><b>Clientes cadastrados</b><small>Contato e quantidade de OS de cada um</small></span>
+                    </label>
+                    <label class="opcao">
+                        <input type="radio" name="tipo" value="andamento" checked />
+                        <span class="opcao-icone"><i data-icone="os"></i></span>
+                        <span><b>OS em andamento</b><small>Não entregues, atrasadas e saldo a receber</small></span>
+                    </label>
+                    <label class="opcao">
+                        <input type="radio" name="tipo" value="entregues" data-periodo />
+                        <span class="opcao-icone"><i data-icone="check"></i></span>
+                        <span><b>OS entregues</b><small>No período, com % entregue no prazo</small></span>
+                    </label>
+                    <label class="opcao">
+                        <input type="radio" name="tipo" value="todas" data-periodo />
+                        <span class="opcao-icone"><i data-icone="calendario"></i></span>
+                        <span><b>Todas as OS</b><small>Abertas no período, em qualquer status</small></span>
+                    </label>
+                    <label class="opcao">
+                        <input type="radio" name="tipo" value="produtos" data-periodo />
+                        <span class="opcao-icone"><i data-icone="produto"></i></span>
+                        <span><b>Produtos mais vendidos</b><small>Quantidade e valor vendidos no período</small></span>
+                    </label>
+                </div>
+            </section>
 
-            <!-- Tipo de relatório -->
-            <fieldset class="grid grid-cols-2 gap-x-6 gap-y-3">
-                <legend class="text-sm text-[var(--color-text-secondary)] mb-2">Escolha o relatório</legend>
-                <label class="flex items-start gap-3 cursor-pointer">
-                    <input type="radio" name="tipo" value="clientes" class="mt-1 accent-[var(--color-primary)]" />
-                    <span><b>Clientes cadastrados</b><br />
-                        <span class="text-sm text-[var(--color-text-secondary)]">Lista com contato e quantidade de OS</span></span>
-                </label>
-                <label class="flex items-start gap-3 cursor-pointer">
-                    <input type="radio" name="tipo" value="andamento" class="mt-1 accent-[var(--color-primary)]" checked />
-                    <span><b>OS em andamento</b><br />
-                        <span class="text-sm text-[var(--color-text-secondary)]">Não entregues, atrasadas e saldo a receber</span></span>
-                </label>
-                <label class="flex items-start gap-3 cursor-pointer">
-                    <input type="radio" name="tipo" value="entregues" data-periodo class="mt-1 accent-[var(--color-primary)]" />
-                    <span><b>OS entregues</b><br />
-                        <span class="text-sm text-[var(--color-text-secondary)]">Entregues no período, com % no prazo</span></span>
-                </label>
-                <label class="flex items-start gap-3 cursor-pointer">
-                    <input type="radio" name="tipo" value="todas" data-periodo class="mt-1 accent-[var(--color-primary)]" />
-                    <span><b>Todas as OS</b><br />
-                        <span class="text-sm text-[var(--color-text-secondary)]">Abertas no período, em qualquer status</span></span>
-                </label>
-                <label class="flex items-start gap-3 cursor-pointer" data-permissao="financeiro">
-                    <input type="radio" name="tipo" value="faturamento" data-periodo class="mt-1 accent-[var(--color-primary)]" />
-                    <span><b>Faturamento</b><br />
-                        <span class="text-sm text-[var(--color-text-secondary)]">Entregues no período, ticket médio, por cliente</span></span>
-                </label>
-                <label class="flex items-start gap-3 cursor-pointer">
-                    <input type="radio" name="tipo" value="produtos" data-periodo class="mt-1 accent-[var(--color-primary)]" />
-                    <span><b>Produtos mais vendidos</b><br />
-                        <span class="text-sm text-[var(--color-text-secondary)]">Quantidade e valor vendidos no período</span></span>
-                </label>
-                <label class="flex items-start gap-3 cursor-pointer" data-permissao="financeiro">
-                    <input type="radio" name="tipo" value="receber" class="mt-1 accent-[var(--color-primary)]" />
-                    <span><b>Contas a receber</b><br />
-                        <span class="text-sm text-[var(--color-text-secondary)]">OS com saldo em aberto, hoje</span></span>
-                </label>
-                <label class="flex items-start gap-3 cursor-pointer" data-permissao="financeiro">
-                    <input type="radio" name="tipo" value="recebimentos" data-periodo class="mt-1 accent-[var(--color-primary)]" />
-                    <span><b>Recebimentos</b><br />
-                        <span class="text-sm text-[var(--color-text-secondary)]">Pagamentos lançados no período, por forma</span></span>
-                </label>
-                <label class="flex items-start gap-3 cursor-pointer" data-permissao="estoque">
-                    <input type="radio" name="tipo" value="estoque" class="mt-1 accent-[var(--color-primary)]" />
-                    <span><b>Estoque de insumos</b><br />
-                        <span class="text-sm text-[var(--color-text-secondary)]">Situação atual e o que comprar</span></span>
-                </label>
-            </fieldset>
+            <section data-permissao="financeiro">
+                <p class="secao-titulo">Financeiro</p>
+                <div class="grade-opcoes">
+                    <label class="opcao">
+                        <input type="radio" name="tipo" value="faturamento" data-periodo />
+                        <span class="opcao-icone"><i data-icone="dinheiro"></i></span>
+                        <span><b>Faturamento</b><small>OS entregues no período, ticket médio, por cliente</small></span>
+                    </label>
+                    <label class="opcao">
+                        <input type="radio" name="tipo" value="receber" />
+                        <span class="opcao-icone"><i data-icone="relogio"></i></span>
+                        <span><b>Contas a receber</b><small>OS com saldo em aberto hoje</small></span>
+                    </label>
+                    <label class="opcao">
+                        <input type="radio" name="tipo" value="recebimentos" data-periodo />
+                        <span class="opcao-icone"><i data-icone="entrada"></i></span>
+                        <span><b>Recebimentos</b><small>Pagamentos lançados no período, por forma</small></span>
+                    </label>
+                </div>
+            </section>
 
-            <div class="flex items-end gap-6">
-                <!-- Período (só para os relatórios marcados com data-periodo) -->
-                <fieldset id="campoPeriodo" class="flex items-center gap-3 disabled:opacity-40">
-                    <legend class="text-sm text-[var(--color-text-secondary)] mb-1">Período</legend>
-                    <input type="date" id="inputInicio" class="inputStyle w-[170px] pr-3" required />
-                    <span>a</span>
-                    <input type="date" id="inputFim" class="inputStyle w-[170px] pr-3" required />
+            <section data-permissao="estoque">
+                <p class="secao-titulo">Estoque</p>
+                <div class="grade-opcoes">
+                    <label class="opcao">
+                        <input type="radio" name="tipo" value="estoque" />
+                        <span class="opcao-icone"><i data-icone="estoque"></i></span>
+                        <span><b>Estoque de insumos</b><small>Situação atual e o que comprar</small></span>
+                    </label>
+                </div>
+            </section>
+
+            <!-- Período (só para os relatórios marcados com data-periodo) e ação -->
+            <div class="card-acoes fixo avulsa !items-end">
+                <fieldset id="campoPeriodo" class="flex items-end gap-3 border-0 p-0 m-0 disabled:opacity-40">
+                    <div class="campo">
+                        <label for="inputInicio">De</label>
+                        <input type="date" id="inputInicio" class="input !w-[170px]" required />
+                    </div>
+                    <div class="campo">
+                        <label for="inputFim">Até</label>
+                        <input type="date" id="inputFim" class="input !w-[170px]" required />
+                    </div>
                 </fieldset>
-
-                <button type="submit" id="btnGerar"
-                    class="inputStyle px-6 py-1 ml-auto rounded text-white hover:brightness-110 disabled:opacity-40">
-                    Gerar PDF
+                <span id="avisoPeriodo" class="ajuda pb-2">Este relatório não usa período</span>
+                <span class="espacador"></span>
+                <button type="submit" id="btnGerar" class="btn btn-primario">
+                    <i data-icone="pdf" data-tamanho="16"></i> Gerar PDF
                 </button>
             </div>
         </form>
-    </section>
+    </main>
 
-    <!-- FOOTER -->
-    <footer class="!w-[730px]">
-        <p id="footerRealTime"></p>
-        <img src="../public/img/dboffRed.png" alt="Icone banco de dados" id="iconeDB" />
-    </footer>
+    <footer class="statusbar"></footer>
 
     <!-- SCRIPTS -->
+    <script src="../public/js/icones.js"></script>
     <script src="../public/js/reportsRenderer.js"></script>
     <script src="../public/js/footer.js"></script>
 </body>

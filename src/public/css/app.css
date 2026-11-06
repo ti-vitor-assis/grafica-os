@@ -1151,3 +1151,72 @@ svg.icone {
 .tabela-container .vazio {
     padding: 18px 16px;
 }
+
+/* Opções em cartões (ex.: escolha do relatório) */
+.grade-opcoes {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 12px;
+}
+
+.opcao {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+.opcao:hover {
+    border-color: var(--border-strong);
+}
+
+.opcao input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.opcao b {
+    display: block;
+    font-size: 14px;
+}
+
+.opcao small {
+    display: block;
+    margin-top: 2px;
+    font-size: 12.5px;
+    color: var(--text-muted);
+}
+
+.opcao-icone {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: 9px;
+    background: var(--surface-2);
+    color: var(--text-muted);
+}
+
+.opcao:has(input:checked) {
+    border-color: var(--primary);
+    background: var(--primary-soft);
+    box-shadow: 0 0 0 1px var(--primary);
+}
+
+.opcao:has(input:checked) .opcao-icone {
+    background: var(--primary);
+    color: #FFFFFF;
+}
+
+.opcao:has(input:focus-visible) {
+    box-shadow: var(--focus);
+}

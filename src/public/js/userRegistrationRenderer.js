@@ -23,16 +23,21 @@ api.receiveUsers((event, dados) => {
     listaUsuarios.innerHTML = "";
     JSON.parse(dados).forEach((u) => {
         const li = document.createElement("li");
-        li.className =
-            "cursor-pointer rounded-[10px] border-b border-[var(--color-primary)] px-3 py-2 hover:bg-[var(--color-panel)]";
+        li.className = "lista-item";
+        li.dataset.id = u._id;
 
-        const nome = document.createElement("p");
-        nome.className = "font-semibold";
-        nome.textContent = u.nome + (u.ativo ? "" : " (inativo)");
+        const nome = document.createElement("div");
+        nome.className = "lista-item-titulo";
+        const texto = document.createElement("span");
+        texto.textContent = u.nome;
+        const perfil = document.createElement("span");
+        perfil.className = u.ativo ? (u.perfil === "administrador" ? "badge badge-pronta" : "badge badge-info") : "badge";
+        perfil.textContent = u.ativo ? u.perfil : "inativo";
+        nome.append(texto, perfil);
 
-        const detalhe = document.createElement("p");
-        detalhe.className = "text-sm text-[var(--color-text-secondary)]";
-        detalhe.textContent = `${u.login} · ${u.perfil}`;
+        const detalhe = document.createElement("div");
+        detalhe.className = "lista-item-detalhe";
+        detalhe.textContent = `login: ${u.login}`;
 
         li.append(nome, detalhe);
         li.addEventListener("click", () => editar(u));
@@ -43,15 +48,17 @@ api.receiveUsers((event, dados) => {
 // Carrega um usuário no formulário para edição (senha em branco = mantém)
 function editar(u) {
     inputIdUsuario.value = u._id;
+    listaUsuarios.querySelectorAll(".lista-item").forEach((li) => li.classList.toggle("ativo", li.dataset.id === u._id));
     inputNome.value = u.nome;
     inputLogin.value = u.login;
     inputPerfil.value = u.perfil;
     inputAtivo.checked = u.ativo;
     inputSenha.value = "";
     inputConfirma.value = "";
-    inputSenha.placeholder = "  Nova senha (deixe em branco para manter)";
-    tituloModo.textContent = `(${u.login})`;
-    btnSalvar.textContent = "Salvar alterações";
+    inputSenha.placeholder = "deixe em branco para manter a atual";
+    document.getElementById("rotuloSenha").textContent = "Nova senha";
+    tituloModo.textContent = `Editar usuário · ${u.login}`;
+    document.getElementById("textoSalvar").textContent = "Salvar alterações";
 }
 
 frmUsuario.addEventListener("submit", (event) => {

@@ -38,15 +38,25 @@ api.receiveSuppliers((event, dados) => {
     const lista = JSON.parse(dados);
     listaResultados.innerHTML = "";
     semResultados.hidden = lista.length > 0;
+    document.getElementById("contagemResultados").textContent =
+        `${lista.length} fornecedor${lista.length === 1 ? "" : "es"}`;
     lista.forEach((f) => {
         const li = document.createElement("li");
-        li.className =
-            "cursor-pointer rounded-[10px] border-b border-[var(--color-primary)] px-3 py-2 hover:bg-[var(--color-panel)]";
-        const nome = document.createElement("p");
-        nome.className = "font-semibold";
-        nome.textContent = f.nome + (f.ativo === false ? " (inativo)" : "");
-        const detalhe = document.createElement("p");
-        detalhe.className = "text-sm text-[var(--color-text-secondary)]";
+        li.className = "lista-item";
+        li.dataset.id = f._id;
+        const nome = document.createElement("div");
+        nome.className = "lista-item-titulo";
+        const texto = document.createElement("span");
+        texto.textContent = f.nome;
+        nome.appendChild(texto);
+        if (f.ativo === false) {
+            const badge = document.createElement("span");
+            badge.className = "badge";
+            badge.textContent = "Inativo";
+            nome.appendChild(badge);
+        }
+        const detalhe = document.createElement("div");
+        detalhe.className = "lista-item-detalhe";
         detalhe.textContent = [f.fornece, f.telefone].filter(Boolean).join(" · ") || "—";
         li.append(nome, detalhe);
         li.addEventListener("click", () => preencher(f));
@@ -56,6 +66,8 @@ api.receiveSuppliers((event, dados) => {
 
 function preencher(f) {
     inputIdSupplier.value = f._id;
+    document.getElementById("tituloForm").textContent = "Editar fornecedor";
+    listaResultados.querySelectorAll(".lista-item").forEach((li) => li.classList.toggle("ativo", li.dataset.id === f._id));
     for (const [id, campo] of Object.entries(campos)) {
         document.getElementById(id).value = f[campo] || "";
     }
