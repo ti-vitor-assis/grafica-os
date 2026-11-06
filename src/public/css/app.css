@@ -1227,3 +1227,52 @@ svg.icone {
     .btn-recolhe .rotulo { display: none; }
     .btn-recolhe { padding-left: 10px; padding-right: 10px; }
 }
+
+/* ============ Espera (conectando, testando, entrando...) ============ */
+/* Roda enquanto o sistema aguarda o banco, para ninguém achar que travou */
+.girando {
+    display: inline-block;
+    flex: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    animation: girar 0.8s linear infinite;
+}
+
+@keyframes girar {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes pulsar {
+    50% { opacity: 0.35; }
+}
+
+/* Quem pediu menos movimento no Windows vê o indicador piscando devagar */
+@media (prefers-reduced-motion: reduce) {
+    .girando { animation: pulsar 1.6s ease-in-out infinite; border-right-color: currentColor; }
+}
+
+.status-espera {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13.5px;
+    color: var(--text-muted);
+}
+
+.status-espera .girando { color: var(--primary); }
+
+.status-espera small {
+    display: block;
+    margin-top: 2px;
+    font-size: 12.5px;
+}
+
+.btn[aria-busy="true"] {
+    cursor: progress;
+}
+
+/* Bloco que só ocupa espaço quando tem conteúdo */
+.some-se-vazio:empty { display: none; }

@@ -23,8 +23,11 @@
                 <div class="flex flex-col items-center text-center mb-6">
                     <span class="tela-icone !w-14 !h-14 !rounded-2xl mb-3"><i data-icone="grafica" data-tamanho="28"></i></span>
                     <h1 class="text-xl font-bold m-0">Gráfica OS</h1>
-                    <p id="subtitulo" class="text-sm texto-mutado mt-1">Conectando ao banco de dados...</p>
+                    <p id="subtitulo" class="text-sm texto-mutado mt-1">Aguarde um instante</p>
                 </div>
+
+                <!-- Enquanto o banco não responde (some quando conecta ou dá erro) -->
+                <div id="esperaConexao" class="some-se-vazio justify-center mb-4"></div>
 
                 <!-- Por que a sessão anterior terminou (inatividade ou bloqueio de tela) -->
                 <div id="avisoSessao" class="alerta alerta-info mb-4" hidden>
@@ -42,7 +45,7 @@
                         <label for="inputSenha">Senha</label>
                         <input type="password" id="inputSenha" class="input" autocomplete="current-password" required />
                     </div>
-                    <button type="submit" class="btn btn-primario w-full mt-1">Entrar</button>
+                    <button type="submit" id="btnEntrar" class="btn btn-primario w-full mt-1">Entrar</button>
                 </form>
 
                 <!-- Primeiro acesso: cadastro do administrador -->
@@ -71,7 +74,7 @@
                         <input type="password" id="inputAdminConfirma" class="input" autocomplete="new-password"
                             minlength="8" required />
                     </div>
-                    <button type="submit" class="btn btn-primario w-full mt-1">Criar e entrar</button>
+                    <button type="submit" id="btnCriarAdmin" class="btn btn-primario w-full mt-1">Criar e entrar</button>
                 </form>
 
                 <p id="erroLogin" class="text-center text-sm texto-perigo mt-4 mb-0 min-h-[20px]"></p>
@@ -88,6 +91,7 @@
 
     <!-- SCRIPTS -->
     <script src="../public/js/icones.js"></script>
+    <script src="../public/js/espera.js"></script>
     <script src="../public/js/loginRenderer.js"></script>
     <script src="../public/js/footer.js"></script>
 </body>

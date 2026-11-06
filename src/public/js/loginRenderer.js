@@ -10,6 +10,21 @@ const erroLogin = document.getElementById("erroLogin");
 
 const valor = (id) => document.getElementById(id).value;
 
+// ===== Espera =====
+// Até o banco responder, mostra que está conectando (com o tempo passando)
+const DICA_CONEXAO = "Ainda tentando. Se o banco estiver na nuvem, confira a internet.";
+let pararEspera = mensagemEsperando(document.getElementById("esperaConexao"), "Conectando ao banco de dados", DICA_CONEXAO);
+function fimDaEspera() {
+    if (pararEspera) pararEspera();
+    pararEspera = null;
+}
+// Botão Entrar / Criar e entrar em espera até o main responder
+let restaurarBotao = null;
+function botaoLivre() {
+    if (restaurarBotao) restaurarBotao();
+    restaurarBotao = null;
+}
+
 // Sessão anterior encerrada automaticamente: explica o motivo
 const parametros = new URLSearchParams(location.search);
 const motivo = parametros.get("motivo");
@@ -26,8 +41,12 @@ if (motivo) {
 // Quando o banco conectar, pergunta ao main se é o primeiro acesso
 api.dbStatus((event, status) => {
     if (status === "conectado") {
+        // Conectou: confere a chave de segurança (e atualiza o banco, se preciso)
+        fimDaEspera();
+        pararEspera = mensagemEsperando(document.getElementById("esperaConexao"), "Preparando o sistema", "Na primeira abertura depois de uma atualização isto pode levar um pouco mais.");
         api.loginInfo();
     } else {
+        fimDaEspera();
         subtitulo.textContent = "Sem conexão com o banco de dados.";
         erroLogin.textContent = "Verifique a internet ou a configuração do banco.";
         document.getElementById("btnConfigBanco").hidden = false;
@@ -35,6 +54,7 @@ api.dbStatus((event, status) => {
 });
 
 api.receiveLoginInfo((event, info) => {
+    fimDaEspera();
     erroLogin.textContent = "";
     // Banco com dados de outro computador e sem a chave deste: só importando
     if (info.chaveAusente) {
@@ -58,6 +78,8 @@ api.receiveLoginInfo((event, info) => {
 
 // Mensagens de erro do main (senha errada, banco fora do ar...)
 api.loginError((event, mensagem) => {
+    fimDaEspera();
+    botaoLivre();
     erroLogin.textContent = mensagem;
     const senha = document.getElementById("inputSenha");
     senha.value = "";
@@ -67,6 +89,7 @@ api.loginError((event, mensagem) => {
 frmLogin.addEventListener("submit", (event) => {
     event.preventDefault();
     erroLogin.textContent = "";
+    restaurarBotao = botaoEsperando(document.getElementById("btnEntrar"), "Entrando…");
     api.login({ login: valor("inputLogin"), senha: valor("inputSenha") });
 });
 
@@ -77,6 +100,7 @@ frmPrimeiroAcesso.addEventListener("submit", (event) => {
         return;
     }
     erroLogin.textContent = "";
+    restaurarBotao = botaoEsperando(document.getElementById("btnCriarAdmin"), "Criando o administrador…");
     api.createFirstAdmin({
         nome: valor("inputAdminNome"),
         login: valor("inputAdminLogin"),

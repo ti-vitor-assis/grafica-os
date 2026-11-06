@@ -14,13 +14,24 @@ function mostrarResultado(texto, ok) {
     resultado.className = `text-sm m-0 min-h-[20px] ${ok ? "texto-sucesso" : "texto-perigo"}`;
 }
 
-function ocupado(sim, texto) {
-    el("btnTestar").disabled = sim;
-    el("btnSalvar").disabled = sim;
-    if (sim) {
-        resultado.className = "text-sm m-0 min-h-[20px] texto-mutado";
-        resultado.textContent = texto;
-    }
+// Enquanto testa/salva: botão com indicador, o outro desabilitado e o
+// tempo passando no resultado (o teste pode levar até ~10 s se não achar o banco)
+const DICA_BANCO = "Pode levar até 10 segundos. Se não terminar, confira a internet e a string de conexão.";
+let fimDaEspera = null;
+function ocupado(botao, textoBotao, textoEspera) {
+    const outro = botao === el("btnTestar") ? el("btnSalvar") : el("btnTestar");
+    const restaurar = botaoEsperando(botao, textoBotao);
+    outro.disabled = true;
+    inputUrl.readOnly = true;
+    resultado.className = "text-sm m-0 min-h-[20px]";
+    const parar = mensagemEsperando(resultado, textoEspera, DICA_BANCO, 4);
+    fimDaEspera = () => {
+        parar();
+        restaurar();
+        outro.disabled = false;
+        inputUrl.readOnly = false;
+        fimDaEspera = null;
+    };
 }
 
 api.dbConfigInfo();
@@ -54,20 +65,21 @@ el("btnLocal").addEventListener("click", () => {
 
 el("btnTestar").addEventListener("click", () => {
     if (!inputUrl.value.trim()) return mostrarResultado("Informe a string de conexão.", false);
-    ocupado(true, "Testando conexão...");
+    ocupado(el("btnTestar"), "Testando…", "Procurando o banco de dados");
     api.testDbConfig(inputUrl.value);
 });
 
 el("frmBanco").addEventListener("submit", (event) => {
     event.preventDefault();
-    ocupado(true, "Testando e salvando...");
+    if (!inputUrl.value.trim()) return mostrarResultado("Informe a string de conexão.", false);
+    ocupado(el("btnSalvar"), "Conectando…", "Testando e salvando a conexão");
     api.saveDbConfig(inputUrl.value);
 });
 
 // Resultado do teste (ou do salvar, quando a conexão falha;
 // quando dá certo, o main fecha esta janela e abre o login)
 api.dbConfigResult((event, r) => {
-    ocupado(false);
+    if (fimDaEspera) fimDaEspera();
     mostrarResultado(r.ok ? "Conexão funcionando! Clique em \"Salvar e conectar\"." : r.erro, r.ok);
 });
 
