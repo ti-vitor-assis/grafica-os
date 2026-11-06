@@ -85,8 +85,8 @@ function quoteRegistrationWindow() {
 // Relatórios (tipo = relatório já selecionado ao abrir, ex.: "entregues")
 function reportsWindow(tipo) {
   return modalWindow("./src/views/reports.html", {
-    width: 560,
-    height: 690,
+    width: 760,
+    height: 510,
     query: tipo ? { tipo } : {},
   });
 }
@@ -1010,6 +1010,8 @@ const tiposRelatorio = {
   todas: { montar: (ini, fim) => relatorios.todasOS(ini, fim), periodo: true },
   faturamento: { montar: (ini, fim) => relatorios.faturamento(ini, fim), periodo: true },
   produtos: { montar: (ini, fim) => relatorios.produtosMaisVendidos(ini, fim), periodo: true },
+  receber: { montar: () => relatorios.contasAReceber(), periodo: false },
+  recebimentos: { montar: (ini, fim) => relatorios.recebimentos(ini, fim), periodo: true },
 };
 
 // pedido = { tipo, inicio: "AAAA-MM-DD", fim: "AAAA-MM-DD" }
@@ -1112,6 +1114,17 @@ const template = [
       {
         label: "Produtos mais vendidos",
         click: () => reportsWindow("produtos"),
+      },
+      {
+        type: "separator"
+      },
+      {
+        label: "Contas a receber",
+        click: () => reportsWindow("receber"),
+      },
+      {
+        label: "Recebimentos",
+        click: () => reportsWindow("recebimentos"),
       },
     ]
   },

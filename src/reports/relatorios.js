@@ -237,7 +237,101 @@ async function produtosMaisVendidos(inicio, fim) {
     };
 }
 
+// ===== Contas a receber: OS não canceladas com saldo em aberto =====
+async function contasAReceber() {
+    const lista = await serviceOrderModel
+        .find({ status: { $ne: "cancelada" }, pago: { $ne: true } })
+        .populate("cliente", "nome")
+        .sort({ prazoFinal: 1 });
+    const comSaldo = lista.filter((os) => saldo(os) > 0);
+    const entregues = comSaldo.filter((os) => os.status === "entregue");
+
+    return {
+        titulo: "Contas a receber",
+        resumo: [
+            ["OS com saldo", String(comSaldo.length)],
+            ["Total a receber", moeda(somar(comSaldo, saldo))],
+            // Serviço já entregue e não pago: é o que mais precisa de cobrança
+            ["De OS já entregues", moeda(somar(entregues, saldo))],
+        ],
+        secoes: [{
+            colunas: [
+                { titulo: "Nº", num: true }, { titulo: "Cliente" }, { titulo: "Status" }, { titulo: "Prazo" },
+                { titulo: "Total", num: true }, { titulo: "Pago", num: true }, { titulo: "Saldo", num: true },
+            ],
+            linhas: comSaldo.map((os) => [
+                String(os.numero),
+                nomeCliente(os),
+                capitalizar(os.status),
+                data(os.prazoFinal),
+                moeda(os.valorTotal),
+                moeda(os.valorPago),
+                moeda(saldo(os)),
+            ]),
+        }],
+    };
+}
+
+// ===== Recebimentos: pagamentos lançados no período (o que entrou no caixa) =====
+async function recebimentos(inicio, fim) {
+    const ordens = await serviceOrderModel
+        .find({ "pagamentos.data": { $gte: inicio, $lte: fim } })
+        .populate("cliente", "nome");
+
+    const lancamentos = [];
+    for (const os of ordens) {
+        for (const p of os.pagamentos) {
+            if (p.data >= inicio && p.data <= fim) {
+                lancamentos.push({ os, ...p.toObject() });
+            }
+        }
+    }
+    lancamentos.sort((a, b) => a.data - b.data || a.os.numero - b.os.numero);
+
+    const total = somar(lancamentos, (l) => l.valor);
+    const porForma = new Map();
+    for (const l of lancamentos) {
+        const g = porForma.get(l.forma) || { qtd: 0, valor: 0 };
+        g.qtd += 1;
+        g.valor = centavos(g.valor + l.valor);
+        porForma.set(l.forma, g);
+    }
+    const formas = [...porForma.entries()].sort((a, b) => b[1].valor - a[1].valor);
+
+    return {
+        titulo: "Recebimentos",
+        resumo: [
+            ["Total recebido", moeda(total)],
+            ["Lançamentos", String(lancamentos.length)],
+        ],
+        secoes: [
+            {
+                titulo: "Por forma de pagamento",
+                colunas: [{ titulo: "Forma" }, { titulo: "Lançamentos", num: true }, { titulo: "Valor", num: true }, { titulo: "%", num: true }],
+                linhas: formas.map(([forma, g]) => [
+                    capitalizar(forma),
+                    String(g.qtd),
+                    moeda(g.valor),
+                    total ? `${((g.valor / total) * 100).toFixed(1).replace(".", ",")}%` : "—",
+                ]),
+            },
+            {
+                titulo: "Lançamentos",
+                colunas: [{ titulo: "Data" }, { titulo: "OS", num: true }, { titulo: "Cliente" }, { titulo: "Forma" }, { titulo: "Valor", num: true }],
+                linhas: lancamentos.map((l) => [
+                    data(l.data),
+                    String(l.os.numero),
+                    nomeCliente(l.os),
+                    capitalizar(l.forma),
+                    moeda(l.valor),
+                ]),
+            },
+        ],
+    };
+}
+
 module.exports = {
     clientes, osEmAndamento, osEntregues, todasOS, faturamento, produtosMaisVendidos,
+    contasAReceber, recebimentos,
     saldo, somar, centavos,
 };

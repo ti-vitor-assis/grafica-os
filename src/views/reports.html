@@ -17,8 +17,8 @@
         <form id="frmRelatorio" class="space-y-4">
 
             <!-- Tipo de relatório -->
-            <fieldset class="space-y-2">
-                <legend class="text-sm text-[var(--color-text-secondary)] mb-1">Escolha o relatório</legend>
+            <fieldset class="grid grid-cols-2 gap-x-6 gap-y-3">
+                <legend class="text-sm text-[var(--color-text-secondary)] mb-2">Escolha o relatório</legend>
                 <label class="flex items-start gap-3 cursor-pointer">
                     <input type="radio" name="tipo" value="clientes" class="mt-1 accent-[var(--color-primary)]" />
                     <span><b>Clientes cadastrados</b><br />
@@ -27,7 +27,7 @@
                 <label class="flex items-start gap-3 cursor-pointer">
                     <input type="radio" name="tipo" value="andamento" class="mt-1 accent-[var(--color-primary)]" checked />
                     <span><b>OS em andamento</b><br />
-                        <span class="text-sm text-[var(--color-text-secondary)]">Ainda não entregues, com atrasadas e saldo a receber</span></span>
+                        <span class="text-sm text-[var(--color-text-secondary)]">Não entregues, atrasadas e saldo a receber</span></span>
                 </label>
                 <label class="flex items-start gap-3 cursor-pointer">
                     <input type="radio" name="tipo" value="entregues" data-periodo class="mt-1 accent-[var(--color-primary)]" />
@@ -42,32 +42,44 @@
                 <label class="flex items-start gap-3 cursor-pointer">
                     <input type="radio" name="tipo" value="faturamento" data-periodo class="mt-1 accent-[var(--color-primary)]" />
                     <span><b>Faturamento</b><br />
-                        <span class="text-sm text-[var(--color-text-secondary)]">OS entregues no período, ticket médio e por cliente</span></span>
+                        <span class="text-sm text-[var(--color-text-secondary)]">Entregues no período, ticket médio, por cliente</span></span>
                 </label>
                 <label class="flex items-start gap-3 cursor-pointer">
                     <input type="radio" name="tipo" value="produtos" data-periodo class="mt-1 accent-[var(--color-primary)]" />
                     <span><b>Produtos mais vendidos</b><br />
                         <span class="text-sm text-[var(--color-text-secondary)]">Quantidade e valor vendidos no período</span></span>
                 </label>
+                <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="radio" name="tipo" value="receber" class="mt-1 accent-[var(--color-primary)]" />
+                    <span><b>Contas a receber</b><br />
+                        <span class="text-sm text-[var(--color-text-secondary)]">OS com saldo em aberto, hoje</span></span>
+                </label>
+                <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="radio" name="tipo" value="recebimentos" data-periodo class="mt-1 accent-[var(--color-primary)]" />
+                    <span><b>Recebimentos</b><br />
+                        <span class="text-sm text-[var(--color-text-secondary)]">Pagamentos lançados no período, por forma</span></span>
+                </label>
             </fieldset>
 
-            <!-- Período (só para os relatórios marcados com data-periodo) -->
-            <fieldset id="campoPeriodo" class="flex items-center gap-3 disabled:opacity-40">
-                <legend class="text-sm text-[var(--color-text-secondary)] mb-1">Período</legend>
-                <input type="date" id="inputInicio" class="inputStyle w-[170px] pr-3" required />
-                <span>a</span>
-                <input type="date" id="inputFim" class="inputStyle w-[170px] pr-3" required />
-            </fieldset>
+            <div class="flex items-end gap-6">
+                <!-- Período (só para os relatórios marcados com data-periodo) -->
+                <fieldset id="campoPeriodo" class="flex items-center gap-3 disabled:opacity-40">
+                    <legend class="text-sm text-[var(--color-text-secondary)] mb-1">Período</legend>
+                    <input type="date" id="inputInicio" class="inputStyle w-[170px] pr-3" required />
+                    <span>a</span>
+                    <input type="date" id="inputFim" class="inputStyle w-[170px] pr-3" required />
+                </fieldset>
 
-            <button type="submit" id="btnGerar"
-                class="inputStyle px-6 py-1 rounded text-white hover:brightness-110 disabled:opacity-40">
-                Gerar PDF
-            </button>
+                <button type="submit" id="btnGerar"
+                    class="inputStyle px-6 py-1 ml-auto rounded text-white hover:brightness-110 disabled:opacity-40">
+                    Gerar PDF
+                </button>
+            </div>
         </form>
     </section>
 
     <!-- FOOTER -->
-    <footer class="!w-[530px]">
+    <footer class="!w-[730px]">
         <p id="footerRealTime"></p>
         <img src="../public/img/dboffRed.png" alt="Icone banco de dados" id="iconeDB" />
     </footer>
