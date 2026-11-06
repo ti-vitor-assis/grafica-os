@@ -593,6 +593,7 @@ async function dadosOS(order) {
 ipcMain.on("create-order", async (event, order) => {
   try {
     const os = await serviceOrderModel.create(await dadosOS(order));
+    avisarDashboard();
     const janela = BrowserWindow.fromWebContents(event.sender);
     const result = await dialog.showMessageBox(janela, {
       type: "info",
@@ -643,6 +644,7 @@ ipcMain.on("update-order", async (event, order) => {
     os.set(await dadosOS(order));
     // save() (e não findByIdAndUpdate) para as regras do modelo rodarem
     await os.save();
+    avisarDashboard();
     await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
       type: "info",
       title: "Aviso",
@@ -655,6 +657,42 @@ ipcMain.on("update-order", async (event, order) => {
     avisoErroValidacao(error);
   }
 });
+
+// ======= DASHBOARD =======
+// Status que contam como "em andamento" (ainda precisam ser entregues)
+const emAndamento = { status: { $nin: ["entregue", "cancelada"] } };
+
+ipcMain.on("dashboard-data", async (event) => {
+  try {
+    const inicioHoje = new Date();
+    inicioHoje.setHours(0, 0, 0, 0);
+    // "Próximas do prazo" = vencem hoje ou nos próximos 3 dias
+    const limiteProximas = new Date(inicioHoje);
+    limiteProximas.setDate(limiteProximas.getDate() + 4);
+
+    const [atrasadas, pendentes, entregues, lista] = await Promise.all([
+      serviceOrderModel.countDocuments({ ...emAndamento, prazoFinal: { $lt: inicioHoje } }),
+      serviceOrderModel.countDocuments({ ...emAndamento, prazoFinal: { $gte: inicioHoje } }),
+      serviceOrderModel.countDocuments({ status: "entregue" }),
+      serviceOrderModel
+        .find({ ...emAndamento, prazoFinal: { $lt: limiteProximas } })
+        .populate("cliente", "nome")
+        .sort({ prazoFinal: 1 })
+        .limit(30),
+    ]);
+
+    event.reply("dashboard-data", JSON.stringify({ atrasadas, pendentes, entregues, lista }));
+  } catch (error) {
+    console.error("Erro ao carregar o dashboard:", error);
+  }
+});
+
+// Avisa a janela principal que as OS mudaram, para o dashboard recarregar
+function avisarDashboard() {
+  if (win && !win.isDestroyed()) {
+    win.webContents.send("dashboard-changed");
+  }
+}
 
 // ======= IMPRESSÃO (PDF) =======
 async function imprimirOS(id, janela) {
@@ -693,6 +731,7 @@ ipcMain.on("delete-order", async (event, id) => {
     });
     if (result.response === 1) {
       await serviceOrderModel.findByIdAndDelete(id);
+      avisarDashboard();
       event.reply("reset-form");
     }
   } catch (error) {

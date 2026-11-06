@@ -8,7 +8,6 @@
     <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' ">
     -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="../public/css/style.css" rel="stylesheet">
     <title>Bem vindo</title>
 </head>
@@ -75,44 +74,33 @@
                 <div class="grafico-container">
                     <h2 class="titulo text-white">Visão Geral</h2>
                     <canvas id="pieChart" width="400" height="400"></canvas>
+                    <p id="semOS" class="text-sm text-[var(--color-text-secondary)] px-2" hidden>
+                        Nenhuma OS em andamento ou entregue ainda.
+                    </p>
                 </div>
 
-                <div class="delayedservices text-white">
-
-                    <h1 class="font-bold text-center text-xl"> Serviços Atrasados / Próximos do Prazo</h1>
-                    <div class="shadow-lg rounded-lg overflow-hidden mx-4 md:mx-10">
-                        <table class="w-full table-fixed">
-                            <thead>
-                                <tr class="" style="background-color: var(--color-panel);">
-                                    <th class="w-1/4 py-4 px-6 text-left text-white-600 font-bold uppercase">Name</th>
-                                    <th class="w-1/4 py-4 px-6 text-left text-white-600 font-bold uppercase">Email</th>
-                                    <th class="w-1/4 py-4 px-6 text-left text-white-600 font-bold uppercase">Phone</th>
-                                    <th class="w-1/4 py-4 px-6 text-left text-white-600 font-bold uppercase">Status</th>
+                <div class="delayedservices text-white flex flex-col">
+                    <h1 class="font-bold text-center text-xl mb-2">Serviços Atrasados / Próximos do Prazo</h1>
+                    <div class="flex-1 overflow-y-auto mx-2 mb-2 rounded-lg">
+                        <table class="w-full table-fixed text-sm">
+                            <thead class="sticky top-0">
+                                <tr>
+                                    <th class="w-[60px] py-2 px-3 text-left font-bold uppercase">Nº</th>
+                                    <th class="py-2 px-3 text-left font-bold uppercase">Cliente</th>
+                                    <th class="w-[95px] py-2 px-3 text-left font-bold uppercase">Prazo</th>
+                                    <th class="w-[135px] py-2 px-3 text-left font-bold uppercase">Situação</th>
                                 </tr>
                             </thead>
-                            <tbody class="">
-                                <tr>
-                                    <td class="py-4 px-6 border-b border-gray-200">John Doe</td>
-                                    <td class="py-4 px-6 border-b border-gray-200 truncate">johndoe@gmail.com</td>
-                                    <td class="py-4 px-6 border-b border-gray-200">555-555-5555</td>
-                                    <td class="py-4 px-6 border-b border-gray-200">
-                                        <span class="bg-green-500 text-white py-1 px-2 rounded-full text-xs">ENTREGUE</span>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="py-4 px-6 border-b border-gray-200">Jane Doe</td>
-                                    <td class="py-4 px-6 border-b border-gray-200 truncate">janedoe@gmail.com</td>
-                                    <td class="py-4 px-6 border-b border-gray-200">555-555-5555</td>
-                                    <td class="py-4 px-6 border-b border-gray-200">
-                                        <span class="bg-red-500 text-white py-1 px-2 rounded-full text-xs">ATRASADO</span>
-                                    </td>
-                                </tr>                               
-                            </tbody>
+                            <!-- Preenchida pelo renderer.js com dados do banco -->
+                            <tbody id="tabelaPrazos"></tbody>
                         </table>
+                        <p id="semPrazos" class="text-center text-sm text-[var(--color-text-secondary)] pt-6" hidden>
+                            Nenhuma OS atrasada ou vencendo nos próximos 3 dias. 🎉
+                        </p>
                     </div>
                 </div>
+            </section>
         </div>
-        </section>
 
         <footer>
             <p id="footerRealTime"></p>

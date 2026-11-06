@@ -60,6 +60,11 @@ contextBridge.exposeInMainWorld("api", {
   listProducts: () => ipcRenderer.send("list-products"),
   receiveProducts: (args) => ipcRenderer.on("products-list", args),
 
+  // Dashboard (tela inicial)
+  requestDashboard: () => ipcRenderer.send("dashboard-data"),
+  receiveDashboard: (args) => ipcRenderer.on("dashboard-data", args),
+  onDashboardChanged: (args) => ipcRenderer.on("dashboard-changed", args),
+
   // Aviso genérico (caixa de diálogo do sistema)
   warn: (mensagem) => ipcRenderer.send("show-warning", mensagem),
 });
