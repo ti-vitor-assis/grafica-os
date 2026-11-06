@@ -39,6 +39,16 @@
                     <span><b>Todas as OS</b><br />
                         <span class="text-sm text-[var(--color-text-secondary)]">Abertas no período, em qualquer status</span></span>
                 </label>
+                <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="radio" name="tipo" value="faturamento" data-periodo class="mt-1 accent-[var(--color-primary)]" />
+                    <span><b>Faturamento</b><br />
+                        <span class="text-sm text-[var(--color-text-secondary)]">OS entregues no período, por forma de pagamento e por cliente</span></span>
+                </label>
+                <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="radio" name="tipo" value="produtos" data-periodo class="mt-1 accent-[var(--color-primary)]" />
+                    <span><b>Produtos mais vendidos</b><br />
+                        <span class="text-sm text-[var(--color-text-secondary)]">Quantidade e valor vendidos no período</span></span>
+                </label>
             </fieldset>
 
             <!-- Período (só para os relatórios marcados com data-periodo) -->

@@ -79,7 +79,7 @@ function productRegistrationWindow() {
 function reportsWindow(tipo) {
   return modalWindow("./src/views/reports.html", {
     width: 560,
-    height: 560,
+    height: 690,
     query: tipo ? { tipo } : {},
   });
 }
@@ -762,6 +762,8 @@ const tiposRelatorio = {
   andamento: { montar: () => relatorios.osEmAndamento(), periodo: false },
   entregues: { montar: (ini, fim) => relatorios.osEntregues(ini, fim), periodo: true },
   todas: { montar: (ini, fim) => relatorios.todasOS(ini, fim), periodo: true },
+  faturamento: { montar: (ini, fim) => relatorios.faturamento(ini, fim), periodo: true },
+  produtos: { montar: (ini, fim) => relatorios.produtosMaisVendidos(ini, fim), periodo: true },
 };
 
 // pedido = { tipo, inicio: "AAAA-MM-DD", fim: "AAAA-MM-DD" }
@@ -849,6 +851,17 @@ const template = [
       {
         label: "Todas as OS",
         click: () => reportsWindow("todas"),
+      },
+      {
+        type: "separator"
+      },
+      {
+        label: "Faturamento",
+        click: () => reportsWindow("faturamento"),
+      },
+      {
+        label: "Produtos mais vendidos",
+        click: () => reportsWindow("produtos"),
       },
     ]
   },

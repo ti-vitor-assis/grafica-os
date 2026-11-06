@@ -156,4 +156,95 @@ async function todasOS(inicio, fim) {
     };
 }
 
-module.exports = { clientes, osEmAndamento, osEntregues, todasOS, saldo, somar, centavos };
+// ===== Faturamento: OS entregues no período =====
+// Considera faturado o serviço entregue (não o que só foi aberto)
+async function faturamento(inicio, fim) {
+    const lista = await serviceOrderModel
+        .find({ status: "entregue", dataEntregaReal: { $gte: inicio, $lte: fim } })
+        .populate("cliente", "nome");
+    const total = somar(lista, (os) => os.valorTotal);
+
+    // Agrupa somando quantidade de OS e valor
+    function agrupar(chave) {
+        const grupos = new Map();
+        for (const os of lista) {
+            const k = chave(os);
+            const g = grupos.get(k) || { os: 0, valor: 0 };
+            g.os += 1;
+            g.valor = centavos(g.valor + os.valorTotal);
+            grupos.set(k, g);
+        }
+        return [...grupos.entries()].sort((a, b) => b[1].valor - a[1].valor);
+    }
+    const porForma = agrupar((os) => capitalizar(os.pagamento && os.pagamento.formaPagamento) || "Não informada");
+    const porCliente = agrupar(nomeCliente);
+    const percentual = (valor) => (total ? `${((valor / total) * 100).toFixed(1).replace(".", ",")}%` : "—");
+
+    return {
+        titulo: "Faturamento",
+        resumo: [
+            ["Faturado (OS entregues)", moeda(total)],
+            ["OS entregues", String(lista.length)],
+            ["Ticket médio", lista.length ? moeda(centavos(total / lista.length)) : "—"],
+            ["Ainda a receber destas OS", moeda(somar(lista, saldo))],
+        ],
+        secoes: [
+            {
+                titulo: "Por forma de pagamento",
+                colunas: [{ titulo: "Forma de pagamento" }, { titulo: "OS", num: true }, { titulo: "Valor", num: true }, { titulo: "%", num: true }],
+                linhas: porForma.map(([forma, g]) => [forma, String(g.os), moeda(g.valor), percentual(g.valor)]),
+            },
+            {
+                titulo: "Por cliente",
+                colunas: [{ titulo: "Cliente" }, { titulo: "OS", num: true }, { titulo: "Valor", num: true }, { titulo: "%", num: true }],
+                linhas: porCliente.map(([cliente, g]) => [cliente, String(g.os), moeda(g.valor), percentual(g.valor)]),
+            },
+        ],
+    };
+}
+
+// ===== Produtos mais vendidos (OS abertas no período, sem as canceladas) =====
+async function produtosMaisVendidos(inicio, fim) {
+    const grupos = await serviceOrderModel.aggregate([
+        { $match: { dataCriacao: { $gte: inicio, $lte: fim }, status: { $ne: "cancelada" } } },
+        { $unwind: "$produtos" },
+        {
+            $group: {
+                _id: "$produtos.produto",
+                descricao: { $last: "$produtos.descricao" },
+                quantidade: { $sum: "$produtos.quantidade" },
+                os: { $addToSet: "$_id" },
+                valor: { $sum: "$produtos.subtotal" },
+            },
+        },
+        { $sort: { valor: -1 } },
+    ]);
+    const total = centavos(grupos.reduce((soma, g) => soma + g.valor, 0));
+
+    return {
+        titulo: "Produtos mais vendidos",
+        resumo: [
+            ["Produtos diferentes", String(grupos.length)],
+            ["Valor vendido", moeda(total)],
+        ],
+        secoes: [{
+            colunas: [
+                { titulo: "#", num: true }, { titulo: "Produto" }, { titulo: "Qtd vendida", num: true },
+                { titulo: "Nº de OS", num: true }, { titulo: "Valor", num: true }, { titulo: "%", num: true },
+            ],
+            linhas: grupos.map((g, i) => [
+                String(i + 1),
+                g.descricao || "(sem descrição)",
+                String(g.quantidade),
+                String(g.os.length),
+                moeda(g.valor),
+                total ? `${((g.valor / total) * 100).toFixed(1).replace(".", ",")}%` : "—",
+            ]),
+        }],
+    };
+}
+
+module.exports = {
+    clientes, osEmAndamento, osEntregues, todasOS, faturamento, produtosMaisVendidos,
+    saldo, somar, centavos,
+};
