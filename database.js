@@ -4,7 +4,26 @@
  */
 
 const path = require('node:path')
-require('dotenv').config({ path: path.join(__dirname, '.env'), quiet: true })
+const fs = require('node:fs')
+
+// Onde fica o arquivo .env com a string de conexão (MONGO_URL):
+// 1) na pasta do projeto, durante o desenvolvimento (npm start)
+// 2) na pasta de dados do usuário, no app instalado, porque o .env não
+//    vai dentro do instalador: %APPDATA%\grafica-os\.env no Windows
+function pastaDadosUsuario() {
+    try {
+        const { app } = require('electron')
+        return app && app.getPath ? app.getPath('userData') : null
+    } catch (error) {
+        return null // fora do Electron (ex.: scripts de teste)
+    }
+}
+const arquivoEnvUsuario = pastaDadosUsuario() ? path.join(pastaDadosUsuario(), '.env') : null
+const arquivoEnv = [path.join(__dirname, '.env'), arquivoEnvUsuario].find((p) => p && fs.existsSync(p))
+if (arquivoEnv) {
+    // Variáveis já definidas no sistema têm prioridade sobre o arquivo
+    require('dotenv').config({ path: arquivoEnv, quiet: true })
+}
 
 const mongoose = require('mongoose')
 
@@ -52,4 +71,5 @@ const desconectar = async () => {
     }
 }
 
-module.exports = { conectar, desconectar }
+// configurado: se existe MONGO_URL; arquivoEnvUsuario: onde criar o .env no app instalado
+module.exports = { conectar, desconectar, configurado: !!url, arquivoEnvUsuario }

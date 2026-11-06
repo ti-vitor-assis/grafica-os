@@ -11,7 +11,7 @@ const path = require("node:path")
 
 const packageInfo = require("./package.json")
 
-const { conectar, desconectar } = require('./database.js')
+const { conectar, desconectar, configurado, arquivoEnvUsuario } = require('./database.js')
 
 const clienteModel = require("./src/model/Clientes.js");
 const serviceOrderModel = require('./src/model/ServiceOrder.js')
@@ -204,9 +204,31 @@ function aboutWindow() {
 }
 
 // FIM - Janelas
+// Sem MONGO_URL (ex.: app recém-instalado), explica onde criar o .env
+async function avisoSemConfiguracao() {
+  const pasta = path.dirname(arquivoEnvUsuario);
+  const result = await dialog.showMessageBox(janelaLogin, {
+    type: "warning",
+    title: "Configuração do banco de dados",
+    message: "A conexão com o banco de dados não está configurada.",
+    detail:
+      `Crie o arquivo:\n${arquivoEnvUsuario}\n\n` +
+      "com a linha:\nMONGO_URL=mongodb+srv://USUARIO:SENHA@SEU-CLUSTER.mongodb.net/serviceOrderPrintingPress\n\n" +
+      "Depois, feche e abra o programa de novo.",
+    buttons: ["OK", "Abrir a pasta"],
+  });
+  if (result.response === 1) {
+    require("node:fs").mkdirSync(pasta, { recursive: true });
+    shell.openPath(pasta);
+  }
+}
+
 app.whenReady().then(() => {
 
   loginWindow();
+  if (!configurado) {
+    janelaLogin.webContents.once("did-finish-load", avisoSemConfiguracao);
+  }
 
   // Cada janela pede a conexão ao carregar (preload.js) e recebe o status
   // para atualizar o ícone do rodapé
