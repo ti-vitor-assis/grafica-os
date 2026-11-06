@@ -17,6 +17,20 @@ ipcRenderer.on('db-status', (event, status) => {
 
 ipcRenderer.send('db-connect')
 
+// Tema (claro/escuro): aplicado antes de a tela aparecer, no <html data-theme>
+let temaAtual = ipcRenderer.sendSync('get-theme')
+const temaCallbacks = []
+function aplicarTema(tema) {
+  temaAtual = tema
+  if (document.documentElement) document.documentElement.setAttribute('data-theme', tema)
+}
+aplicarTema(temaAtual)
+document.addEventListener('DOMContentLoaded', () => aplicarTema(temaAtual))
+ipcRenderer.on('theme-changed', (event, tema) => {
+  aplicarTema(tema)
+  temaCallbacks.forEach((cb) => cb(tema))
+})
+
 // permissões para estabelecer a comunicação entre processos
 // Os nomes dos canais aqui precisam ser exatamente os mesmos usados no main.js
 contextBridge.exposeInMainWorld("api", {
@@ -24,6 +38,11 @@ contextBridge.exposeInMainWorld("api", {
     dbStatusCallbacks.push(callback)
     if (dbStatusAtual !== null) callback(null, dbStatusAtual)
   },
+
+  // Tema
+  getTheme: () => temaAtual,
+  toggleTheme: () => ipcRenderer.send('toggle-theme'),
+  onThemeChanged: (callback) => temaCallbacks.push(callback),
 
   // Configuração do banco de dados
   openDbConfig: () => ipcRenderer.send("open-db-config"),

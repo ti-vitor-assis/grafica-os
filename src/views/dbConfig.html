@@ -7,69 +7,76 @@
     <!-- Só scripts/estilos do próprio app (esta tela não tem onclick) -->
     <meta http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:" />
-    <link href="../public/css/costumerRegistrationStyle.css" rel="stylesheet" />
+    <link href="../public/css/app.css" rel="stylesheet" />
     <link href="../public/css/tailwind.css" rel="stylesheet" />
     <title>Configurar banco de dados</title>
 </head>
 
-<body class="text-[var(--color-text-primary)]">
+<body class="tela">
+    <header class="tela-cabecalho">
+        <div class="tela-titulo">
+            <span class="tela-icone"><i data-icone="banco" data-tamanho="20"></i></span>
+            <div>
+                <h1>Configurar banco de dados</h1>
+                <p>O Gráfica OS guarda os dados em um banco MongoDB. Informe onde ele está.</p>
+            </div>
+        </div>
+    </header>
 
-    <section class="m-[5px] mb-[45px] rounded-[5px] bg-[var(--color-panel)] px-8 py-6 space-y-4">
+    <main class="tela-conteudo flex flex-col gap-4">
 
-        <div>
-            <h1 class="text-xl font-semibold">Configurar banco de dados</h1>
-            <p class="text-sm text-[var(--color-text-secondary)] mt-1">
-                O Gráfica OS guarda os dados em um banco MongoDB. Informe onde ele está.
-            </p>
+        <div id="avisoAmbiente" class="alerta alerta-aviso" hidden>
+            <i data-icone="alerta"></i>
+            <span>A conexão está definida pela variável <b>MONGO_URL</b> (arquivo <b>.env</b> da pasta do projeto).
+                Para usar esta tela, remova essa linha do .env.</span>
         </div>
 
-        <p id="avisoAmbiente" class="text-sm rounded-[10px] border border-yellow-600 p-3" hidden>
-            A conexão está definida pela variável <b>MONGO_URL</b> (arquivo <b>.env</b> da pasta do projeto).
-            Para usar esta tela, remova essa linha do .env.
-        </p>
+        <p id="textoAtual" class="text-sm texto-mutado m-0"></p>
 
-        <p id="textoAtual" class="text-sm text-[var(--color-text-secondary)]"></p>
+        <form id="frmBanco" class="card">
+            <div class="card-corpo flex flex-col gap-4">
+                <div class="campo">
+                    <label for="inputUrl">String de conexão <span class="obrigatorio">*</span></label>
+                    <div class="flex gap-2">
+                        <input type="password" id="inputUrl" class="input flex-1" autocomplete="off" spellcheck="false"
+                            placeholder="mongodb+srv://usuario:senha@cluster.mongodb.net/graficaos" required />
+                        <button type="button" id="btnMostrar" class="btn btn-secundario w-[96px]">Mostrar</button>
+                    </div>
+                </div>
 
-        <form id="frmBanco" class="space-y-3">
-            <label for="inputUrl" class="block text-sm font-semibold">String de conexão</label>
-            <div class="flex gap-2">
-                <input type="password" id="inputUrl" class="inputStyle flex-1 min-w-0" autocomplete="off"
-                    spellcheck="false" placeholder="  mongodb+srv://usuario:senha@cluster.mongodb.net/graficaos"
-                    required />
-                <button type="button" id="btnMostrar" class="btns !w-[90px]">Mostrar</button>
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    <div class="rounded-[10px] border border-[var(--border)] p-3">
+                        <b>MongoDB Atlas (nuvem)</b>
+                        <p class="texto-mutado mt-1 mb-0">No site do Atlas, em <i>Connect › Drivers</i>, copie a string e
+                            troque &lt;password&gt; pela senha do usuário do banco.</p>
+                    </div>
+                    <div class="rounded-[10px] border border-[var(--border)] p-3">
+                        <b>Neste computador</b>
+                        <p class="texto-mutado mt-1 mb-2">Instale o MongoDB Community Server como serviço.</p>
+                        <button type="button" id="btnLocal" class="btn btn-secundario btn-pequeno">Usar MongoDB
+                            local</button>
+                    </div>
+                </div>
+
+                <p id="resultado" class="text-sm m-0 min-h-[20px]"></p>
             </div>
 
-            <div class="text-sm text-[var(--color-text-secondary)] space-y-1">
-                <p><b>MongoDB Atlas (nuvem):</b> no site do Atlas, em <i>Connect &gt; Drivers</i>, copie a string
-                    e troque &lt;password&gt; pela senha do usuário do banco.</p>
-                <p><b>MongoDB neste computador:</b> instale o MongoDB Community Server como serviço e use o botão
-                    abaixo.</p>
-            </div>
-
-            <button type="button" id="btnLocal" class="btns !w-auto px-4">Usar MongoDB local (este computador)</button>
-
-            <div class="flex gap-3 pt-2">
-                <button type="button" id="btnTestar"
-                    class="inputStyle px-4 py-1 rounded text-white hover:brightness-110 disabled:opacity-40">
-                    Testar conexão
+            <div class="card-acoes">
+                <span class="espacador"></span>
+                <button type="button" id="btnTestar" class="btn btn-secundario">
+                    <i data-icone="banco" data-tamanho="16"></i> Testar conexão
                 </button>
-                <button type="submit" id="btnSalvar"
-                    class="inputStyle px-4 py-1 rounded text-white hover:brightness-110 disabled:opacity-40">
-                    Salvar e conectar
+                <button type="submit" id="btnSalvar" class="btn btn-primario">
+                    <i data-icone="salvar" data-tamanho="16"></i> Salvar e conectar
                 </button>
             </div>
         </form>
+    </main>
 
-        <p id="resultado" class="text-sm min-h-[20px]"></p>
-    </section>
-
-    <!-- FOOTER -->
-    <footer class="!w-[610px]">
-        <p id="footerRealTime"></p>
-        <img src="../public/img/dboffRed.png" alt="Icone banco de dados" id="iconeDB" />
-    </footer>
+    <footer class="statusbar"></footer>
 
     <!-- SCRIPTS -->
+    <script src="../public/js/icones.js"></script>
     <script src="../public/js/dbConfigRenderer.js"></script>
     <script src="../public/js/footer.js"></script>
 </body>

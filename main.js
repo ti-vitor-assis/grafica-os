@@ -67,17 +67,49 @@ function ipcComPermissao(canal, permissao, handler) {
   })
 }
 
+// =============================
+// =========== TEMA ============
+
+// "claro" ou "escuro", salvo no config.json deste computador
+function temaAtual() {
+  return configuracao.lerPreferencia("tema", "claro")
+}
+
+// Cor de fundo da janela enquanto a tela carrega (evita piscar branco no tema escuro)
+function corDeFundo() {
+  return temaAtual() === "escuro" ? "#161625" : "#F4F3F8"
+}
+
+function aplicarTema(tema) {
+  configuracao.salvarPreferencia("tema", tema)
+  nativeTheme.themeSource = tema === "escuro" ? "dark" : "light"
+  // Todas as janelas abertas trocam na hora
+  BrowserWindow.getAllWindows().forEach((janela) => janela.webContents.send("theme-changed", tema))
+  // Atualiza a marcação do item "Tema escuro" no menu
+  if (usuarioLogado) Menu.setApplicationMenu(Menu.buildFromTemplate(montarMenu()))
+}
+
+// O preload pergunta o tema de forma síncrona, antes de a tela aparecer
+ipcMain.on("get-theme", (event) => {
+  event.returnValue = temaAtual()
+})
+
+ipcMain.on("toggle-theme", () => {
+  aplicarTema(temaAtual() === "escuro" ? "claro" : "escuro")
+})
+
 // INICIO - Janelas
 
 // Tela de login: é a primeira janela do app
 function loginWindow() {
-  nativeTheme.themeSource = "dark"
+  nativeTheme.themeSource = temaAtual() === "escuro" ? "dark" : "light"
   Menu.setApplicationMenu(null)
   janelaLogin = new BrowserWindow({
     width: 440,
-    height: 600,
+    height: 640,
     resizable: false,
     maximizable: false,
+    backgroundColor: corDeFundo(),
     title: "Gráfica OS · Login",
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
@@ -91,10 +123,13 @@ function loginWindow() {
 
 // Janela principal: só abre depois do login
 const createWindow = () => {
-  nativeTheme.themeSource = "dark"
+  nativeTheme.themeSource = temaAtual() === "escuro" ? "dark" : "light"
   win = new BrowserWindow({
-    width: 1010,
-    height: 720,
+    width: 1280,
+    height: 760,
+    minWidth: 1024,
+    minHeight: 640,
+    backgroundColor: corDeFundo(),
     // Preload
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
@@ -110,11 +145,14 @@ const createWindow = () => {
 function modalWindow(arquivoHtml, opcoes = {}) {
   if (!win) return null;
   const janela = new BrowserWindow({
-    width: opcoes.width || 1010,
-    height: opcoes.height || 720,
+    width: opcoes.width || 1180,
+    height: opcoes.height || 740,
+    minWidth: opcoes.minWidth || 960,
+    minHeight: opcoes.minHeight || 600,
     autoHideMenuBar: true,
-    resizable: false,
+    resizable: true,
     minimizable: false,
+    backgroundColor: corDeFundo(),
     parent: win,
     modal: true,
     webPreferences: {
@@ -157,7 +195,7 @@ function stockWindow() {
 
 // Usuários (só administrador)
 function userRegistrationWindow() {
-  return modalWindow("./src/views/userRegistration.html", { width: 900, height: 600 });
+  return modalWindow("./src/views/userRegistration.html", { width: 980, height: 660, minWidth: 820 });
 }
 
 // Relatórios (tipo = relatório já selecionado ao abrir, ex.: "entregues")
@@ -221,8 +259,9 @@ function dbConfigWindow() {
   const pai = (usuarioLogado && win) || janelaLogin || undefined
   janelaConfigBanco = new BrowserWindow({
     width: 640,
-    height: 600,
+    height: 640,
     resizable: false,
+    backgroundColor: corDeFundo(),
     maximizable: false,
     autoHideMenuBar: true,
     parent: pai,
@@ -1768,6 +1807,13 @@ const template = [
         click: () => dbConfigWindow(),
       },
       {
+        id: "tema",
+        label: "Tema escuro",
+        type: "checkbox",
+        accelerator: "CTRL+T",
+        click: () => aplicarTema(temaAtual() === "escuro" ? "claro" : "escuro"),
+      },
+      {
         type: "separator"
       },
       {
@@ -1817,6 +1863,7 @@ function montarMenu(itens = template) {
   const visiveis = itens
     .filter((item) => !item.permissao || pode(item.permissao))
     .map(({ permissao, ...item }) => (item.submenu ? { ...item, submenu: montarMenu(item.submenu) } : item))
+    .map((item) => (item.id === "tema" ? { ...item, checked: temaAtual() === "escuro" } : item))
     .filter((item) => !item.submenu || item.submenu.length > 0);
   return visiveis.filter((item, i) =>
     item.type !== "separator" ||

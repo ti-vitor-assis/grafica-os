@@ -11,14 +11,14 @@ const URL_LOCAL = "mongodb://127.0.0.1:27017/graficaos";
 
 function mostrarResultado(texto, ok) {
     resultado.textContent = texto;
-    resultado.className = `text-sm min-h-[20px] ${ok ? "text-[var(--color-success)]" : "text-[var(--color-error)]"}`;
+    resultado.className = `text-sm m-0 min-h-[20px] ${ok ? "texto-sucesso" : "texto-perigo"}`;
 }
 
 function ocupado(sim, texto) {
     el("btnTestar").disabled = sim;
     el("btnSalvar").disabled = sim;
     if (sim) {
-        resultado.className = "text-sm min-h-[20px] text-[var(--color-text-secondary)]";
+        resultado.className = "text-sm m-0 min-h-[20px] texto-mutado";
         resultado.textContent = texto;
     }
 }

@@ -17,7 +17,7 @@ api.dbStatus((event, status) => {
     } else {
         subtitulo.textContent = "Sem conexão com o banco de dados.";
         erroLogin.textContent = "Verifique a internet ou a configuração do banco.";
-        document.getElementById("btnConfigBanco").style.display = "block";
+        document.getElementById("btnConfigBanco").hidden = false;
     }
 });
 
