@@ -137,6 +137,11 @@
                 </div>
             </section>
 
+            <!-- Alerta de estoque baixo (preenchido pelo renderer.js; clicar abre o estoque) -->
+            <button id="alertaEstoque" type="button" style="display: none"
+                class="w-[calc(100%-10px)] m-[5px] mb-0 rounded-[5px] bg-red-900/60 border border-red-500 px-4 py-2 text-left text-white text-sm hover:brightness-125">
+            </button>
+
             <!-- Indicadores financeiros (preenchidos pelo renderer.js) -->
             <section class="grid grid-cols-2 gap-[5px] m-[5px] text-white" data-permissao="financeiro">
                 <div class="rounded-[5px] bg-[var(--color-background)] p-4">

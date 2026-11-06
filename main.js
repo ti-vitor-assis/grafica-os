@@ -161,7 +161,7 @@ function userRegistrationWindow() {
 function reportsWindow(tipo) {
   return modalWindow("./src/views/reports.html", {
     width: 760,
-    height: 510,
+    height: 590,
     query: tipo ? { tipo } : {},
   });
 }
@@ -859,7 +859,7 @@ ipcMain.on("dashboard-data", async (event) => {
 
     const inicioMes = new Date(inicioHoje.getFullYear(), inicioHoje.getMonth(), 1);
 
-    const [atrasadas, pendentes, entregues, lista, recebido, faturado, aReceber, orcamentosPendentes] = await Promise.all([
+    const [atrasadas, pendentes, entregues, lista, recebido, faturado, aReceber, orcamentosPendentes, estoqueBaixo] = await Promise.all([
       serviceOrderModel.countDocuments({ ...emAndamento, prazoFinal: { $lt: inicioHoje } }),
       serviceOrderModel.countDocuments({ ...emAndamento, prazoFinal: { $gte: inicioHoje } }),
       serviceOrderModel.countDocuments({ status: "entregue" }),
@@ -886,6 +886,11 @@ ipcMain.on("dashboard-data", async (event) => {
       ]),
       // Orçamentos esperando resposta e ainda dentro da validade
       quoteModel.countDocuments({ status: "pendente", validade: { $gte: inicioHoje } }),
+      // Insumos ativos abaixo do estoque mínimo
+      insumoModel
+        .find({ ativo: true, estoqueMinimo: { $gt: 0 }, $expr: { $lt: ["$quantidade", "$estoqueMinimo"] } })
+        .select("nome quantidade unidade estoqueMinimo")
+        .sort({ nome: 1 }),
     ]);
 
     const soma = (resultado) => Math.round(((resultado[0] && resultado[0].total) || 0) * 100) / 100;
@@ -901,6 +906,8 @@ ipcMain.on("dashboard-data", async (event) => {
         aReceber: soma(aReceber),
         orcamentosPendentes,
       },
+      // Só quem cuida do estoque recebe o alerta
+      estoqueBaixo: pode("estoque") ? estoqueBaixo : null,
     }));
   } catch (error) {
     console.error("Erro ao carregar o dashboard:", error);
@@ -1485,16 +1492,18 @@ Esta ação não poderá ser desfeita.`,
 // =============================
 // ======== RELATÓRIOS =========
 
-// Tipos de relatório: função que monta os dados e se usa período
+// Tipos de relatório: função que monta os dados, se usa período e a
+// permissão extra exigida (além de "relatorios"), quando houver
 const tiposRelatorio = {
   clientes: { montar: () => relatorios.clientes(), periodo: false },
   andamento: { montar: () => relatorios.osEmAndamento(), periodo: false },
   entregues: { montar: (ini, fim) => relatorios.osEntregues(ini, fim), periodo: true },
   todas: { montar: (ini, fim) => relatorios.todasOS(ini, fim), periodo: true },
-  faturamento: { montar: (ini, fim) => relatorios.faturamento(ini, fim), periodo: true , financeiro: true },
+  faturamento: { montar: (ini, fim) => relatorios.faturamento(ini, fim), periodo: true, permissao: "financeiro" },
   produtos: { montar: (ini, fim) => relatorios.produtosMaisVendidos(ini, fim), periodo: true },
-  receber: { montar: () => relatorios.contasAReceber(), periodo: false , financeiro: true },
-  recebimentos: { montar: (ini, fim) => relatorios.recebimentos(ini, fim), periodo: true , financeiro: true },
+  receber: { montar: () => relatorios.contasAReceber(), periodo: false, permissao: "financeiro" },
+  recebimentos: { montar: (ini, fim) => relatorios.recebimentos(ini, fim), periodo: true, permissao: "financeiro" },
+  estoque: { montar: () => relatorios.estoque(), periodo: false, permissao: "estoque" },
 };
 
 // pedido = { tipo, inicio: "AAAA-MM-DD", fim: "AAAA-MM-DD" }
@@ -1502,7 +1511,7 @@ ipcComPermissao("generate-report", "relatorios", async (event, pedido) => {
   const janela = BrowserWindow.fromWebContents(event.sender);
   const tipo = tiposRelatorio[pedido.tipo];
   if (!tipo) return;
-  if (tipo.financeiro && !pode("financeiro")) return avisoSemPermissao(event);
+  if (tipo.permissao && !pode(tipo.permissao)) return avisoSemPermissao(event);
 
   try {
     // Período no horário local: do começo do dia inicial ao fim do dia final
@@ -1638,6 +1647,14 @@ const template = [
         label: "Recebimentos",
         permissao: "financeiro",
         click: () => reportsWindow("recebimentos"),
+      },
+      {
+        type: "separator"
+      },
+      {
+        label: "Estoque de insumos",
+        permissao: "estoque",
+        click: () => reportsWindow("estoque"),
       },
     ]
   },

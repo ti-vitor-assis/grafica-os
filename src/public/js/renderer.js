@@ -55,7 +55,19 @@ function etiquetaSituacao(prazo) {
 }
 
 api.receiveDashboard((event, dados) => {
-  const { atrasadas, pendentes, entregues, lista, financeiro } = JSON.parse(dados)
+  const { atrasadas, pendentes, entregues, lista, financeiro, estoqueBaixo } = JSON.parse(dados)
+
+  // Alerta de estoque baixo (vem null para quem não cuida do estoque)
+  const alerta = document.getElementById("alertaEstoque")
+  if (estoqueBaixo && estoqueBaixo.length > 0) {
+    const itens = estoqueBaixo
+      .map((i) => `${i.nome} (${i.quantidade.toLocaleString("pt-BR")} ${i.unidade})`)
+      .join(", ")
+    alerta.textContent = `⚠ Estoque baixo: ${itens}`
+    alerta.style.display = "block"
+  } else {
+    alerta.style.display = "none"
+  }
 
   // Indicadores financeiros (vêm null para quem não tem permissão "financeiro")
   if (financeiro) {
@@ -111,3 +123,6 @@ api.onDashboardChanged(() => carregarDashboard())
 api.dbStatus((event, status) => {
   if (status === "conectado") carregarDashboard()
 })
+
+// Clicar no alerta abre a tela de estoque
+document.getElementById("alertaEstoque").addEventListener("click", () => api.openWindow("estoque"))

@@ -5,6 +5,7 @@
 
 const clienteModel = require("../model/Clientes.js");
 const serviceOrderModel = require("../model/ServiceOrder.js");
+const insumoModel = require("../model/Insumo.js");
 const { moeda, data, capitalizar } = require("../print/formatar.js");
 
 // OS que ainda precisam ser entregues
@@ -330,8 +331,44 @@ async function recebimentos(inicio, fim) {
     };
 }
 
+// ===== Estoque de insumos (situação atual) =====
+async function estoque() {
+    const lista = await insumoModel.find({ ativo: true }).populate("fornecedor", "nome").sort({ nome: 1 });
+    const baixo = (i) => i.estoqueMinimo > 0 && i.quantidade < i.estoqueMinimo;
+    const numero = (n) => Number(n).toLocaleString("pt-BR", { maximumFractionDigits: 3 });
+    const valor = (i) => centavos(i.quantidade * (i.custoUnitario || 0));
+
+    // Os que precisam de compra aparecem primeiro
+    const ordenada = [...lista].sort((a, b) => baixo(b) - baixo(a));
+
+    return {
+        titulo: "Estoque de insumos",
+        resumo: [
+            ["Insumos ativos", String(lista.length)],
+            ["Abaixo do mínimo", String(lista.filter(baixo).length)],
+            ["Valor em estoque", moeda(somar(lista, valor))],
+        ],
+        secoes: [{
+            colunas: [
+                { titulo: "Insumo" }, { titulo: "Categoria" }, { titulo: "Fornecedor" },
+                { titulo: "Estoque", num: true }, { titulo: "Mínimo", num: true },
+                { titulo: "Situação" }, { titulo: "Valor", num: true },
+            ],
+            linhas: ordenada.map((i) => [
+                i.nome,
+                i.categoria || "",
+                i.fornecedor ? i.fornecedor.nome : "",
+                `${numero(i.quantidade)} ${i.unidade}`,
+                i.estoqueMinimo ? numero(i.estoqueMinimo) : "—",
+                baixo(i) ? "COMPRAR" : "ok",
+                moeda(valor(i)),
+            ]),
+        }],
+    };
+}
+
 module.exports = {
     clientes, osEmAndamento, osEntregues, todasOS, faturamento, produtosMaisVendidos,
-    contasAReceber, recebimentos,
+    contasAReceber, recebimentos, estoque,
     saldo, somar, centavos,
 };
