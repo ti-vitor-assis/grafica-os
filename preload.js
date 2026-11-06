@@ -38,6 +38,14 @@ contextBridge.exposeInMainWorld("api", {
   deleteClient: (id) => ipcRenderer.send("delete-client", id),
   updateClient: (client) => ipcRenderer.send("update-client", client),
 
+  // Produtos
+  createProduct: (produto) => ipcRenderer.send("create-product", produto),
+  searchProduct: (termo) => ipcRenderer.send("search-product", termo),
+  updateProduct: (produto) => ipcRenderer.send("update-product", produto),
+  deleteProduct: (id) => ipcRenderer.send("delete-product", id),
+  renderProduct: (args) => ipcRenderer.on("render-product", args),
+  setProductName: (args) => ipcRenderer.on("set-product-name", args),
+
   // Ordens de Serviço
   createOrder: (order) => ipcRenderer.send("create-order", order),
   updateOrder: (order) => ipcRenderer.send("update-order", order),

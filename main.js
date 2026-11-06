@@ -15,6 +15,7 @@ const { conectar, desconectar } = require('./database.js')
 
 const clienteModel = require("./src/model/Clientes.js");
 const serviceOrderModel = require('./src/model/ServiceOrder.js')
+const productModel = require('./src/model/Products.js')
 
 let win
 
@@ -380,6 +381,147 @@ ipcMain.on("delete-client", async (event, id) => {
 });
 
 
+// =============================
+// ========= PRODUTOS ==========
+
+// Escapa caracteres especiais para usar o texto digitado dentro de uma RegExp
+// (sem isso, buscar por "(" ou "+" gera erro)
+function escapeRegex(texto) {
+  return String(texto).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Converte os dados vindos da tela para o formato do schema
+function dadosProduto(produto) {
+  return {
+    nome: produto.nome,
+    categoria: produto.categoria,
+    descricao: produto.descricao,
+    material: produto.material,
+    tamanho: produto.tamanho,
+    cores: produto.cores,
+    acabamento: produto.acabamento,
+    unidade: produto.unidade,
+    valorUnitario: Number(produto.valorUnitario),
+    ativo: produto.ativo,
+  };
+}
+
+// Mostra os erros de validação do mongoose de forma legível
+function avisoErroValidacao(error) {
+  const mensagens = error.errors
+    ? Object.values(error.errors).map((e) => `• ${e.path}: ${e.message}`)
+    : [error.message];
+  return dialog.showMessageBox({
+    type: "error",
+    title: "Atenção!",
+    message: "Não foi possível salvar. Verifique os campos:",
+    detail: mensagens.join("\n"),
+    buttons: ["OK"],
+  });
+}
+
+// ======== CREATE =========
+ipcMain.on("create-product", async (event, produto) => {
+  try {
+    await productModel.create(dadosProduto(produto));
+    const result = await dialog.showMessageBox({
+      type: "info",
+      title: "Aviso",
+      message: "Produto adicionado com sucesso",
+      buttons: ["OK"],
+    });
+    if (result.response === 0) {
+      event.reply("reset-form");
+    }
+  } catch (error) {
+    console.log(error);
+    avisoErroValidacao(error);
+  }
+});
+
+// ======== READ =========
+// Busca por nome ou categoria. Devolve um vetor (pode ter vários resultados)
+ipcMain.on("search-product", async (event, termo) => {
+  try {
+    const regex = new RegExp(escapeRegex(termo), "i");
+    const produtos = await productModel
+      .find({ $or: [{ nome: regex }, { categoria: regex }] })
+      .sort({ nome: 1 });
+
+    if (produtos.length === 0) {
+      const result = await dialog.showMessageBox({
+        type: "warning",
+        title: "Aviso",
+        message: "Produto não cadastrado.\nDeseja cadastrar este produto?",
+        defaultId: 0,
+        buttons: ["SIM", "NÃO"],
+      });
+      if (result.response === 0) {
+        event.reply("set-product-name");
+      } else {
+        event.reply("reset-form");
+      }
+    } else {
+      event.reply("render-product", JSON.stringify(produtos));
+    }
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+// ======== UPDATE =========
+ipcMain.on("update-product", async (event, produto) => {
+  try {
+    await productModel.findByIdAndUpdate(produto._id, dadosProduto(produto), {
+      new: true,
+      runValidators: true,
+    });
+    const result = await dialog.showMessageBox({
+      type: "info",
+      title: "Aviso",
+      message: "Dados do produto alterados com sucesso",
+      buttons: ["OK"],
+    });
+    if (result.response === 0) {
+      event.reply("reset-form");
+    }
+  } catch (error) {
+    console.log(error);
+    avisoErroValidacao(error);
+  }
+});
+
+// ======== DELETE =========
+ipcMain.on("delete-product", async (event, id) => {
+  try {
+    // Produto que já foi usado em alguma OS não pode ser apagado,
+    // senão a OS perde a referência. Nesse caso, sugerir desativar.
+    const usadoEmOS = await serviceOrderModel.exists({ "produtos.produto": id });
+    if (usadoEmOS) {
+      await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
+        type: "warning",
+        title: "Atenção!",
+        message: "Este produto já foi usado em Ordens de Serviço e não pode ser excluído.",
+        detail: "Desmarque a opção \"Ativo\" e salve para tirá-lo de linha.",
+        buttons: ["OK"],
+      });
+      return;
+    }
+
+    const result = await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
+      type: "warning",
+      title: "Atenção!",
+      message: "Tem certeza que deseja excluir este produto?\nEsta ação não poderá ser desfeita.",
+      buttons: ["Cancelar", "Excluir"],
+    });
+    if (result.response === 1) {
+      await productModel.findByIdAndDelete(id);
+      event.reply("reset-form");
+    }
+  } catch (error) {
+    console.log(error);
+  }
+});
 
 
 // =============================
