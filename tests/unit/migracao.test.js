@@ -1,5 +1,5 @@
 /**
- * Migração de bancos da versão 1.0 (rodam com: npm test)
+ * Migração de bancos das versões de teste, antes da 1.0.0 (rodam com: npm test)
  */
 
 const { describe, it, before, after, beforeEach } = require("node:test");
@@ -24,7 +24,7 @@ before(async () => {
 });
 beforeEach(async () => {
     await limparBanco();
-    // Como era na 1.0: índice único no CPF em texto puro
+    // Como era antes da 1.0.0: índice único no CPF em texto puro
     await Cli.collection.dropIndexes().catch(() => {});
     await Cli.collection.createIndex({ cpf: 1 }, { unique: true });
 });
@@ -33,7 +33,7 @@ after(async () => {
     fs.rmSync(pasta, { recursive: true, force: true });
 });
 
-// Dados no formato da 1.0, gravados direto na coleção
+// Dados no formato antigo, gravados direto na coleção
 async function bancoAntigo() {
     const [maria, padaria, semCpf, repetida] = [1, 2, 3, 4].map(() => new mongoose.Types.ObjectId());
     await Cli.collection.insertMany([
@@ -55,7 +55,7 @@ async function bancoAntigo() {
     return { maria, padaria, semCpf, repetida };
 }
 
-describe("Migração 1.0 -> 1.1", () => {
+describe("Migração de bancos antigos", () => {
     it("cifra o CPF/CNPJ, tira RG e sexo, troca o índice e copia o cliente nas OS e orçamentos", async () => {
         const ids = await bancoAntigo();
         const r = await migracao.migrar({ pastaBackup: pasta });

@@ -83,7 +83,7 @@ async function copiarClienteNosDocumentos() {
                 cache.set(id, await Clientes.collection.findOne({ _id: doc.cliente }, { projection: { nome: 1, tipoPessoa: 1, documentoCifrado: 1, documentoBusca: 1 } }));
             }
             const c = cache.get(id);
-            if (!c) continue; // cliente excluído antes da 1.1: não há o que copiar
+            if (!c) continue; // cliente excluído antes da 1.0.0: não há o que copiar
             const copia = { nome: c.nome, tipoPessoa: c.tipoPessoa || "PF" };
             if (c.documentoCifrado) copia.documentoCifrado = c.documentoCifrado;
             if (c.documentoBusca) copia.documentoBusca = c.documentoBusca;

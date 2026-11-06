@@ -1,4 +1,4 @@
-// Banco da versão 1.0 (CPF em texto puro, RG, sexo, OS sem cópia do cliente)
+// Banco de uma versão de teste, antes da 1.0.0 (CPF em texto puro, RG, sexo, OS sem cópia do cliente)
 // aberto pela versão nova: migra sozinho antes do login, com backup cifrado.
 const path = require("node:path");
 const fs = require("node:fs");
