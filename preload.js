@@ -103,6 +103,8 @@ contextBridge.exposeInMainWorld("api", {
   setName: (args) => ipcRenderer.on("set-name", args),
   setCpf: (args) => ipcRenderer.on("set-cpf", args),
   deleteClient: (id) => ipcRenderer.send("delete-client", id),
+  clientDataPdf: (id) => ipcRenderer.send("client-data-pdf", id),
+  anonymizeClient: (id) => ipcRenderer.send("anonymize-client", id),
   updateClient: (client) => ipcRenderer.send("update-client", client),
 
   // Produtos

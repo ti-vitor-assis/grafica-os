@@ -1220,3 +1220,10 @@ svg.icone {
 .opcao:has(input:focus-visible) {
     box-shadow: var(--focus);
 }
+
+/* Botões secundários que viram só ícone em janelas estreitas
+   (o texto continua no title e no aria-label) */
+@media (max-width: 1100px) {
+    .btn-recolhe .rotulo { display: none; }
+    .btn-recolhe { padding-left: 10px; padding-right: 10px; }
+}

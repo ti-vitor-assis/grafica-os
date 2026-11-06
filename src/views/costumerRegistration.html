@@ -104,12 +104,12 @@
 
                     <!-- Endereço -->
                     <div class="secao">
-                        <p class="secao-titulo">Endereço</p>
+                        <p class="secao-titulo">Endereço <span class="font-normal normal-case tracking-normal">(só se precisar para entrega ou nota)</span></p>
                         <div class="grid grid-cols-12 gap-x-4 gap-y-3">
                             <div class="campo col-span-3">
                                 <label for="inputCep">CEP</label>
                                 <input type="text" id="inputCep" class="input" placeholder="00000-000" />
-                                <span class="ajuda">Preenche o endereço sozinho. Endereço só é preciso para entrega ou nota.</span>
+                                <span class="ajuda">Preenche o endereço sozinho</span>
                             </div>
                             <div class="campo col-span-7">
                                 <label for="inputEndereco">Endereço</label>
@@ -171,6 +171,14 @@
                 <div class="card-acoes fixo">
                     <button type="button" id="btnDelete" data-permissao="excluir" class="btn btn-perigo some-desabilitado">
                         <i data-icone="lixeira" data-tamanho="16"></i> Excluir
+                    </button>
+                    <button type="button" id="btnAnonimizar" data-permissao="excluir" class="btn btn-secundario btn-recolhe some-desabilitado"
+                        title="Anonimizar: apaga os dados pessoais a pedido do cliente (LGPD)" aria-label="Anonimizar">
+                        <i data-icone="cadeado" data-tamanho="16"></i> <span class="rotulo">Anonimizar</span>
+                    </button>
+                    <button type="button" id="btnDadosCliente" class="btn btn-secundario btn-recolhe some-desabilitado"
+                        title="Dados do cliente: PDF com tudo o que a gráfica guarda sobre ele (LGPD)" aria-label="Dados do cliente">
+                        <i data-icone="pdf" data-tamanho="16"></i> <span class="rotulo">Dados do cliente</span>
                     </button>
                     <span class="espacador"></span>
                     <button type="reset" id="btnReset" class="btn btn-secundario">

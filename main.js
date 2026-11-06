@@ -34,6 +34,7 @@ const cripto = require('./src/seguranca/cripto.js')
 const arquivoChave = require('./src/seguranca/arquivoChave.js')
 const configuracaoModel = require('./src/model/Configuracao.js')
 const servicoClientes = require('./src/servicos/clientes.js')
+const lgpd = require('./src/servicos/lgpd.js')
 
 let win
 
@@ -809,6 +810,90 @@ ipcComPermissao("update-client", "clientes", async (event, cliente) => {
 });
 
 // ======== DELETE =========
+// ======== LGPD =========
+
+// PDF com tudo o que a gráfica guarda sobre o cliente (pedido do titular)
+ipcComPermissao("client-data-pdf", "clientes", async (event, id) => {
+  const janela = BrowserWindow.fromWebContents(event.sender);
+  try {
+    const relatorio = await lgpd.relatorioTitular(id);
+    if (!relatorio) return;
+    await gerarPDF(htmlRelatorio(relatorio), `Dados-do-cliente-${new Date().toISOString().slice(0, 10)}.pdf`, janela);
+  } catch (error) {
+    console.error("Erro ao gerar os dados do cliente:", error.message);
+  }
+});
+
+// Apaga os dados pessoais do cadastro a pedido do titular
+ipcComPermissao("anonymize-client", "excluir", async (event, id) => {
+  const janela = BrowserWindow.fromWebContents(event.sender);
+  try {
+    const cliente = await clienteModel.findById(id);
+    if (!cliente || cliente.anonimizado) return;
+    const result = await dialog.showMessageBox(janela, {
+      type: "warning",
+      title: "Anonimizar cliente (LGPD)",
+      message: `Apagar os dados pessoais de "${cliente.nome}"?`,
+      detail:
+        "Nome, CPF/CNPJ, contatos e endereço serão apagados do cadastro e não poderão ser recuperados. " +
+        "Gere antes o PDF com os dados do cliente, se ele pediu uma cópia.\n\n" +
+        `As OS e orçamentos continuam guardados por ${lgpd.PRAZO_ANOS} anos (obrigação legal) e depois são limpos pela Limpeza LGPD.`,
+      buttons: ["Cancelar", "Anonimizar"],
+      defaultId: 0,
+      cancelId: 0,
+    });
+    if (result.response !== 1) return;
+    await lgpd.anonimizar(id);
+    await dialog.showMessageBox(janela, { type: "info", title: "Aviso", message: "Dados pessoais do cliente apagados.", buttons: ["OK"] });
+    event.reply("reset-form");
+  } catch (error) {
+    console.error("Erro ao anonimizar cliente:", error.message);
+  }
+});
+
+// Ferramentas > Limpeza LGPD: dados além do prazo de guarda
+async function limpezaLgpd() {
+  if (!pode("configuracao")) return;
+  const janela = BrowserWindow.getFocusedWindow() || win;
+  try {
+    const previa = await lgpd.previaLimpeza();
+    const total = previa.clientes + previa.ordens + previa.orcamentos;
+    if (total === 0) {
+      await dialog.showMessageBox(janela, {
+        type: "info",
+        title: "Limpeza LGPD",
+        message: `Nada a limpar: não há dados pessoais com mais de ${lgpd.PRAZO_ANOS} anos sem movimento.`,
+        buttons: ["OK"],
+      });
+      return;
+    }
+    const result = await dialog.showMessageBox(janela, {
+      type: "warning",
+      title: "Limpeza LGPD",
+      message: `Apagar dados pessoais anteriores a ${previa.limite.toLocaleDateString("pt-BR")}?`,
+      detail:
+        `• ${previa.clientes} cliente(s) sem OS nem orçamento há mais de ${lgpd.PRAZO_ANOS} anos serão anonimizados\n` +
+        `• ${previa.ordens} OS e ${previa.orcamentos} orçamento(s) antigos perdem o nome e o CPF/CNPJ do cliente\n\n` +
+        "Valores, itens e datas continuam para os relatórios. Não dá para desfazer.",
+      buttons: ["Cancelar", "Limpar"],
+      defaultId: 0,
+      cancelId: 0,
+    });
+    if (result.response !== 1) return;
+    const feito = await lgpd.executarLimpeza();
+    await dialog.showMessageBox(janela, {
+      type: "info",
+      title: "Limpeza LGPD",
+      message: "Limpeza concluída.",
+      detail: `${feito.clientes} cliente(s) anonimizado(s); ${feito.ordens} OS e ${feito.orcamentos} orçamento(s) limpos.`,
+      buttons: ["OK"],
+    });
+    avisarDashboard();
+  } catch (error) {
+    console.error("Erro na limpeza LGPD:", error.message);
+  }
+}
+
 // Cliente com OS ou orçamento não é excluído (o histórico fica): só desativado.
 // Excluir de vez só quem nunca teve OS nem orçamento (ex.: cadastro por engano).
 ipcComPermissao("delete-client", "excluir", async (event, id) => {
@@ -1984,6 +2069,11 @@ const template = [
         label: "Configurar banco de dados",
         permissao: "configuracao",
         click: () => dbConfigWindow(),
+      },
+      {
+        label: "Limpeza LGPD (dados antigos)",
+        permissao: "configuracao",
+        click: () => limpezaLgpd(),
       },
       {
         id: "tema",

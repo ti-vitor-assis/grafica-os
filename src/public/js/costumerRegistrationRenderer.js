@@ -220,6 +220,8 @@ function preencherCliente(c) {
     btnCreate.disabled = true;
     btnUpdate.disabled = !!c.anonimizado;
     btnDelete.disabled = false;
+    btnAnonimizar.disabled = !!c.anonimizado;
+    btnDadosCliente.disabled = false;
 
     document.querySelectorAll("#listaResultados .lista-item").forEach((li) => {
         li.classList.toggle("ativo", li.dataset.id === c._id);
@@ -273,6 +275,8 @@ api.setCpf(() => {
 document.addEventListener("DOMContentLoaded", () => {
     btnUpdate.disabled = true;
     btnDelete.disabled = true;
+    btnAnonimizar.disabled = true;
+    btnDadosCliente.disabled = true;
     btnCreate.disabled = false;
     aplicarTipoPessoa();
     searchClient.focus();
@@ -284,4 +288,6 @@ campo("inputDocumento").addEventListener("blur", () => {
 });
 campo("inputCep").addEventListener("blur", buscarEndereco);
 btnDelete.addEventListener("click", removeClient);
+btnAnonimizar.addEventListener("click", () => api.anonymizeClient(campo("inputIdClient").value));
+btnDadosCliente.addEventListener("click", () => api.clientDataPdf(campo("inputIdClient").value));
 btnReset.addEventListener("click", resetForm);

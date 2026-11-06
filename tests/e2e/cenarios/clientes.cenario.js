@@ -33,7 +33,7 @@ module.exports = {
         ctx.igual(await js("inputDocumento.value"), "529.982.247-25", "a ficha mostra o CPF completo");
         ctx.igual(await js("inputDataNasc.value"), "1990-05-10", "data de nascimento não volta um dia");
         ctx.ok((await js("listaResultados.innerText")).includes("CPF ***.982.247-**"), "a lista mostra o CPF mascarado");
-        ctx.igual(await botoesVisiveis(), ["Excluir", "Novo cliente", "Salvar alterações"], "modo edição mostra Excluir e Salvar");
+        ctx.igual(await botoesVisiveis(), ["Excluir", "Anonimizar", "Dados do cliente", "Novo cliente", "Salvar alterações"], "modo edição mostra Excluir, LGPD e Salvar");
 
         await js(`inputTelefone2.value='(11) 3000-0000'; frmCli.requestSubmit()`);
         await ctx.aguardar(async () => (await Cli.findOne()).telefone2 === "(11) 3000-0000");
@@ -96,6 +96,20 @@ module.exports = {
         await ctx.aguardar(async () => (await Cli.findById(pj._id)).ativo === false);
         ctx.ok(ctx.ultimoDialogo().includes("1 OS") && ctx.ultimoDialogo().includes("não pode ser excluído"), "cliente com OS não é excluído: é desativado");
         ctx.igual(await Cli.countDocuments(), 2, "cliente com histórico continua no banco");
+        await ctx.espera(1500);
+
+        // ---- LGPD: PDF com os dados do titular e anonimização
+        await buscar("Padaria");
+        await js("btnDadosCliente.click()");
+        await ctx.aguardar(() => ctx.pdfs.length === 1 && require("fs").existsSync(ctx.pdfs[0]));
+        ctx.ok(true, "PDF com os dados do cliente gerado");
+
+        ctx.respostas.push(1);
+        await js("btnAnonimizar.click()");
+        await ctx.aguardar(async () => (await Cli.findById(pj._id)).anonimizado === true);
+        const anon = await Cli.collection.findOne({ _id: pj._id });
+        ctx.ok(anon.nome === "Cliente anonimizado" && !anon.documentoBusca && !anon.telefone && !anon.nomeFantasia, "anonimizar apaga nome, CNPJ e contatos");
+        ctx.igual(await ctx.modelo("ServiceOrder").countDocuments({ cliente: pj._id }), 1, "a OS do cliente anonimizado continua");
         await ctx.espera(1500);
 
         await buscar("Maria");
