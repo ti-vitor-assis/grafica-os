@@ -20,6 +20,7 @@ const quoteModel = require('./src/model/Quote.js')
 
 const { gerarPDF } = require('./src/print/pdf.js')
 const { htmlOS } = require('./src/print/osTemplate.js')
+const { htmlOrcamento } = require('./src/print/quoteTemplate.js')
 const { htmlRelatorio } = require('./src/print/reportTemplate.js')
 const relatorios = require('./src/reports/relatorios.js')
 
@@ -791,12 +792,16 @@ async function avisoOrcamentoFechado(janela, q) {
 ipcMain.on("create-quote", async (event, q) => {
   try {
     const orcamento = await quoteModel.create(await dadosOrcamento(q));
-    await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
+    const janela = BrowserWindow.fromWebContents(event.sender);
+    const result = await dialog.showMessageBox(janela, {
       type: "info",
       title: "Aviso",
       message: `Orçamento nº ${orcamento.numero} criado com sucesso.`,
-      buttons: ["OK"],
+      buttons: ["OK", "Imprimir orçamento"],
     });
+    if (result.response === 1) {
+      await imprimirOrcamento(orcamento._id, janela);
+    }
     event.reply("reset-form");
   } catch (error) {
     console.log(error);
@@ -852,6 +857,29 @@ ipcMain.on("update-quote", async (event, q) => {
     console.log(error);
     avisoErroValidacao(error);
   }
+});
+
+// ======= IMPRESSÃO (PDF) =======
+async function imprimirOrcamento(id, janela) {
+  try {
+    const orcamento = await quoteModel.findById(id).populate("cliente");
+    if (!orcamento) return;
+    const nome = `Orcamento-${String(orcamento.numero).padStart(4, "0")}.pdf`;
+    await gerarPDF(htmlOrcamento(orcamento, quoteModel.estaVencido(orcamento)), nome, janela);
+  } catch (error) {
+    console.error("Erro ao gerar PDF do orçamento:", error);
+    dialog.showMessageBox(janela, {
+      type: "error",
+      title: "Erro",
+      message: "Não foi possível gerar o PDF do orçamento.",
+      detail: error.message,
+      buttons: ["OK"],
+    });
+  }
+}
+
+ipcMain.on("print-quote", (event, id) => {
+  imprimirOrcamento(id, BrowserWindow.fromWebContents(event.sender));
 });
 
 // ======= APROVAR (CONVERTER EM OS) =======

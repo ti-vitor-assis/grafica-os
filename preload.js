@@ -66,6 +66,7 @@ contextBridge.exposeInMainWorld("api", {
   deleteQuote: (id) => ipcRenderer.send("delete-quote", id),
   refuseQuote: (id) => ipcRenderer.send("refuse-quote", id),
   convertQuote: (id) => ipcRenderer.send("convert-quote", id),
+  printQuote: (id) => ipcRenderer.send("print-quote", id),
   // filtro: { numero } ou { clienteId }
   searchQuote: (filtro) => ipcRenderer.send("search-quote", filtro),
   receiveQuote: (args) => ipcRenderer.on("quote-result", args),

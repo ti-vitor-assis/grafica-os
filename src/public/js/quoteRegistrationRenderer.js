@@ -24,6 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
     btnDelete.disabled = true;
     btnRefuse.disabled = true;
     btnConvert.disabled = true;
+    btnPrint.disabled = true;
     btnCreate.disabled = false;
 
     const validade = new Date();
@@ -105,6 +106,7 @@ function carregarOrcamento(q) {
     btnConvert.disabled = !aberto;
     btnRefuse.disabled = !aberto;
     btnDelete.disabled = !!q.osGerada;
+    btnPrint.disabled = false;
 }
 
 // ============================
@@ -139,6 +141,11 @@ frmQuote.addEventListener("submit", (event) => {
 
 // ============================
 // == APROVAR / RECUSAR / EXCLUIR
+
+// Gera o PDF do orçamento como está salvo no banco
+function printQuote() {
+    api.printQuote(inputIdQuote.value);
+}
 
 // Aprovação usa o orçamento como está salvo: salve as alterações antes
 function convertQuote() {
