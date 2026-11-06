@@ -809,21 +809,58 @@ ipcComPermissao("update-client", "clientes", async (event, cliente) => {
 });
 
 // ======== DELETE =========
+// Cliente com OS ou orçamento não é excluído (o histórico fica): só desativado.
+// Excluir de vez só quem nunca teve OS nem orçamento (ex.: cadastro por engano).
 ipcComPermissao("delete-client", "excluir", async (event, id) => {
-  // Excluir o registro do banco IMPORTANTE! (confirmar antes da exclusão)
-  const result = await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
-    type: "warning",
-    title: "Atenção!",
-    message: "Tem certeza que deseja excluir este Cliente?\nEsta ação não poderá ser desfeita.",
-    buttons: ["Cancelar", "Excluir"],
-  });
-  if (result.response === 1) {
-    try {
+  const janela = BrowserWindow.fromWebContents(event.sender);
+  try {
+    const cliente = await clienteModel.findById(id);
+    if (!cliente) return;
+    const [qtdOS, qtdOrcamentos] = await Promise.all([
+      serviceOrderModel.countDocuments({ cliente: cliente._id }),
+      quoteModel.countDocuments({ cliente: cliente._id }),
+    ]);
+
+    if (qtdOS + qtdOrcamentos > 0) {
+      const partes = [qtdOS && `${qtdOS} OS`, qtdOrcamentos && `${qtdOrcamentos} orçamento${qtdOrcamentos > 1 ? "s" : ""}`].filter(Boolean);
+      if (!cliente.ativo) {
+        await dialog.showMessageBox(janela, {
+          type: "info",
+          title: "Cliente com histórico",
+          message: `Este cliente tem ${partes.join(" e ")} e já está inativo.`,
+          detail: "Para manter o histórico, clientes com OS ou orçamentos não são excluídos.",
+          buttons: ["OK"],
+        });
+        return;
+      }
+      const result = await dialog.showMessageBox(janela, {
+        type: "warning",
+        title: "Cliente com histórico",
+        message: `Este cliente tem ${partes.join(" e ")}.\nPara manter o histórico ele não pode ser excluído.`,
+        detail: "Desativado, ele continua nas buscas e no histórico, mas não pode receber novas OS nem orçamentos.",
+        buttons: ["Cancelar", "Desativar cliente"],
+        defaultId: 1,
+      });
+      if (result.response === 1) {
+        cliente.ativo = false;
+        await cliente.save();
+        event.reply("reset-form");
+      }
+      return;
+    }
+
+    const result = await dialog.showMessageBox(janela, {
+      type: "warning",
+      title: "Atenção!",
+      message: "Tem certeza que deseja excluir este Cliente?\nEsta ação não poderá ser desfeita.",
+      buttons: ["Cancelar", "Excluir"],
+    });
+    if (result.response === 1) {
       await clienteModel.findByIdAndDelete(id);
       event.reply("reset-form");
-    } catch (error) {
-      console.log(error.message);
     }
+  } catch (error) {
+    console.log(error.message);
   }
 });
 
@@ -1266,27 +1303,6 @@ ipcOn("print-order", (event, id) => {
   imprimirOS(id, BrowserWindow.fromWebContents(event.sender));
 });
 
-// ======= DELETE =======
-ipcComPermissao("delete-order", "excluir", async (event, id) => {
-  try {
-    const os = await serviceOrderModel.findById(id);
-    if (!os) return;
-    const result = await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
-      type: "warning",
-      title: "Atenção!",
-      message: `Tem certeza que deseja excluir a OS nº ${os.numero}?\nEsta ação não poderá ser desfeita.`,
-      detail: "Se o serviço não vai mais ser feito, prefira mudar o status para \"cancelada\" e manter o histórico.",
-      buttons: ["Cancelar", "Excluir"],
-    });
-    if (result.response === 1) {
-      await serviceOrderModel.findByIdAndDelete(id);
-      avisarDashboard();
-      event.reply("reset-form");
-    }
-  } catch (error) {
-    console.error("Erro ao excluir OS:", error);
-  }
-});
 
 
 // =============================
@@ -1791,37 +1807,6 @@ ipcComPermissao("refuse-quote", "orcamentos", async (event, id) => {
   }
 });
 
-// ======= DELETE =======
-ipcComPermissao("delete-quote", "excluir", async (event, id) => {
-  const janela = BrowserWindow.fromWebContents(event.sender);
-  try {
-    const orcamento = await quoteModel.findById(id).populate("osGerada", "numero");
-    if (!orcamento) return;
-    if (orcamento.osGerada) {
-      await dialog.showMessageBox(janela, {
-        type: "warning",
-        title: "Atenção!",
-        message: `O orçamento nº ${orcamento.numero} já virou a OS nº ${orcamento.osGerada.numero} e não pode ser excluído.`,
-        buttons: ["OK"],
-      });
-      return;
-    }
-    const result = await dialog.showMessageBox(janela, {
-      type: "warning",
-      title: "Atenção!",
-      message: `Tem certeza que deseja excluir o orçamento nº ${orcamento.numero}?
-Esta ação não poderá ser desfeita.`,
-      buttons: ["Cancelar", "Excluir"],
-    });
-    if (result.response === 1) {
-      await quoteModel.findByIdAndDelete(id);
-      avisarDashboard();
-      event.reply("reset-form");
-    }
-  } catch (error) {
-    console.error("Erro ao excluir orçamento:", error);
-  }
-});
 
 // =============================
 // ======== RELATÓRIOS =========

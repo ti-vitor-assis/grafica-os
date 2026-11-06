@@ -21,7 +21,6 @@ const DIAS_VALIDADE_PADRAO = 15;
 
 document.addEventListener("DOMContentLoaded", () => {
     btnUpdate.disabled = true;
-    btnDelete.disabled = true;
     btnRefuse.disabled = true;
     btnConvert.disabled = true;
     btnPrint.disabled = true;
@@ -112,7 +111,6 @@ function carregarOrcamento(q) {
     btnUpdate.disabled = !aberto;
     btnConvert.disabled = !aberto;
     btnRefuse.disabled = !aberto;
-    btnDelete.disabled = !!q.osGerada;
     btnPrint.disabled = false;
 }
 
@@ -147,7 +145,7 @@ frmQuote.addEventListener("submit", (event) => {
 });
 
 // ============================
-// == APROVAR / RECUSAR / EXCLUIR
+// == APROVAR / RECUSAR ======
 
 // Gera o PDF do orçamento como está salvo no banco
 function printQuote() {
@@ -165,15 +163,9 @@ function refuseQuote() {
     api.refuseQuote(inputIdQuote.value);
 }
 
-function removeQuote() {
-    aguardandoReset = true;
-    api.deleteQuote(inputIdQuote.value);
-}
-
 // ============================
 // ===== EVENTOS DA TELA ======
 // (antes eram onclick no HTML)
-btnDelete.addEventListener("click", removeQuote);
 btnRefuse.addEventListener("click", refuseQuote);
 btnConvert.addEventListener("click", convertQuote);
 btnPrint.addEventListener("click", printQuote);

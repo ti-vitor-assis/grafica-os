@@ -116,7 +116,6 @@ contextBridge.exposeInMainWorld("api", {
   // Ordens de Serviço
   createOrder: (order) => ipcRenderer.send("create-order", order),
   updateOrder: (order) => ipcRenderer.send("update-order", order),
-  deleteOrder: (id) => ipcRenderer.send("delete-order", id),
   printOrder: (id) => ipcRenderer.send("print-order", id),
   // filtro: { numero } ou { clienteId }
   searchOrder: (filtro) => ipcRenderer.send("search-order", filtro),
@@ -127,7 +126,6 @@ contextBridge.exposeInMainWorld("api", {
   // Orçamentos
   createQuote: (q) => ipcRenderer.send("create-quote", q),
   updateQuote: (q) => ipcRenderer.send("update-quote", q),
-  deleteQuote: (id) => ipcRenderer.send("delete-quote", id),
   refuseQuote: (id) => ipcRenderer.send("refuse-quote", id),
   convertQuote: (id) => ipcRenderer.send("convert-quote", id),
   printQuote: (id) => ipcRenderer.send("print-quote", id),

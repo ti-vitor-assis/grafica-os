@@ -66,9 +66,8 @@ module.exports = {
         await ctx.aguardar(() => js("inputIdOS.value !== ''"));
         ctx.igual(await js("inputNome.value"), "Maria Souza — CPF ***.982.247-** (cadastro removido)", "OS mostra o cliente da época");
 
-        ctx.respostas.push(1);
-        await js("btnDelete.click()");
-        await ctx.aguardar(async () => (await OS.countDocuments()) === 0);
-        ctx.ok(true, "OS excluída após confirmação");
+        // OS não se exclui (o histórico fica): cancela-se pelo status
+        ctx.ok(await js("!document.getElementById('btnDelete') && typeof api.deleteOrder === 'undefined'"), "não há como excluir OS");
+        ctx.ok(await js("[...inputStatus.options].some(o => o.value === 'cancelada')"), "OS pode ser cancelada pelo status");
     },
 };

@@ -23,13 +23,19 @@ function clienteNoDocumento(schema) {
     schema.add({ clienteCopia: { type: clienteCopiaSchema, default: undefined } })
     schema.index({ 'clienteCopia.documentoBusca': 1 })
 
-    // Ao criar o documento ou trocar o cliente, copia os dados atuais
+    // Ao criar o documento ou trocar o cliente, copia os dados atuais.
+    // Cliente inativo ou anonimizado não recebe OS nem orçamento novo.
     schema.pre('validate', async function () {
         if (!this.cliente) return
-        if (!this.isNew && !this.isModified('cliente') && this.clienteCopia && this.clienteCopia.nome) return
+        const trocouCliente = this.isNew || this.isModified('cliente')
+        if (!trocouCliente && this.clienteCopia && this.clienteCopia.nome) return
         const id = this.cliente._id || this.cliente
-        const c = await Clientes.findById(id).select('nome tipoPessoa documentoCifrado documentoBusca')
+        const c = await Clientes.findById(id).select('nome tipoPessoa documentoCifrado documentoBusca ativo anonimizado')
         if (!c) return
+        if (trocouCliente && (c.ativo === false || c.anonimizado)) {
+            this.invalidate('cliente', 'Cliente inativo. Reative o cadastro em Clientes para criar OS ou orçamento para ele.')
+            return
+        }
         this.clienteCopia = {
             nome: c.nome,
             tipoPessoa: c.tipoPessoa || 'PF',

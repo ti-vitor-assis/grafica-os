@@ -119,3 +119,30 @@ describe("Cópia do cliente na OS e no orçamento", () => {
         assert.equal(os.clienteCopia.documentoBusca, undefined);
     });
 });
+
+describe("Cliente inativo", () => {
+    const OS = require("../../src/model/ServiceOrder.js");
+    const Quote = require("../../src/model/Quote.js");
+    const amanha = () => new Date(Date.now() + 864e5);
+    const itens = () => [{ produto: new (require("mongoose").Types.ObjectId)(), quantidade: 1, valorUnitario: 10 }];
+
+    it("não recebe OS nem orçamento novo, mas as antigas continuam editáveis", async () => {
+        const c = await Cli.create({ nome: "Vai sair" });
+        const os = await OS.create({ cliente: c._id, prazoFinal: amanha(), produtos: itens() });
+        c.ativo = false;
+        await c.save();
+
+        await assert.rejects(OS.create({ cliente: c._id, prazoFinal: amanha(), produtos: itens() }), /Cliente inativo/);
+        await assert.rejects(Quote.create({ cliente: c._id, validade: amanha(), produtos: itens() }), /Cliente inativo/);
+
+        // A tela manda o id do cliente como texto ao salvar a OS: não conta como troca
+        os.set({ cliente: String(c._id), observacoes: "ajuste" });
+        await os.save();
+        assert.equal((await OS.findById(os._id)).observacoes, "ajuste");
+    });
+
+    it("anonimizado também não recebe documento novo", async () => {
+        const c = await Cli.create({ nome: "Cliente anonimizado", anonimizado: true });
+        await assert.rejects(OS.create({ cliente: c._id, prazoFinal: amanha(), produtos: itens() }), /Cliente inativo/);
+    });
+});

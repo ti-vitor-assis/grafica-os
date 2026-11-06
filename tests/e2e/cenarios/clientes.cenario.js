@@ -85,11 +85,23 @@ module.exports = {
         await buscar("pão quente");
         ctx.igual(await js("inputNome.value"), "Padaria Pão Quente Ltda", "busca pelo nome fantasia");
 
-        // ---- Exclusão
+        // ---- Exclusão: só sem histórico; com OS, o cliente é desativado
+        await ctx.modelo("ServiceOrder").create({
+            cliente: pj._id, prazoFinal: new Date(Date.now() + 864e5),
+            produtos: [{ produto: pj._id, descricao: "Banner", quantidade: 1, valorUnitario: 50 }],
+        });
+        await buscar("Padaria");
+        ctx.respostas.push(1);
+        await js("btnDelete.click()");
+        await ctx.aguardar(async () => (await Cli.findById(pj._id)).ativo === false);
+        ctx.ok(ctx.ultimoDialogo().includes("1 OS") && ctx.ultimoDialogo().includes("não pode ser excluído"), "cliente com OS não é excluído: é desativado");
+        ctx.igual(await Cli.countDocuments(), 2, "cliente com histórico continua no banco");
+        await ctx.espera(1500);
+
         await buscar("Maria");
         ctx.respostas.push(1);
         await js("btnDelete.click()");
         await ctx.aguardar(async () => (await Cli.countDocuments()) === 1);
-        ctx.ok(true, "cliente excluído após confirmação");
+        ctx.ok(true, "cliente sem histórico é excluído após confirmação");
     },
 };

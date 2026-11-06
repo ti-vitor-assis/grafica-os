@@ -25,7 +25,6 @@ const inputObs = document.getElementById("inputObs");
 
 document.addEventListener("DOMContentLoaded", () => {
     btnUpdate.disabled = true;
-    btnDelete.disabled = true;
     btnPrint.disabled = true;
     btnCreate.disabled = false;
     inputDataPagamento.value = dataParaInput(new Date());
@@ -174,7 +173,6 @@ function carregarOS(o) {
 
     btnCreate.disabled = true;
     btnUpdate.disabled = false;
-    btnDelete.disabled = false;
     btnPrint.disabled = false;
 }
 
@@ -216,11 +214,6 @@ frmOS.addEventListener("submit", (event) => {
 // ============================
 // ========== DELETE ==========
 
-function removeOrder() {
-    aguardandoReset = true;
-    api.deleteOrder(inputIdOS.value);
-}
-
 // ============================
 // ======== IMPRESSÃO =========
 
@@ -232,6 +225,5 @@ function printOrder() {
 // ============================
 // ===== EVENTOS DA TELA ======
 // (antes eram onclick no HTML)
-btnDelete.addEventListener("click", removeOrder);
 btnPrint.addEventListener("click", printOrder);
 btnReset.addEventListener("click", resetForm);
