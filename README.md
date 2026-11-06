@@ -80,7 +80,7 @@ Os CPFs/CNPJs são cifrados com uma **chave de segurança** criada no primeiro c
 > Guarde o arquivo de chave e a senha em local seguro (por exemplo, um pen drive guardado). Sem eles, os CPFs/CNPJs não podem ser lidos.
 
 ### Atualizando da versão 1.0
-Ao abrir a versão nova pela primeira vez, o sistema atualiza o banco sozinho: grava um backup cifrado em `%APPDATA%grafica-osackups`, cifra os CPFs já cadastrados, retira RG e sexo e liga cada OS e orçamento ao CPF/CNPJ do cliente.
+Ao abrir a versão nova pela primeira vez, o sistema atualiza o banco sozinho: grava um backup cifrado em `%APPDATA%\grafica-os\backups`, cifra os CPFs já cadastrados, retira RG e sexo e liga cada OS e orçamento ao CPF/CNPJ do cliente.
 
 ## Perfis de acesso
 
