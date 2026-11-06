@@ -34,7 +34,7 @@ const createWindow = () => {
 // Clientes
 let costumerRegistration
 function costumerRegistrationWindow() {
-  const mainWindow = BrowserWindow.getFocusedWindow();
+  const mainWindow = BrowserWindow.getFocusedWindow() || win;
 
   if (mainWindow) {
     costumerRegistration = new BrowserWindow({
@@ -49,17 +49,17 @@ function costumerRegistrationWindow() {
         preload: path.join(__dirname, "preload.js"),
       },
     });
+    costumerRegistration.loadFile("./src/views/costumerRegistration.html");
   }
-  costumerRegistration.loadFile("./src/views/costumerRegistration.html");
 }
 
 // Ordem de Serviços
 let serviceOrderRegistration
 function serviceOrderRegistrationWindow() {
-  const mainWindow = BrowserWindow.getFocusedWindow();
+  const mainWindow = BrowserWindow.getFocusedWindow() || win;
 
   if (mainWindow) {
-    costumerRegistration = new BrowserWindow({
+    serviceOrderRegistration = new BrowserWindow({
       width: 1010,
       height: 720,
       autoHideMenuBar: true,
@@ -71,8 +71,8 @@ function serviceOrderRegistrationWindow() {
         preload: path.join(__dirname, "preload.js"),
       },
     });
+    serviceOrderRegistration.loadFile("./src/views/serviceOrderRegistration.html");
   }
-  costumerRegistration.loadFile("./src/views/serviceOrderRegistration.html");
 }
 
 
