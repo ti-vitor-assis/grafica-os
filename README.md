@@ -127,8 +127,8 @@ src/reports/       Consultas dos relatórios
 
 <hr>
 
-### ☕ Gostou do projeto? Me paga um café!
-Desenvolver e compartilhar projetos gratuitos leva tempo, dedicação e, claro, bastante café! Se o Gráfica OS te ajudou e você quiser apoiar, qualquer "cafezinho" faz diferença. <br>Sua contribuição me motiva a continuar criando e melhorando projetos como este!
+### ☕ Feito com muito café
+O Gráfica OS levou semanas de trabalho, muitas delas noite adentro, sempre com uma xícara de café por perto. Ele é gratuito e vai continuar sendo. <br>Se o projeto foi útil para você e quiser colaborar com o próximo café, fique à vontade. Toda ajuda é muito bem-vinda!
 
 #### Chave PIX❖:
 ~~~txt
@@ -136,6 +136,6 @@ em breve
 ~~~
 *( em nome de Vitor de Assis Passos )*
 
-E se não puder contribuir agora, deixar uma estrela ⭐, seguir o repositório e compartilhar já ajuda demais!
+Uma estrela ⭐ no repositório e o compartilhamento com quem possa precisar também ajudam bastante.
 
-😃 Obrigado pelo apoio!
+😃 Obrigado pela visita!
