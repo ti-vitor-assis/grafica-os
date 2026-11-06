@@ -1,6 +1,13 @@
 const { model, Schema, Types } = require('mongoose');
+const { proximoNumero } = require('./Counter.js');
 
 const serviceOrderSchema = new Schema({
+    // Número legível da OS (1, 2, 3...), mostrado ao cliente e usado na busca
+    numero: {
+        type: Number,
+        unique: true,
+        index: true
+    },
     cliente: {
         type: Types.ObjectId,
         ref: 'Clientes',
@@ -49,5 +56,12 @@ const serviceOrderSchema = new Schema({
         type: Date
     }
 }, { versionKey: false });
+
+// Ao criar uma OS nova, pega o próximo número da sequência
+serviceOrderSchema.pre('validate', async function () {
+    if (this.isNew && this.numero == null) {
+        this.numero = await proximoNumero('serviceOrder');
+    }
+});
 
 module.exports = model('ServiceOrder', serviceOrderSchema);
