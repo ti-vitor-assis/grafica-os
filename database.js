@@ -1,11 +1,16 @@
 /**
- * 
+ *
  * @Author Vitor de Assis Passos
  */
 
+const path = require('node:path')
+require('dotenv').config({ path: path.join(__dirname, '.env') })
+
 const mongoose = require('mongoose')
 
-const url = 'mongodb+srv://USUARIO:SENHA@cluster0.fnijm.mongodb.net/serviceOrderPrintingPress'
+// A string de conexão fica no arquivo .env (que não vai para o Git).
+// Veja o modelo em .env.example
+const url = process.env.MONGO_URL
 
 let conectado = false
 
