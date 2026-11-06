@@ -44,8 +44,11 @@ const saldoAReceber = () => Math.max(centavos(editorItens.total() - totalPago())
 // Pago e saldo a receber (o main recalcula ao salvar; aqui é só para exibir)
 function atualizarSaldo() {
     const quitada = editorItens.total() > 0 && saldoAReceber() === 0;
-    textoSaldo.textContent = `Pago ${moeda(totalPago())} · ` +
-        (quitada ? "Quitada ✓" : `Saldo a receber ${moeda(saldoAReceber())}`);
+    document.getElementById("resumoPago").textContent = moeda(totalPago());
+    document.getElementById("resumoSaldo").textContent = moeda(saldoAReceber());
+    document.getElementById("valorTotalPagamentos").textContent = moeda(editorItens.total());
+    textoSaldo.className = quitada ? "badge badge-sucesso" : totalPago() > 0 ? "badge badge-aviso" : "badge";
+    textoSaldo.textContent = quitada ? "Quitada" : totalPago() > 0 ? "Pagamento parcial" : "Sem pagamento";
 }
 editorItens.aoMudar = atualizarSaldo;
 
@@ -56,24 +59,23 @@ function renderPagamentos() {
     tabelaPagamentos.innerHTML = "";
     pagamentos.forEach((p, indice) => {
         const linha = document.createElement("tr");
-        linha.className = "border-b border-[var(--color-panel)]";
         [
-            [formatarData(`${p.data}T12:00:00`), "text-left px-3"],
-            [p.forma, "text-left px-2"],
-            [moeda(p.valor), "text-right px-2"],
+            [formatarData(`${p.data}T12:00:00`), "numero"],
+            [p.forma.charAt(0).toUpperCase() + p.forma.slice(1), ""],
+            [moeda(p.valor), "num font-semibold"],
         ].forEach(([texto, classe]) => {
             const td = document.createElement("td");
-            td.className = classe + " py-1";
+            td.className = classe;
             td.textContent = texto;
             linha.appendChild(td);
         });
         const td = document.createElement("td");
-        td.className = "w-[36px]";
+        td.className = "w-[44px]";
         const btn = document.createElement("button");
         btn.type = "button";
         btn.title = "Remover pagamento";
-        btn.textContent = "✕";
-        btn.className = "text-[var(--color-error)] hover:brightness-125 px-2";
+        btn.innerHTML = icone("lixeira", 16);
+        btn.className = "btn btn-fantasma btn-icone";
         btn.addEventListener("click", () => {
             pagamentos.splice(indice, 1);
             renderPagamentos();
@@ -219,3 +221,10 @@ function removeOrder() {
 function printOrder() {
     api.printOrder(inputIdOS.value);
 }
+
+// ============================
+// ===== EVENTOS DA TELA ======
+// (antes eram onclick no HTML)
+btnDelete.addEventListener("click", removeOrder);
+btnPrint.addEventListener("click", printOrder);
+btnReset.addEventListener("click", resetForm);

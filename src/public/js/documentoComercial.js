@@ -30,19 +30,15 @@ function dataParaInput(data) {
     return `${d.getFullYear()}-${mes}-${dia}`;
 }
 
-// Cores das etiquetas de status (OS e orçamento)
-const corStatus = {
-    "aberta": "bg-slate-500",
-    "aguardando arte": "bg-yellow-600",
-    "em produção": "bg-blue-600",
-    "pronta": "bg-purple-600",
-    "entregue": "bg-green-600",
-    "cancelada": "bg-red-600",
-    "pendente": "bg-yellow-600",
-    "aprovado": "bg-green-600",
-    "recusado": "bg-red-600",
-    "vencido": "bg-slate-500",
-};
+// Etiqueta de status: "em produção" -> classe "badge badge-em-producao" (cores no app.css)
+function classeStatus(status) {
+    const slug = String(status || "")
+        .normalize("NFD")
+        .replace(/[̀-ͯ]/g, "") // tira os acentos
+        .toLowerCase()
+        .replace(/\s+/g, "-");
+    return `badge badge-${slug}`;
+}
 
 // ============================
 // ====== RESET DA TELA =======
@@ -77,28 +73,29 @@ function mostrarLista(titulo, itens, textoVazio) {
 
     itens.forEach(({ titulo, detalhe, etiqueta, aoClicar }) => {
         const li = document.createElement("li");
-        li.className =
-            "cursor-pointer rounded-[10px] border-b border-[var(--color-primary)] px-3 py-2 hover:bg-[var(--color-panel)]";
+        li.className = "lista-item";
 
         const linhaTitulo = document.createElement("div");
-        linhaTitulo.className = "flex items-center justify-between gap-2";
-        const p = document.createElement("p");
-        p.className = "font-semibold";
+        linhaTitulo.className = "lista-item-titulo";
+        const p = document.createElement("span");
         p.textContent = titulo;
         linhaTitulo.appendChild(p);
         if (etiqueta) {
             const span = document.createElement("span");
-            span.className = `${corStatus[etiqueta] || "bg-slate-500"} text-white text-xs rounded-full px-2 py-[2px]`;
+            span.className = classeStatus(etiqueta);
             span.textContent = etiqueta;
             linhaTitulo.appendChild(span);
         }
 
-        const pDetalhe = document.createElement("p");
-        pDetalhe.className = "text-sm text-[var(--color-text-secondary)]";
+        const pDetalhe = document.createElement("div");
+        pDetalhe.className = "lista-item-detalhe";
         pDetalhe.textContent = detalhe;
 
         li.append(linhaTitulo, pDetalhe);
-        li.addEventListener("click", aoClicar);
+        li.addEventListener("click", () => {
+            listaResultados.querySelectorAll(".lista-item").forEach((x) => x.classList.toggle("ativo", x === li));
+            aoClicar();
+        });
         listaResultados.appendChild(li);
     });
 }
@@ -203,27 +200,27 @@ const editorItens = {
         tabelaItens.innerHTML = "";
         this.itens.forEach((item, indice) => {
             const linha = document.createElement("tr");
-            linha.className = "border-t border-[var(--color-panel)]";
 
             const celulas = [
-                [item.descricao, "text-left px-3"],
-                [`${item.quantidade} ${item.unidade || ""}`, "text-right px-2"],
-                [moeda(item.valorUnitario), "text-right px-2"],
-                [moeda(centavos(item.quantidade * item.valorUnitario)), "text-right px-2"],
+                [item.descricao, ""],
+                [`${item.quantidade} ${item.unidade || ""}`, "num"],
+                [moeda(item.valorUnitario), "num"],
+                [moeda(centavos(item.quantidade * item.valorUnitario)), "num font-semibold"],
             ];
             celulas.forEach(([texto, classe]) => {
                 const td = document.createElement("td");
-                td.className = classe + " py-1";
+                td.className = classe;
                 td.textContent = texto;
                 linha.appendChild(td);
             });
 
             const tdRemover = document.createElement("td");
+            tdRemover.className = "w-[44px]";
             const btnRemover = document.createElement("button");
             btnRemover.type = "button";
             btnRemover.title = "Remover item";
-            btnRemover.textContent = "✕";
-            btnRemover.className = "text-[var(--color-error)] hover:brightness-125 px-2";
+            btnRemover.innerHTML = icone("lixeira", 16);
+            btnRemover.className = "btn btn-fantasma btn-icone";
             btnRemover.addEventListener("click", () => {
                 this.itens.splice(indice, 1);
                 this.render();
