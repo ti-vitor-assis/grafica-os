@@ -60,6 +60,15 @@ contextBridge.exposeInMainWorld("api", {
   listProducts: () => ipcRenderer.send("list-products"),
   receiveProducts: (args) => ipcRenderer.on("products-list", args),
 
+  // Orçamentos
+  createQuote: (q) => ipcRenderer.send("create-quote", q),
+  updateQuote: (q) => ipcRenderer.send("update-quote", q),
+  deleteQuote: (id) => ipcRenderer.send("delete-quote", id),
+  refuseQuote: (id) => ipcRenderer.send("refuse-quote", id),
+  // filtro: { numero } ou { clienteId }
+  searchQuote: (filtro) => ipcRenderer.send("search-quote", filtro),
+  receiveQuote: (args) => ipcRenderer.on("quote-result", args),
+
   // Dashboard (tela inicial)
   requestDashboard: () => ipcRenderer.send("dashboard-data"),
   receiveDashboard: (args) => ipcRenderer.on("dashboard-data", args),

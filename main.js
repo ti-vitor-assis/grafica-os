@@ -16,6 +16,7 @@ const { conectar, desconectar } = require('./database.js')
 const clienteModel = require("./src/model/Clientes.js");
 const serviceOrderModel = require('./src/model/ServiceOrder.js')
 const productModel = require('./src/model/Products.js')
+const quoteModel = require('./src/model/Quote.js')
 
 const { gerarPDF } = require('./src/print/pdf.js')
 const { htmlOS } = require('./src/print/osTemplate.js')
@@ -75,6 +76,11 @@ function productRegistrationWindow() {
   return modalWindow("./src/views/productRegistration.html");
 }
 
+// Orçamentos
+function quoteRegistrationWindow() {
+  return modalWindow("./src/views/quoteRegistration.html");
+}
+
 // Relatórios (tipo = relatório já selecionado ao abrir, ex.: "entregues")
 function reportsWindow(tipo) {
   return modalWindow("./src/views/reports.html", {
@@ -90,6 +96,7 @@ const janelasPorNome = {
   clientes: costumerRegistrationWindow,
   os: serviceOrderRegistrationWindow,
   produtos: productRegistrationWindow,
+  orcamentos: quoteRegistrationWindow,
   relatorios: () => reportsWindow(),
 };
 ipcMain.on("open-window", (event, nome) => {
@@ -577,20 +584,24 @@ function dataLocal(texto) {
 // Subtotal e total NÃO são lidos da tela: o modelo recalcula ao salvar.
 // Arte e pagamento usam caminhos com ponto ("arte.origem") para alterar só
 // esses campos e não apagar as datas que o modelo preenche sozinho.
-async function dadosOS(order) {
-  const itens = Array.isArray(order.produtos) ? order.produtos : [];
+// Itens vindos da tela (OS ou orçamento), no formato do schema
+async function itensDaTela(lista) {
+  const itens = Array.isArray(lista) ? lista : [];
   const produtos = await productModel.find({ _id: { $in: itens.map((i) => i.produto) } });
   const nomes = new Map(produtos.map((p) => [String(p._id), p.nome]));
+  return itens.map((i) => ({
+    produto: i.produto,
+    // Item que já estava no documento mantém a descrição original
+    descricao: i.descricao || nomes.get(String(i.produto)),
+    quantidade: Number(i.quantidade),
+    valorUnitario: Number(i.valorUnitario),
+  }));
+}
 
+async function dadosOS(order) {
   return {
     cliente: order.cliente || undefined,
-    produtos: itens.map((i) => ({
-      produto: i.produto,
-      // Item que já estava na OS mantém a descrição original
-      descricao: i.descricao || nomes.get(String(i.produto)),
-      quantidade: Number(i.quantidade),
-      valorUnitario: Number(i.valorUnitario),
-    })),
+    produtos: await itensDaTela(order.produtos),
     prazoFinal: dataLocal(order.prazoFinal),
     status: order.status,
     observacoes: order.observacoes,
@@ -754,6 +765,150 @@ ipcMain.on("delete-order", async (event, id) => {
 
 
 // =============================
+// ======== ORÇAMENTOS =========
+
+async function dadosOrcamento(q) {
+  return {
+    cliente: q.cliente || undefined,
+    produtos: await itensDaTela(q.produtos),
+    validade: dataLocal(q.validade),
+    prazoProducaoDias: Number(q.prazoProducaoDias),
+    observacoes: q.observacoes,
+  };
+}
+
+// Orçamento aprovado ou recusado não pode mais ser alterado
+async function avisoOrcamentoFechado(janela, q) {
+  await dialog.showMessageBox(janela, {
+    type: "warning",
+    title: "Atenção",
+    message: `O orçamento nº ${q.numero} já foi ${q.status} e não pode mais ser alterado.`,
+    buttons: ["OK"],
+  });
+}
+
+// ======= CREATE =======
+ipcMain.on("create-quote", async (event, q) => {
+  try {
+    const orcamento = await quoteModel.create(await dadosOrcamento(q));
+    await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
+      type: "info",
+      title: "Aviso",
+      message: `Orçamento nº ${orcamento.numero} criado com sucesso.`,
+      buttons: ["OK"],
+    });
+    event.reply("reset-form");
+  } catch (error) {
+    console.log(error);
+    avisoErroValidacao(error);
+  }
+});
+
+// ======= READ =======
+// filtro: { numero } para abrir um orçamento, ou { clienteId } para listar os do cliente
+ipcMain.on("search-quote", async (event, filtro) => {
+  try {
+    const porNumero = filtro.numero != null;
+    const lista = await quoteModel
+      .find(porNumero ? { numero: Number(filtro.numero) } : { cliente: filtro.clienteId })
+      .populate("cliente")
+      .populate("osGerada", "numero")
+      .sort({ numero: -1 });
+
+    if (porNumero && lista.length === 0) {
+      await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
+        type: "info",
+        title: "Aviso",
+        message: `Orçamento nº ${filtro.numero} não encontrado.`,
+        buttons: ["OK"],
+      });
+      return;
+    }
+    // "vencido" é calculado na hora
+    const orcamentos = lista.map((q) => ({ ...q.toObject(), vencido: quoteModel.estaVencido(q) }));
+    event.reply("quote-result", JSON.stringify({ modo: porNumero ? "numero" : "cliente", orcamentos }));
+  } catch (error) {
+    console.error("Erro na busca do orçamento:", error);
+  }
+});
+
+// ======= UPDATE =======
+ipcMain.on("update-quote", async (event, q) => {
+  const janela = BrowserWindow.fromWebContents(event.sender);
+  try {
+    const orcamento = await quoteModel.findById(q._id);
+    if (!orcamento) return;
+    if (orcamento.status !== "pendente") return avisoOrcamentoFechado(janela, orcamento);
+    orcamento.set(await dadosOrcamento(q));
+    await orcamento.save();
+    await dialog.showMessageBox(janela, {
+      type: "info",
+      title: "Aviso",
+      message: `Orçamento nº ${orcamento.numero} atualizado com sucesso.`,
+      buttons: ["OK"],
+    });
+    event.reply("reset-form");
+  } catch (error) {
+    console.log(error);
+    avisoErroValidacao(error);
+  }
+});
+
+// ======= RECUSAR =======
+ipcMain.on("refuse-quote", async (event, id) => {
+  const janela = BrowserWindow.fromWebContents(event.sender);
+  try {
+    const orcamento = await quoteModel.findById(id);
+    if (!orcamento) return;
+    if (orcamento.status !== "pendente") return avisoOrcamentoFechado(janela, orcamento);
+    const result = await dialog.showMessageBox(janela, {
+      type: "question",
+      title: "Recusar orçamento",
+      message: `Marcar o orçamento nº ${orcamento.numero} como recusado pelo cliente?`,
+      buttons: ["Cancelar", "Recusar"],
+    });
+    if (result.response === 1) {
+      orcamento.status = "recusado";
+      await orcamento.save();
+      event.reply("reset-form");
+    }
+  } catch (error) {
+    console.error("Erro ao recusar orçamento:", error);
+  }
+});
+
+// ======= DELETE =======
+ipcMain.on("delete-quote", async (event, id) => {
+  const janela = BrowserWindow.fromWebContents(event.sender);
+  try {
+    const orcamento = await quoteModel.findById(id).populate("osGerada", "numero");
+    if (!orcamento) return;
+    if (orcamento.osGerada) {
+      await dialog.showMessageBox(janela, {
+        type: "warning",
+        title: "Atenção!",
+        message: `O orçamento nº ${orcamento.numero} já virou a OS nº ${orcamento.osGerada.numero} e não pode ser excluído.`,
+        buttons: ["OK"],
+      });
+      return;
+    }
+    const result = await dialog.showMessageBox(janela, {
+      type: "warning",
+      title: "Atenção!",
+      message: `Tem certeza que deseja excluir o orçamento nº ${orcamento.numero}?
+Esta ação não poderá ser desfeita.`,
+      buttons: ["Cancelar", "Excluir"],
+    });
+    if (result.response === 1) {
+      await quoteModel.findByIdAndDelete(id);
+      event.reply("reset-form");
+    }
+  } catch (error) {
+    console.error("Erro ao excluir orçamento:", error);
+  }
+});
+
+// =============================
 // ======== RELATÓRIOS =========
 
 // Tipos de relatório: função que monta os dados e se usa período
@@ -814,6 +969,10 @@ const template = [
       {
         label: "Cliente",
         click: () => costumerRegistrationWindow(),
+      },
+      {
+        label: "Orçamento",
+        click: () => quoteRegistrationWindow(),
       },
       {
         label: "OS",
