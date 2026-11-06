@@ -17,6 +17,7 @@ const clienteModel = require("./src/model/Clientes.js");
 const serviceOrderModel = require('./src/model/ServiceOrder.js')
 const productModel = require('./src/model/Products.js')
 const quoteModel = require('./src/model/Quote.js')
+const usuarioModel = require('./src/model/Usuario.js')
 
 const { gerarPDF } = require('./src/print/pdf.js')
 const { htmlOS } = require('./src/print/osTemplate.js')
@@ -26,7 +27,33 @@ const relatorios = require('./src/reports/relatorios.js')
 
 let win
 
+// Usuário que fez login ({ _id, nome, login, perfil, ativo }) ou null
+let usuarioLogado = null
+let janelaLogin = null
+
 // INICIO - Janelas
+
+// Tela de login: é a primeira janela do app
+function loginWindow() {
+  nativeTheme.themeSource = "dark"
+  Menu.setApplicationMenu(null)
+  janelaLogin = new BrowserWindow({
+    width: 440,
+    height: 600,
+    resizable: false,
+    maximizable: false,
+    title: "Gráfica OS · Login",
+    webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
+    },
+  })
+  janelaLogin.loadFile("./src/views/login.html")
+  janelaLogin.on("closed", () => {
+    janelaLogin = null
+  })
+}
+
+// Janela principal: só abre depois do login
 const createWindow = () => {
   nativeTheme.themeSource = "dark"
   win = new BrowserWindow({
@@ -123,7 +150,7 @@ function aboutWindow() {
 // FIM - Janelas
 app.whenReady().then(() => {
 
-  createWindow();
+  loginWindow();
 
   // Cada janela pede a conexão ao carregar (preload.js) e recebe o status
   // para atualizar o ícone do rodapé
@@ -135,7 +162,7 @@ app.whenReady().then(() => {
   })
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+      loginWindow();
     }
   })
 });
@@ -149,6 +176,79 @@ app.on("window-all-closed", () => {
 app.on("before-quit", async () => {
   await desconectar();
 });
+
+// =============================
+// =========== LOGIN ===========
+
+// Ao abrir, a tela de login pergunta se já existe algum usuário.
+// Se não existir (primeiro acesso), ela mostra o cadastro do administrador.
+ipcMain.on("login-info", async (event) => {
+  try {
+    const total = await usuarioModel.countDocuments();
+    event.reply("login-info", { primeiroAcesso: total === 0 });
+  } catch (error) {
+    console.log(error);
+    event.reply("login-error", "Não foi possível acessar o banco de dados. Verifique a conexão e o arquivo .env.");
+  }
+});
+
+// Login feito: guarda o usuário, abre a janela principal e fecha o login
+function entrar(usuario) {
+  usuarioLogado = usuario.publico();
+  createWindow();
+  if (janelaLogin) janelaLogin.close();
+}
+
+ipcMain.on("login", async (event, dados) => {
+  try {
+    const usuario = await usuarioModel.findOne({ login: String(dados.login || "").trim().toLowerCase() });
+    // Mesma mensagem para login inexistente e senha errada (não revela quais logins existem)
+    if (!usuario || !usuario.ativo || !(await usuario.conferirSenha(dados.senha))) {
+      event.reply("login-error", "Login ou senha incorretos.");
+      return;
+    }
+    entrar(usuario);
+  } catch (error) {
+    console.log(error);
+    event.reply("login-error", "Não foi possível acessar o banco de dados.");
+  }
+});
+
+// Primeiro acesso: cria o administrador (só funciona se ainda não houver usuários)
+ipcMain.on("create-first-admin", async (event, dados) => {
+  try {
+    if ((await usuarioModel.countDocuments()) > 0) {
+      event.reply("login-error", "O administrador já foi criado. Faça login.");
+      return;
+    }
+    const usuario = new usuarioModel({ nome: dados.nome, login: dados.login, perfil: "administrador" });
+    await usuario.definirSenha(dados.senha);
+    await usuario.save();
+    entrar(usuario);
+  } catch (error) {
+    console.log(error);
+    const mensagens = error.errors ? Object.values(error.errors).map((e) => e.message) : [error.message];
+    event.reply("login-error", mensagens.join(" "));
+  }
+});
+
+// Qualquer tela pode perguntar quem está logado (rodapé, permissões)
+ipcMain.on("get-session", (event) => {
+  event.reply("session", usuarioLogado);
+});
+
+// Volta para a tela de login, fechando as outras janelas
+function trocarUsuario() {
+  usuarioLogado = null;
+  loginWindow();
+  BrowserWindow.getAllWindows()
+    .filter((janela) => janela !== janelaLogin)
+    // (ao destruir a principal, as modais filhas também são destruídas)
+    .forEach((janela) => {
+      if (!janela.isDestroyed()) janela.destroy();
+    });
+  win = null;
+}
 
 
 
@@ -1113,6 +1213,10 @@ const template = [
       },
       {
         type: "separator"
+      },
+      {
+        label: "Trocar usuário",
+        click: () => trocarUsuario()
       },
       {
         label: "Sair",

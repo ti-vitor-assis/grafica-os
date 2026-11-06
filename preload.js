@@ -25,6 +25,15 @@ contextBridge.exposeInMainWorld("api", {
     if (dbStatusAtual !== null) callback(null, dbStatusAtual)
   },
 
+  // Login e sessão
+  loginInfo: () => ipcRenderer.send("login-info"),
+  receiveLoginInfo: (args) => ipcRenderer.on("login-info", args),
+  login: (dados) => ipcRenderer.send("login", dados),
+  createFirstAdmin: (dados) => ipcRenderer.send("create-first-admin", dados),
+  loginError: (args) => ipcRenderer.on("login-error", args),
+  getSession: () => ipcRenderer.send("get-session"),
+  receiveSession: (args) => ipcRenderer.on("session", args),
+
   // Abrir janelas a partir da tela inicial ('clientes', 'os' ou 'produtos')
   openWindow: (nome) => ipcRenderer.send("open-window", nome),
 

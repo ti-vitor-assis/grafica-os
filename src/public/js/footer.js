@@ -37,3 +37,17 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('iconeDB').src = "../public/img/dboffRed.png"
     }
   })
+
+// Mostra no rodapé quem está logado (na tela de login ainda não há ninguém)
+api.receiveSession((event, usuario) => {
+  if (!usuario) return
+  const footer = document.querySelector('footer')
+  const icone = document.getElementById('iconeDB')
+  if (!footer || !icone || document.getElementById('footerUsuario')) return
+  const p = document.createElement('p')
+  p.id = 'footerUsuario'
+  p.style.marginTop = '5px'
+  p.textContent = `${usuario.nome} (${usuario.perfil})`
+  footer.insertBefore(p, icone)
+})
+api.getSession()

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Só scripts/estilos do próprio app -->
+    <meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:" />
+    <link href="../public/css/costumerRegistrationStyle.css" rel="stylesheet" />
+    <link href="../public/css/tailwind.css" rel="stylesheet" />
+    <title>Gráfica OS · Login</title>
+</head>
+
+<body class="text-[var(--color-text-primary)]">
+
+    <section class="m-[5px] mb-[45px] rounded-[5px] bg-[var(--color-panel)] px-8 py-8">
+
+        <h1 class="text-2xl font-bold text-center">Gráfica OS</h1>
+        <p id="subtitulo" class="text-center text-sm text-[var(--color-text-secondary)] mt-1 mb-8">
+            Conectando ao banco de dados...
+        </p>
+
+        <!-- Login -->
+        <form id="frmLogin" class="space-y-4" hidden>
+            <input type="text" id="inputLogin" class="inputStyle w-full" placeholder="  Login" autocomplete="username"
+                required />
+            <input type="password" id="inputSenha" class="inputStyle w-full" placeholder="  Senha"
+                autocomplete="current-password" required />
+            <button type="submit" class="btns !w-full">ENTRAR</button>
+        </form>
+
+        <!-- Primeiro acesso: cadastro do administrador -->
+        <form id="frmPrimeiroAcesso" class="space-y-4" hidden>
+            <p class="text-sm">
+                <b>Primeiro acesso.</b> Crie o usuário administrador; depois ele poderá cadastrar os outros
+                funcionários.
+            </p>
+            <input type="text" id="inputAdminNome" class="inputStyle w-full" placeholder="  Seu nome" required />
+            <input type="text" id="inputAdminLogin" class="inputStyle w-full" placeholder="  Login (ex.: vitor)"
+                autocomplete="username" required />
+            <input type="password" id="inputAdminSenha" class="inputStyle w-full"
+                placeholder="  Senha (mínimo 6 caracteres)" autocomplete="new-password" minlength="6" required />
+            <input type="password" id="inputAdminConfirma" class="inputStyle w-full" placeholder="  Confirme a senha"
+                autocomplete="new-password" minlength="6" required />
+            <button type="submit" class="btns !w-full">CRIAR E ENTRAR</button>
+        </form>
+
+        <p id="erroLogin" class="text-center text-sm text-[var(--color-error)] mt-4 min-h-[20px]"></p>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="!w-[410px]">
+        <p id="footerRealTime"></p>
+        <img src="../public/img/dboffRed.png" alt="Icone banco de dados" id="iconeDB" />
+    </footer>
+
+    <!-- SCRIPTS -->
+    <script src="../public/js/loginRenderer.js"></script>
+    <script src="../public/js/footer.js"></script>
+</body>
+
+</html>
