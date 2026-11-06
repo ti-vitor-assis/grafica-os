@@ -138,6 +138,9 @@ const modoDesenvolvimento = !app.isPackaged && process.env.GRAFICA_SIMULAR_INSTA
 // Opções das telas do app (todas usam o mesmo preload). As três primeiras
 // já são o padrão do Electron, mas ficam explícitas: a tela não tem acesso
 // ao Node, roda isolada e só fala com o main pelo preload (window.api)
+// Ícone das janelas e da barra de tarefas (gerado por scripts/gerar-icone.js)
+const ICONE = path.join(__dirname, "src", "public", "img", process.platform === "win32" ? "icone.ico" : "icone.png")
+
 function preferenciasJanela() {
   return {
     preload: path.join(__dirname, "preload.js"),
@@ -176,6 +179,7 @@ function loginWindow(motivo) {
   nativeTheme.themeSource = temaAtual() === "escuro" ? "dark" : "light"
   Menu.setApplicationMenu(null)
   janelaLogin = new BrowserWindow({
+    icon: ICONE,
     width: 440,
     height: 640,
     resizable: false,
@@ -196,6 +200,7 @@ function loginWindow(motivo) {
 const createWindow = () => {
   nativeTheme.themeSource = temaAtual() === "escuro" ? "dark" : "light"
   win = new BrowserWindow({
+    icon: ICONE,
     width: 1280,
     height: 760,
     minWidth: 1024,
@@ -214,6 +219,7 @@ const createWindow = () => {
 function modalWindow(arquivoHtml, opcoes = {}) {
   if (!win) return null;
   const janela = new BrowserWindow({
+    icon: ICONE,
     width: opcoes.width || 1180,
     height: opcoes.height || 740,
     minWidth: opcoes.minWidth || 960,
@@ -334,6 +340,7 @@ function dbConfigWindow() {
   }
   const pai = (usuarioLogado && win) || janelaLogin || undefined
   janelaConfigBanco = new BrowserWindow({
+    icon: ICONE,
     width: 640,
     height: 640,
     resizable: false,
@@ -534,6 +541,8 @@ ipcOn("db-config-save", async (event, url) => {
 // FIM - Janelas
 
 app.whenReady().then(() => {
+  // Agrupa as janelas na barra de tarefas do Windows com o ícone do app
+  if (process.platform === "win32") app.setAppUserModelId(packageInfo.build.appId)
 
   // URL salva pela tela de configuração (se não vier do .env/ambiente)
   if (!urlDoAmbiente) definirUrl(configuracao.lerUrlBanco())

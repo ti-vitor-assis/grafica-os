@@ -139,6 +139,7 @@ MONGO_URL=mongodb://127.0.0.1:27017/graficaos
 | `npm start` | Abre o sistema |
 | `npm run css` | Gera o `tailwind.css` (rode depois de usar classes novas do Tailwind) |
 | `npm run dist` | Gera o instalador do Windows em `dist/` |
+| `npx electron scripts/gerar-icone.js` | Gera de novo o ícone do app (pasta `build/` e `src/public/img/`) |
 | `npm test` | Testes de unidade (modelos, relatórios, segurança, LGPD e migração) |
 | `npm run test:e2e` | Abre o app de verdade e testa as telas de ponta a ponta |
 
