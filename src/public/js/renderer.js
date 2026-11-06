@@ -9,6 +9,7 @@ const tabelaPrazos = document.getElementById("tabelaPrazos")
 const semPrazos = document.getElementById("semPrazos")
 const semOS = document.getElementById("semOS")
 const canvas = document.getElementById("pieChart")
+const formatoMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" })
 
 // Gráfico criado vazio; os números chegam do banco em api.receiveDashboard
 const grafico = new Chart(canvas.getContext("2d"), {
@@ -54,7 +55,13 @@ function etiquetaSituacao(prazo) {
 }
 
 api.receiveDashboard((event, dados) => {
-  const { atrasadas, pendentes, entregues, lista } = JSON.parse(dados)
+  const { atrasadas, pendentes, entregues, lista, financeiro } = JSON.parse(dados)
+
+  // Indicadores financeiros
+  document.getElementById("kpiRecebido").textContent = formatoMoeda.format(financeiro.recebidoMes)
+  document.getElementById("kpiFaturado").textContent = formatoMoeda.format(financeiro.faturadoMes)
+  document.getElementById("kpiReceber").textContent = formatoMoeda.format(financeiro.aReceber)
+  document.getElementById("kpiOrcamentos").textContent = String(financeiro.orcamentosPendentes)
 
   // Gráfico
   grafico.data.datasets[0].data = [atrasadas, entregues, pendentes]

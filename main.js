@@ -698,7 +698,9 @@ ipcMain.on("dashboard-data", async (event) => {
     const limiteProximas = new Date(inicioHoje);
     limiteProximas.setDate(limiteProximas.getDate() + 4);
 
-    const [atrasadas, pendentes, entregues, lista] = await Promise.all([
+    const inicioMes = new Date(inicioHoje.getFullYear(), inicioHoje.getMonth(), 1);
+
+    const [atrasadas, pendentes, entregues, lista, recebido, faturado, aReceber, orcamentosPendentes] = await Promise.all([
       serviceOrderModel.countDocuments({ ...emAndamento, prazoFinal: { $lt: inicioHoje } }),
       serviceOrderModel.countDocuments({ ...emAndamento, prazoFinal: { $gte: inicioHoje } }),
       serviceOrderModel.countDocuments({ status: "entregue" }),
@@ -707,9 +709,39 @@ ipcMain.on("dashboard-data", async (event) => {
         .populate("cliente", "nome")
         .sort({ prazoFinal: 1 })
         .limit(30),
+      // Recebido no mês: soma dos pagamentos lançados desde o dia 1º
+      serviceOrderModel.aggregate([
+        { $unwind: "$pagamentos" },
+        { $match: { "pagamentos.data": { $gte: inicioMes } } },
+        { $group: { _id: null, total: { $sum: "$pagamentos.valor" } } },
+      ]),
+      // Faturado no mês: valor das OS entregues desde o dia 1º
+      serviceOrderModel.aggregate([
+        { $match: { status: "entregue", dataEntregaReal: { $gte: inicioMes } } },
+        { $group: { _id: null, total: { $sum: "$valorTotal" } } },
+      ]),
+      // A receber: saldo de todas as OS não canceladas e não quitadas
+      serviceOrderModel.aggregate([
+        { $match: { status: { $ne: "cancelada" }, pago: { $ne: true } } },
+        { $group: { _id: null, total: { $sum: { $subtract: ["$valorTotal", { $ifNull: ["$valorPago", 0] }] } } } },
+      ]),
+      // Orçamentos esperando resposta e ainda dentro da validade
+      quoteModel.countDocuments({ status: "pendente", validade: { $gte: inicioHoje } }),
     ]);
 
-    event.reply("dashboard-data", JSON.stringify({ atrasadas, pendentes, entregues, lista }));
+    const soma = (resultado) => Math.round(((resultado[0] && resultado[0].total) || 0) * 100) / 100;
+    event.reply("dashboard-data", JSON.stringify({
+      atrasadas,
+      pendentes,
+      entregues,
+      lista,
+      financeiro: {
+        recebidoMes: soma(recebido),
+        faturadoMes: soma(faturado),
+        aReceber: soma(aReceber),
+        orcamentosPendentes,
+      },
+    }));
   } catch (error) {
     console.error("Erro ao carregar o dashboard:", error);
   }
@@ -795,6 +827,7 @@ async function avisoOrcamentoFechado(janela, q) {
 ipcMain.on("create-quote", async (event, q) => {
   try {
     const orcamento = await quoteModel.create(await dadosOrcamento(q));
+    avisarDashboard();
     const janela = BrowserWindow.fromWebContents(event.sender);
     const result = await dialog.showMessageBox(janela, {
       type: "info",
@@ -849,6 +882,7 @@ ipcMain.on("update-quote", async (event, q) => {
     if (orcamento.status !== "pendente") return avisoOrcamentoFechado(janela, orcamento);
     orcamento.set(await dadosOrcamento(q));
     await orcamento.save();
+    avisarDashboard();
     await dialog.showMessageBox(janela, {
       type: "info",
       title: "Aviso",
@@ -961,6 +995,7 @@ ipcMain.on("refuse-quote", async (event, id) => {
     if (result.response === 1) {
       orcamento.status = "recusado";
       await orcamento.save();
+      avisarDashboard();
       event.reply("reset-form");
     }
   } catch (error) {
@@ -992,6 +1027,7 @@ Esta ação não poderá ser desfeita.`,
     });
     if (result.response === 1) {
       await quoteModel.findByIdAndDelete(id);
+      avisarDashboard();
       event.reply("reset-form");
     }
   } catch (error) {

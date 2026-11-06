@@ -118,6 +118,30 @@
                     </div>
                 </div>
             </section>
+
+            <!-- Indicadores financeiros (preenchidos pelo renderer.js) -->
+            <section class="grid grid-cols-2 gap-[5px] m-[5px] text-white">
+                <div class="rounded-[5px] bg-[var(--color-background)] p-4">
+                    <p class="text-sm text-[var(--color-text-secondary)]">Recebido no mês</p>
+                    <p id="kpiRecebido" class="text-2xl font-bold mt-1">—</p>
+                    <p class="text-xs text-[var(--color-text-secondary)] mt-1">Pagamentos lançados desde o dia 1º</p>
+                </div>
+                <div class="rounded-[5px] bg-[var(--color-background)] p-4">
+                    <p class="text-sm text-[var(--color-text-secondary)]">Faturado no mês</p>
+                    <p id="kpiFaturado" class="text-2xl font-bold mt-1">—</p>
+                    <p class="text-xs text-[var(--color-text-secondary)] mt-1">Valor das OS entregues desde o dia 1º</p>
+                </div>
+                <div class="rounded-[5px] bg-[var(--color-background)] p-4">
+                    <p class="text-sm text-[var(--color-text-secondary)]">A receber</p>
+                    <p id="kpiReceber" class="text-2xl font-bold mt-1 text-[#facc15]">—</p>
+                    <p class="text-xs text-[var(--color-text-secondary)] mt-1">Saldo das OS não quitadas</p>
+                </div>
+                <div class="rounded-[5px] bg-[var(--color-background)] p-4">
+                    <p class="text-sm text-[var(--color-text-secondary)]">Orçamentos pendentes</p>
+                    <p id="kpiOrcamentos" class="text-2xl font-bold mt-1">—</p>
+                    <p class="text-xs text-[var(--color-text-secondary)] mt-1">Aguardando resposta, dentro da validade</p>
+                </div>
+            </section>
         </div>
 
         <footer>
