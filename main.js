@@ -530,108 +530,145 @@ ipcMain.on("delete-product", async (event, id) => {
 // =============================
 // ====== SERVICE ORDER ========
 
-// Busca as OS de um cliente (pelo _id do cliente)
-ipcMain.on("search-order", async (event, clienteId) => {
+// Aviso genérico pedido pela tela (ex.: validação do formulário de OS)
+ipcMain.on("show-warning", (event, mensagem) => {
+  dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
+    type: "warning",
+    title: "Atenção",
+    message: mensagem,
+    buttons: ["OK"],
+  });
+});
+
+// Produtos ativos, para o campo de seleção de itens da OS
+ipcMain.on("list-products", async (event) => {
   try {
-    const resultado = await serviceOrderModel
-      .find({ cliente: clienteId })
+    const produtos = await productModel.find({ ativo: { $ne: false } }).sort({ nome: 1 });
+    event.reply("products-list", JSON.stringify(produtos));
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+// Converte "AAAA-MM-DD" (valor do input date) para meio-dia no horário local.
+// new Date("2026-11-10") seria meia-noite UTC, que no Brasil ainda é dia 9.
+function dataLocal(texto) {
+  if (!texto) return undefined;
+  return new Date(`${texto}T12:00:00`);
+}
+
+// Monta os dados da OS a partir do que veio da tela.
+// Subtotal e total NÃO são lidos da tela: o modelo recalcula ao salvar.
+// Arte e pagamento usam caminhos com ponto ("arte.origem") para alterar só
+// esses campos e não apagar as datas que o modelo preenche sozinho.
+async function dadosOS(order) {
+  const itens = Array.isArray(order.produtos) ? order.produtos : [];
+  const produtos = await productModel.find({ _id: { $in: itens.map((i) => i.produto) } });
+  const nomes = new Map(produtos.map((p) => [String(p._id), p.nome]));
+
+  return {
+    cliente: order.cliente || undefined,
+    produtos: itens.map((i) => ({
+      produto: i.produto,
+      // Item que já estava na OS mantém a descrição original
+      descricao: i.descricao || nomes.get(String(i.produto)),
+      quantidade: Number(i.quantidade),
+      valorUnitario: Number(i.valorUnitario),
+    })),
+    prazoFinal: dataLocal(order.prazoFinal),
+    status: order.status,
+    observacoes: order.observacoes,
+    "arte.origem": order.arte?.origem,
+    "arte.aprovada": !!order.arte?.aprovada,
+    "pagamento.sinal": Number(order.pagamento?.sinal || 0),
+    "pagamento.formaPagamento": order.pagamento?.formaPagamento || "",
+    "pagamento.pago": !!order.pagamento?.pago,
+  };
+}
+
+// ======= CREATE =======
+ipcMain.on("create-order", async (event, order) => {
+  try {
+    const os = await serviceOrderModel.create(await dadosOS(order));
+    await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
+      type: "info",
+      title: "Aviso",
+      message: `Ordem de Serviço nº ${os.numero} criada com sucesso.`,
+      buttons: ["OK"],
+    });
+    event.reply("reset-form");
+  } catch (error) {
+    console.log(error);
+    avisoErroValidacao(error);
+  }
+});
+
+// ======= READ =======
+// filtro: { numero } para abrir uma OS, ou { clienteId } para listar as OS do cliente
+ipcMain.on("search-order", async (event, filtro) => {
+  try {
+    const porNumero = filtro.numero != null;
+    const ordens = await serviceOrderModel
+      .find(porNumero ? { numero: Number(filtro.numero) } : { cliente: filtro.clienteId })
       .populate("cliente")
-      .populate("produtos.produto")
-      .sort({ dataCriacao: -1 });
-    if (resultado.length === 0) {
-      await dialog.showMessageBox({
+      .sort({ numero: -1 });
+
+    if (porNumero && ordens.length === 0) {
+      await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
         type: "info",
         title: "Aviso",
-        message: "Nenhuma Ordem de Serviço encontrada.",
-        buttons: ["OK"]
+        message: `OS nº ${filtro.numero} não encontrada.`,
+        buttons: ["OK"],
       });
-    } else {
-      event.reply("order-result", JSON.stringify(resultado));
+      return;
     }
+    event.reply("order-result", JSON.stringify({ modo: porNumero ? "numero" : "cliente", ordens }));
   } catch (error) {
     console.error("Erro na busca da OS:", error);
   }
 });
 
-// ======= CREATE SERVICE ORDER =======
-ipcMain.on("create-order", async (event, order) => {
-  console.log("Received new order:", order);
-
-  try {
-    // Os nomes dos campos precisam ser os mesmos do schema (src/model/ServiceOrder.js)
-    const newOrder = new serviceOrderModel({
-      cliente: order.cliente,
-      produtos: order.produtos,
-      valorTotal: order.valorTotal,
-      prazoFinal: order.prazoFinal,
-      status: order.status,
-      observacoes: order.observacoes,
-    });
-
-    await newOrder.save();
-
-    const result = await dialog.showMessageBox({
-      type: "info",
-      title: "Aviso",
-      message: "Ordem de serviço criada com sucesso.",
-      buttons: ["OK"]
-    });
-
-    if (result.response === 0) {
-      event.reply("reset-form");
-    }
-  } catch (error) {
-    console.error("Error saving order:", error);
-    await dialog.showMessageBox({
-      type: "error",
-      title: "Erro",
-      message: "Falha ao criar ordem de serviço.",
-      buttons: ["OK"]
-    });
-  }
-});
-
-// ======= DELETE SERVICE ORDER =======
-ipcMain.on("delete-order", async (event, id) => {
-  if (!win) {
-    console.error("Janela principal (win) não está definida.");
-    return;
-  }
-
-  const result = await dialog.showMessageBox(win, {
-    type: "warning",
-    title: "Atenção!",
-    message: "Tem certeza que deseja excluir esta ordem de serviço? Esta ação não pode ser desfeita.",
-    buttons: ["Cancelar", "Excluir"]
-  });
-
-  if (result.response === 1) {
-    try {
-      await serviceOrderModel.findByIdAndDelete(id);
-      console.log(`Order ${id} deleted`);
-      event.reply("reset-form");
-    } catch (error) {
-      console.error("Error deleting order:", error);
-    }
-  }
-});
-
-// ======= UPDATE SERVICE ORDER =======
+// ======= UPDATE =======
 ipcMain.on("update-order", async (event, order) => {
   try {
-    await serviceOrderModel.findByIdAndUpdate(order._id, order);
-    await dialog.showMessageBox({
+    const os = await serviceOrderModel.findById(order._id);
+    if (!os) return;
+    os.set(await dadosOS(order));
+    // save() (e não findByIdAndUpdate) para as regras do modelo rodarem
+    await os.save();
+    await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
       type: "info",
       title: "Aviso",
-      message: "Ordem de serviço atualizada com sucesso.",
-      buttons: ["OK"]
+      message: `Ordem de Serviço nº ${os.numero} atualizada com sucesso.`,
+      buttons: ["OK"],
     });
     event.reply("reset-form");
   } catch (error) {
-    console.error("Error updating order:", error);
+    console.log(error);
+    avisoErroValidacao(error);
   }
 });
 
+// ======= DELETE =======
+ipcMain.on("delete-order", async (event, id) => {
+  try {
+    const os = await serviceOrderModel.findById(id);
+    if (!os) return;
+    const result = await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
+      type: "warning",
+      title: "Atenção!",
+      message: `Tem certeza que deseja excluir a OS nº ${os.numero}?\nEsta ação não poderá ser desfeita.`,
+      detail: "Se o serviço não vai mais ser feito, prefira mudar o status para \"cancelada\" e manter o histórico.",
+      buttons: ["Cancelar", "Excluir"],
+    });
+    if (result.response === 1) {
+      await serviceOrderModel.findByIdAndDelete(id);
+      event.reply("reset-form");
+    }
+  } catch (error) {
+    console.error("Erro ao excluir OS:", error);
+  }
+});
 
 
 //

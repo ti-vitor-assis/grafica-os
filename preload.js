@@ -53,6 +53,12 @@ contextBridge.exposeInMainWorld("api", {
   createOrder: (order) => ipcRenderer.send("create-order", order),
   updateOrder: (order) => ipcRenderer.send("update-order", order),
   deleteOrder: (id) => ipcRenderer.send("delete-order", id),
-  searchOrder: (clienteId) => ipcRenderer.send("search-order", clienteId),
+  // filtro: { numero } ou { clienteId }
+  searchOrder: (filtro) => ipcRenderer.send("search-order", filtro),
   receiveOrder: (args) => ipcRenderer.on("order-result", args),
+  listProducts: () => ipcRenderer.send("list-products"),
+  receiveProducts: (args) => ipcRenderer.on("products-list", args),
+
+  // Aviso genérico (caixa de diálogo do sistema)
+  warn: (mensagem) => ipcRenderer.send("show-warning", mensagem),
 });
