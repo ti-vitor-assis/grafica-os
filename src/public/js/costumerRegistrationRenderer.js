@@ -187,9 +187,12 @@ function formatDate(date) {
       return "";
     }
   
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    // A data de nascimento é gravada como meia-noite UTC ("2000-05-10" vira
+    // 2000-05-10T00:00Z). Lendo no horário local (UTC-3) ela voltava para o
+    // dia 9; por isso usamos os getters UTC.
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   }
 
