@@ -15,8 +15,7 @@ const somar = (lista, campo) => centavos(lista.reduce((soma, item) => soma + (ca
 
 // Quanto falta receber de uma OS
 function saldo(os) {
-    if (os.pagamento && os.pagamento.pago) return 0;
-    return Math.max(centavos(os.valorTotal - ((os.pagamento && os.pagamento.sinal) || 0)), 0);
+    return Math.max(centavos(os.valorTotal - (os.valorPago || 0)), 0);
 }
 
 const nomeCliente = (os) => (os.cliente ? os.cliente.nome : "(cliente excluído)");
@@ -176,7 +175,6 @@ async function faturamento(inicio, fim) {
         }
         return [...grupos.entries()].sort((a, b) => b[1].valor - a[1].valor);
     }
-    const porForma = agrupar((os) => capitalizar(os.pagamento && os.pagamento.formaPagamento) || "Não informada");
     const porCliente = agrupar(nomeCliente);
     const percentual = (valor) => (total ? `${((valor / total) * 100).toFixed(1).replace(".", ",")}%` : "—");
 
@@ -189,11 +187,6 @@ async function faturamento(inicio, fim) {
             ["Ainda a receber destas OS", moeda(somar(lista, saldo))],
         ],
         secoes: [
-            {
-                titulo: "Por forma de pagamento",
-                colunas: [{ titulo: "Forma de pagamento" }, { titulo: "OS", num: true }, { titulo: "Valor", num: true }, { titulo: "%", num: true }],
-                linhas: porForma.map(([forma, g]) => [forma, String(g.os), moeda(g.valor), percentual(g.valor)]),
-            },
             {
                 titulo: "Por cliente",
                 colunas: [{ titulo: "Cliente" }, { titulo: "OS", num: true }, { titulo: "Valor", num: true }, { titulo: "%", num: true }],

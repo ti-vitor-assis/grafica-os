@@ -15,9 +15,12 @@ const textoSaldo = document.getElementById("textoSaldo");
 const inputPrazo = document.getElementById("inputPrazo");
 const inputArteOrigem = document.getElementById("inputArteOrigem");
 const inputArteAprovada = document.getElementById("inputArteAprovada");
-const inputSinal = document.getElementById("inputSinal");
+const inputValorPagamento = document.getElementById("inputValorPagamento");
 const inputFormaPagamento = document.getElementById("inputFormaPagamento");
-const inputPago = document.getElementById("inputPago");
+const inputDataPagamento = document.getElementById("inputDataPagamento");
+const btnAddPagamento = document.getElementById("btnAddPagamento");
+const tabelaPagamentos = document.getElementById("tabelaPagamentos");
+const semPagamentos = document.getElementById("semPagamentos");
 const inputObs = document.getElementById("inputObs");
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -25,22 +28,86 @@ document.addEventListener("DOMContentLoaded", () => {
     btnDelete.disabled = true;
     btnPrint.disabled = true;
     btnCreate.disabled = false;
+    inputDataPagamento.value = dataParaInput(new Date());
     searchClient.focus();
 });
 
 // ============================
 // ========= TOTAIS ===========
 
-// Sinal e saldo a receber (o main recalcula ao salvar; aqui é só para exibir)
+// Pagamentos lançados nesta OS: { valor, forma, data: "AAAA-MM-DD" }
+let pagamentos = [];
+
+const totalPago = () => centavos(pagamentos.reduce((soma, p) => soma + p.valor, 0));
+const saldoAReceber = () => Math.max(centavos(editorItens.total() - totalPago()), 0);
+
+// Pago e saldo a receber (o main recalcula ao salvar; aqui é só para exibir)
 function atualizarSaldo() {
-    const sinal = Number(inputSinal.value) || 0;
-    const saldo = inputPago.checked ? 0 : Math.max(centavos(editorItens.total() - sinal), 0);
-    textoSaldo.textContent = `Sinal ${moeda(sinal)} · Saldo a receber ${moeda(saldo)}`;
+    const quitada = editorItens.total() > 0 && saldoAReceber() === 0;
+    textoSaldo.textContent = `Pago ${moeda(totalPago())} · ` +
+        (quitada ? "Quitada ✓" : `Saldo a receber ${moeda(saldoAReceber())}`);
 }
 editorItens.aoMudar = atualizarSaldo;
-inputSinal.addEventListener("input", atualizarSaldo);
-inputPago.addEventListener("change", atualizarSaldo);
-atualizarSaldo();
+
+// ============================
+// ======= PAGAMENTOS =========
+
+function renderPagamentos() {
+    tabelaPagamentos.innerHTML = "";
+    pagamentos.forEach((p, indice) => {
+        const linha = document.createElement("tr");
+        linha.className = "border-b border-[var(--color-panel)]";
+        [
+            [formatarData(`${p.data}T12:00:00`), "text-left px-3"],
+            [p.forma, "text-left px-2"],
+            [moeda(p.valor), "text-right px-2"],
+        ].forEach(([texto, classe]) => {
+            const td = document.createElement("td");
+            td.className = classe + " py-1";
+            td.textContent = texto;
+            linha.appendChild(td);
+        });
+        const td = document.createElement("td");
+        td.className = "w-[36px]";
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.title = "Remover pagamento";
+        btn.textContent = "✕";
+        btn.className = "text-[var(--color-error)] hover:brightness-125 px-2";
+        btn.addEventListener("click", () => {
+            pagamentos.splice(indice, 1);
+            renderPagamentos();
+        });
+        td.appendChild(btn);
+        linha.appendChild(td);
+        tabelaPagamentos.appendChild(linha);
+    });
+    semPagamentos.hidden = pagamentos.length > 0;
+    atualizarSaldo();
+}
+
+// Ao escolher a forma de pagamento com o valor vazio, sugere o saldo
+inputFormaPagamento.addEventListener("change", () => {
+    if (!inputValorPagamento.value && saldoAReceber() > 0) {
+        inputValorPagamento.value = saldoAReceber();
+    }
+});
+
+btnAddPagamento.addEventListener("click", () => {
+    const valor = centavos(Number(inputValorPagamento.value));
+    if (!(valor > 0)) return api.warn("Informe o valor recebido.");
+    if (!inputFormaPagamento.value) return api.warn("Selecione a forma de pagamento.");
+    if (!inputDataPagamento.value) return api.warn("Informe a data do pagamento.");
+    if (valor > saldoAReceber()) {
+        return api.warn(`O valor passa do saldo a receber (${moeda(saldoAReceber())}).`);
+    }
+    pagamentos.push({ valor, forma: inputFormaPagamento.value, data: inputDataPagamento.value });
+    inputValorPagamento.value = "";
+    inputFormaPagamento.value = "";
+    renderPagamentos();
+});
+
+renderPagamentos();
 
 // ============================
 // ========= CLIENTE ==========
@@ -90,12 +157,11 @@ function carregarOS(o) {
     inputPrazo.value = dataParaInput(o.prazoFinal);
     inputArteOrigem.value = (o.arte && o.arte.origem) || "cliente";
     inputArteAprovada.checked = !!(o.arte && o.arte.aprovada);
-    inputSinal.value = (o.pagamento && o.pagamento.sinal) || "";
-    inputFormaPagamento.value = (o.pagamento && o.pagamento.formaPagamento) || "";
-    inputPago.checked = !!(o.pagamento && o.pagamento.pago);
     inputObs.value = o.observacoes || "";
 
     editorItens.definir(o.produtos);
+    pagamentos = (o.pagamentos || []).map((p) => ({ valor: p.valor, forma: p.forma, data: dataParaInput(p.data) }));
+    renderPagamentos();
 
     btnCreate.disabled = true;
     btnUpdate.disabled = false;
@@ -126,11 +192,7 @@ frmOS.addEventListener("submit", (event) => {
             origem: inputArteOrigem.value,
             aprovada: inputArteAprovada.checked,
         },
-        pagamento: {
-            sinal: inputSinal.value,
-            formaPagamento: inputFormaPagamento.value,
-            pago: inputPago.checked,
-        },
+        pagamentos,
     };
 
     aguardandoReset = true;

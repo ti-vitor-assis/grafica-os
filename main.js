@@ -583,8 +583,9 @@ function dataLocal(texto) {
 
 // Monta os dados da OS a partir do que veio da tela.
 // Subtotal e total NÃO são lidos da tela: o modelo recalcula ao salvar.
-// Arte e pagamento usam caminhos com ponto ("arte.origem") para alterar só
-// esses campos e não apagar as datas que o modelo preenche sozinho.
+// A arte usa caminhos com ponto ("arte.origem") para alterar só esses campos
+// e não apagar a data de aprovação que o modelo preenche sozinho.
+// Valor pago e "quitada" são calculados pelo modelo a partir dos pagamentos.
 // Itens vindos da tela (OS ou orçamento), no formato do schema
 async function itensDaTela(lista) {
   const itens = Array.isArray(lista) ? lista : [];
@@ -608,9 +609,11 @@ async function dadosOS(order) {
     observacoes: order.observacoes,
     "arte.origem": order.arte?.origem,
     "arte.aprovada": !!order.arte?.aprovada,
-    "pagamento.sinal": Number(order.pagamento?.sinal || 0),
-    "pagamento.formaPagamento": order.pagamento?.formaPagamento || "",
-    "pagamento.pago": !!order.pagamento?.pago,
+    pagamentos: (Array.isArray(order.pagamentos) ? order.pagamentos : []).map((p) => ({
+      valor: Number(p.valor),
+      forma: p.forma,
+      data: dataLocal(p.data) || new Date(),
+    })),
   };
 }
 

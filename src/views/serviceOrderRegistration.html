@@ -71,7 +71,7 @@
           </div>
 
           <!-- Itens da OS -->
-          <div class="h-[130px] overflow-y-auto rounded-[10px] bg-[var(--color-background)]">
+          <div class="h-[110px] overflow-y-auto rounded-[10px] bg-[var(--color-background)]">
             <table class="w-full text-sm">
               <thead class="sticky top-0 bg-[var(--color-background)] text-[var(--color-text-secondary)]">
                 <tr>
@@ -84,7 +84,7 @@
               </thead>
               <tbody id="tabelaItens"></tbody>
             </table>
-            <p id="semItens" class="text-center text-sm text-[var(--color-text-secondary)] pt-6">
+            <p id="semItens" class="text-center text-sm text-[var(--color-text-secondary)] pt-4">
               Nenhum item adicionado.
             </p>
           </div>
@@ -109,27 +109,33 @@
             </label>
           </div>
 
-          <!-- Pagamento -->
+          <!-- Pagamentos: os campos de lançamento também ficam fora da validação (form="frmItem") -->
           <div class="flex gap-2 items-center">
-            <label for="inputSinal" class="text-sm">Sinal R$</label>
-            <input type="number" id="inputSinal" min="0" step="0.01" class="inputStyle w-[130px]"
-              placeholder="  0,00" />
-            <select id="inputFormaPagamento" class="inputStyle flex-1 min-w-0">
-              <option value="">Forma de pagamento...</option>
+            <label for="inputValorPagamento" class="text-sm whitespace-nowrap">Receber R$</label>
+            <input type="number" id="inputValorPagamento" form="frmItem" min="0.01" step="0.01"
+              class="inputStyle w-[115px]" placeholder="  0,00" />
+            <select id="inputFormaPagamento" form="frmItem" class="inputStyle flex-1 min-w-0">
+              <option value="">Forma...</option>
               <option value="dinheiro">Dinheiro</option>
               <option value="pix">Pix</option>
               <option value="cartão de débito">Cartão de débito</option>
               <option value="cartão de crédito">Cartão de crédito</option>
               <option value="boleto">Boleto</option>
             </select>
-            <label class="flex items-center gap-2 text-sm whitespace-nowrap">
-              <input type="checkbox" id="inputPago" class="w-4 h-4 accent-[var(--color-primary)]" />
-              Pago (quitado)
-            </label>
+            <input type="date" id="inputDataPagamento" form="frmItem" class="inputStyle w-[160px] pr-3" />
+            <button type="button" id="btnAddPagamento" class="btns !w-[90px]">+ Lançar</button>
+          </div>
+          <div class="h-[56px] overflow-y-auto rounded-[10px] bg-[var(--color-background)] text-sm">
+            <table class="w-full">
+              <tbody id="tabelaPagamentos"></tbody>
+            </table>
+            <p id="semPagamentos" class="text-center text-[var(--color-text-secondary)] pt-4">
+              Nenhum pagamento lançado.
+            </p>
           </div>
 
           <!-- Observações -->
-          <textarea id="inputObs" class="inputStyle w-full h-[50px] pt-2 resize-none"
+          <textarea id="inputObs" class="inputStyle w-full h-[40px] pt-2 resize-none"
             placeholder="Observações (ex.: detalhes da arte, forma de entrega)"></textarea>
 
           <!-- Botões -->

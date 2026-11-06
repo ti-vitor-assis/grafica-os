@@ -7,9 +7,13 @@ const { cabecalho, blocoCliente, blocoItens, documento } = require("./blocos.js"
 
 // os: documento da OS com o cliente já populado (populate("cliente"))
 function htmlOS(os) {
-    const sinal = (os.pagamento && os.pagamento.sinal) || 0;
-    const pago = !!(os.pagamento && os.pagamento.pago);
-    const saldo = pago ? 0 : Math.max(os.valorTotal - sinal, 0);
+    const valorPago = os.valorPago || 0;
+    const saldo = Math.max(os.valorTotal - valorPago, 0);
+    const pagamentos = os.pagamentos || [];
+    const linhasPagamentos = pagamentos.length
+        ? pagamentos.map((p) => `
+            <tr><td>${data(p.data)}</td><td>${escapeHtml(capitalizar(p.forma))}</td><td class="num">${moeda(p.valor)}</td></tr>`).join("")
+        : `<tr><td colspan="3" style="color:#9ca3af">Nenhum pagamento registrado.</td></tr>`;
 
     const arte = os.arte || {};
     const textoArte = `${arte.origem === "gráfica" ? "Criada pela gráfica" : "Enviada pelo cliente"} · ` +
@@ -28,17 +32,21 @@ function htmlOS(os) {
     ${blocoCliente(os.cliente)}
 
     ${blocoItens(os.produtos, [
-        ["Sinal", moeda(sinal)],
+        ["Pago", moeda(valorPago)],
         ["Saldo a receber", moeda(saldo)],
         ["Total", moeda(os.valorTotal), true],
     ])}
 
-    <h2>Arte e pagamento</h2>
+    <h2>Arte</h2>
     <div class="grade">
-        <div class="campo largo"><span>Arte</span><b>${escapeHtml(textoArte)}</b></div>
-        <div class="campo"><span>Forma de pagamento</span><b>${escapeHtml(capitalizar(os.pagamento && os.pagamento.formaPagamento) || "—")}</b></div>
-        <div class="campo"><span>Situação</span><b>${pago ? "Quitado" : "Em aberto"}</b></div>
+        <div class="campo inteiro"><b>${escapeHtml(textoArte)}</b></div>
     </div>
+
+    <h2>Pagamentos · ${os.pago ? "Quitada" : "Em aberto"}</h2>
+    <table>
+        <thead><tr><th>Data</th><th>Forma</th><th class="num">Valor</th></tr></thead>
+        <tbody>${linhasPagamentos}</tbody>
+    </table>
 
     <h2>Observações</h2>
     <div class="obs">${escapeHtml(os.observacoes || "")}</div>

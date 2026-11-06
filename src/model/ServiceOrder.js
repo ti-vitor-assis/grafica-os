@@ -5,12 +5,30 @@
 
 const { model, Schema, Types } = require('mongoose');
 const { proximoNumero } = require('./Counter.js');
-const { campoItens, calcularTotais } = require('./itens.js');
+const { campoItens, calcularTotais, centavos } = require('./itens.js');
 
 // Etapas de uma OS de gráfica, na ordem em que normalmente acontecem
 const STATUS = ['aberta', 'aguardando arte', 'em produção', 'pronta', 'entregue', 'cancelada'];
 const ORIGEM_ARTE = ['cliente', 'gráfica'];
-const FORMAS_PAGAMENTO = ['', 'dinheiro', 'pix', 'cartão de débito', 'cartão de crédito', 'boleto'];
+const FORMAS_PAGAMENTO = ['dinheiro', 'pix', 'cartão de débito', 'cartão de crédito', 'boleto'];
+
+// Cada valor recebido do cliente (sinal, parcelas, quitação)
+const pagamentoSchema = new Schema({
+    valor: {
+        type: Number,
+        required: [true, 'Informe o valor do pagamento'],
+        min: [0.01, 'O valor do pagamento deve ser maior que zero']
+    },
+    forma: {
+        type: String,
+        required: [true, 'Informe a forma de pagamento'],
+        enum: { values: FORMAS_PAGAMENTO, message: 'Forma de pagamento inválida: {VALUE}' }
+    },
+    data: {
+        type: Date,
+        default: Date.now
+    }
+}, { _id: false });
 
 const serviceOrderSchema = new Schema({
     // Número legível da OS (1, 2, 3...), mostrado ao cliente e usado na busca
@@ -74,21 +92,18 @@ const serviceOrderSchema = new Schema({
             type: Date
         }
     },
-    pagamento: {
-        sinal: {
-            type: Number,
-            default: 0,
-            min: [0, 'O sinal não pode ser negativo']
-        },
-        formaPagamento: {
-            type: String,
-            enum: { values: FORMAS_PAGAMENTO, message: 'Forma de pagamento inválida: {VALUE}' },
-            default: ''
-        },
-        pago: {
-            type: Boolean,
-            default: false
-        }
+    pagamentos: {
+        type: [pagamentoSchema],
+        default: []
+    },
+    // Calculados a partir dos pagamentos (ver pre('validate') abaixo)
+    valorPago: {
+        type: Number,
+        default: 0
+    },
+    pago: {
+        type: Boolean,
+        default: false
     }
 }, { versionKey: false });
 
@@ -99,8 +114,11 @@ serviceOrderSchema.pre('validate', function () {
     // Subtotais e total recalculados
     calcularTotais(this);
 
-    if (this.pagamento && this.pagamento.sinal > this.valorTotal) {
-        this.invalidate('pagamento.sinal', 'O sinal não pode ser maior que o valor total');
+    // Total pago e situação (quitada quando o pago cobre o total)
+    this.valorPago = centavos(this.pagamentos.reduce((soma, p) => soma + (p.valor || 0), 0));
+    this.pago = this.valorTotal > 0 && this.valorPago >= this.valorTotal;
+    if (this.valorPago > this.valorTotal) {
+        this.invalidate('pagamentos', 'O total pago não pode ser maior que o valor da OS');
     }
 
     // Data de entrega real: preenche ao marcar "entregue" e limpa se voltar atrás
