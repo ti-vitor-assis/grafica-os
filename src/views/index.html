@@ -17,7 +17,7 @@
     <div class="base">
 
         <div class="left_side">
-            <button class="text-white px-4 py-2 rounded hover:bg-purple-700 transition btn-sm btnStyle mt-1">
+            <button id="btnClientes" onclick="api.openWindow('clientes')" class="text-white px-4 py-2 rounded hover:bg-purple-700 transition btn-sm btnStyle mt-1">
                 <div class="row">
                     <div class="col imageColumn">
                         <img src="../public/img/clientsIcon.png" alt="Clients Icon" class="clientsIcon">
@@ -28,7 +28,7 @@
                 </div>
             </button>
 
-            <button class="text-white px-4 py-2 rounded hover:bg-purple-700 transition btn-sm btnStyle mt-1">
+            <button id="btnOS" onclick="api.openWindow('os')" class="text-white px-4 py-2 rounded hover:bg-purple-700 transition btn-sm btnStyle mt-1">
                 <div class="row">
                     <div class="col imageColumn">
                         <img src="../public/img/serviceOrderIcon.png" alt="Service Order Icon" class="soIcon">
@@ -39,7 +39,25 @@
                 </div>
             </button>
 
-            <button class="text-white px-4 py-2 rounded hover:bg-purple-700 transition btn-sm btnStyle mt-1">
+            <button id="btnProdutos" onclick="api.openWindow('produtos')" class="text-white px-4 py-2 rounded hover:bg-purple-700 transition btn-sm btnStyle mt-1">
+                <div class="row">
+                    <div class="col imageColumn">
+                        <!-- Ícone de produto (caixa), no mesmo estilo de linha branca dos outros -->
+                        <svg class="soIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"
+                            stroke-linecap="round" stroke-linejoin="round" aria-label="Products Icon">
+                            <path d="M21 8l-9-5-9 5 9 5 9-5z" />
+                            <path d="M3 8v8l9 5 9-5V8" />
+                            <path d="M12 13v8" />
+                            <path d="M7.5 5.5l9 5" />
+                        </svg>
+                    </div>
+                    <div class="col">
+                        <p class="menuLabels">Produtos</p>
+                    </div>
+                </div>
+            </button>
+
+            <button id="btnRelatorios" class="text-white px-4 py-2 rounded hover:bg-purple-700 transition btn-sm btnStyle mt-1">
                 <div class="row">
                     <div class="col imageColumn">
                         <img src="../public/img/reportsIcon.png" alt="Service Order Icon" class="soIcon">

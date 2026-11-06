@@ -25,6 +25,9 @@ contextBridge.exposeInMainWorld("api", {
     if (dbStatusAtual !== null) callback(null, dbStatusAtual)
   },
 
+  // Abrir janelas a partir da tela inicial ('clientes', 'os' ou 'produtos')
+  openWindow: (nome) => ipcRenderer.send("open-window", nome),
+
   // Clientes
   createCliente: (cliente) => ipcRenderer.send("create-cliente", cliente),
   resetForm: (args) => ipcRenderer.on("reset-form", args),

@@ -69,6 +69,18 @@ function productRegistrationWindow() {
   return modalWindow("./src/views/productRegistration.html");
 }
 
+// Botões da tela inicial pedem para abrir uma janela pelo nome.
+// Só os nomes desta lista são aceitos.
+const janelasPorNome = {
+  clientes: costumerRegistrationWindow,
+  os: serviceOrderRegistrationWindow,
+  produtos: productRegistrationWindow,
+};
+ipcMain.on("open-window", (event, nome) => {
+  const abrir = janelasPorNome[nome];
+  if (abrir) abrir();
+});
+
 // Sobre
 function aboutWindow() {
   dialog.showMessageBox(BrowserWindow.getFocusedWindow() || win, {
@@ -636,6 +648,10 @@ const template = [
       {
         label: "OS",
         click: () => serviceOrderRegistrationWindow(),
+      },
+      {
+        label: "Produto",
+        click: () => productRegistrationWindow(),
       },
       {
         type: "separator"
