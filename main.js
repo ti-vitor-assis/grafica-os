@@ -31,6 +31,37 @@ let win
 let usuarioLogado = null
 let janelaLogin = null
 
+// O que cada perfil pode fazer
+const PERMISSOES = {
+  administrador: ["clientes", "orcamentos", "os", "produtos", "relatorios", "financeiro", "excluir", "usuarios"],
+  atendente: ["clientes", "orcamentos", "os", "relatorios"],
+  "produção": ["os"],
+}
+
+function pode(permissao) {
+  return !!usuarioLogado && (PERMISSOES[usuarioLogado.perfil] || []).includes(permissao)
+}
+
+function avisoSemPermissao(event) {
+  const perfil = usuarioLogado ? usuarioLogado.perfil : "sem login"
+  dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
+    type: "warning",
+    title: "Acesso negado",
+    message: `Seu perfil (${perfil}) não tem permissão para fazer isso.`,
+    buttons: ["OK"],
+  })
+}
+
+// Registra um handler IPC que só roda se o usuário logado tiver a permissão.
+// É aqui que as permissões valem de verdade: esconder botões na tela é só
+// conveniência, porque a tela pode ser alterada (ex.: pelo DevTools).
+function ipcComPermissao(canal, permissao, handler) {
+  ipcMain.on(canal, (event, ...args) => {
+    if (!pode(permissao)) return avisoSemPermissao(event)
+    return handler(event, ...args)
+  })
+}
+
 // INICIO - Janelas
 
 // Tela de login: é a primeira janela do app
@@ -64,7 +95,7 @@ const createWindow = () => {
       preload: path.join(__dirname, "preload.js"),
     },
   })
-  Menu.setApplicationMenu(Menu.buildFromTemplate(template))
+  Menu.setApplicationMenu(Menu.buildFromTemplate(montarMenu()))
   win.loadFile("./src/views/index.html")
 }
 
@@ -120,6 +151,7 @@ function reportsWindow(tipo) {
 
 // Botões da tela inicial pedem para abrir uma janela pelo nome.
 // Só os nomes desta lista são aceitos.
+// O nome da janela é também a permissão necessária para abri-la.
 const janelasPorNome = {
   clientes: costumerRegistrationWindow,
   os: serviceOrderRegistrationWindow,
@@ -129,7 +161,9 @@ const janelasPorNome = {
 };
 ipcMain.on("open-window", (event, nome) => {
   const abrir = janelasPorNome[nome];
-  if (abrir) abrir();
+  if (!abrir) return;
+  if (!pode(nome)) return avisoSemPermissao(event);
+  abrir();
 });
 
 // Sobre
@@ -234,7 +268,10 @@ ipcMain.on("create-first-admin", async (event, dados) => {
 
 // Qualquer tela pode perguntar quem está logado (rodapé, permissões)
 ipcMain.on("get-session", (event) => {
-  event.reply("session", usuarioLogado);
+  event.reply("session", usuarioLogado && {
+    ...usuarioLogado,
+    permissoes: PERMISSOES[usuarioLogado.perfil] || [],
+  });
 });
 
 // Volta para a tela de login, fechando as outras janelas
@@ -255,7 +292,7 @@ function trocarUsuario() {
 // ===============================================
 // ================ CRUD CREATE ==================
 
-ipcMain.on("create-cliente", async (event, cliente) => {
+ipcComPermissao("create-cliente", "clientes", async (event, cliente) => {
   console.log(cliente);
 
   try {
@@ -418,7 +455,7 @@ ipcMain.on("search-cpf", async (event, cpfCli) => {
 
 // ======== CRUD UPDATE =========
 
-ipcMain.on("update-client", async (event, client) => {
+ipcComPermissao("update-client", "clientes", async (event, client) => {
   try {
     const updateCliente = await clienteModel.findByIdAndUpdate(
       client.idCli,
@@ -484,7 +521,7 @@ ipcMain.on("update-client", async (event, client) => {
 // ==============================
 // ======== CRUD DELETE =========
 
-ipcMain.on("delete-client", async (event, id) => {
+ipcComPermissao("delete-client", "excluir", async (event, id) => {
   //console.log(id);
   // Excuir o registro do banco (passo 3) IMPORTANTE! (confirmar antes da exclusão)
   // win = Janela Principal
@@ -548,7 +585,7 @@ function avisoErroValidacao(error) {
 }
 
 // ======== CREATE =========
-ipcMain.on("create-product", async (event, produto) => {
+ipcComPermissao("create-product", "produtos", async (event, produto) => {
   try {
     await productModel.create(dadosProduto(produto));
     const result = await dialog.showMessageBox({
@@ -597,7 +634,7 @@ ipcMain.on("search-product", async (event, termo) => {
 });
 
 // ======== UPDATE =========
-ipcMain.on("update-product", async (event, produto) => {
+ipcComPermissao("update-product", "produtos", async (event, produto) => {
   try {
     await productModel.findByIdAndUpdate(produto._id, dadosProduto(produto), {
       new: true,
@@ -619,7 +656,7 @@ ipcMain.on("update-product", async (event, produto) => {
 });
 
 // ======== DELETE =========
-ipcMain.on("delete-product", async (event, id) => {
+ipcComPermissao("delete-product", "excluir", async (event, id) => {
   try {
     // Produto que já foi usado em alguma OS não pode ser apagado,
     // senão a OS perde a referência. Nesse caso, sugerir desativar.
@@ -718,7 +755,7 @@ async function dadosOS(order) {
 }
 
 // ======= CREATE =======
-ipcMain.on("create-order", async (event, order) => {
+ipcComPermissao("create-order", "os", async (event, order) => {
   try {
     const os = await serviceOrderModel.create(await dadosOS(order));
     avisarDashboard();
@@ -765,7 +802,7 @@ ipcMain.on("search-order", async (event, filtro) => {
 });
 
 // ======= UPDATE =======
-ipcMain.on("update-order", async (event, order) => {
+ipcComPermissao("update-order", "os", async (event, order) => {
   try {
     const os = await serviceOrderModel.findById(order._id);
     if (!os) return;
@@ -835,7 +872,8 @@ ipcMain.on("dashboard-data", async (event) => {
       pendentes,
       entregues,
       lista,
-      financeiro: {
+      // Só quem tem permissão "financeiro" recebe os valores
+      financeiro: !pode("financeiro") ? null : {
         recebidoMes: soma(recebido),
         faturadoMes: soma(faturado),
         aReceber: soma(aReceber),
@@ -878,7 +916,7 @@ ipcMain.on("print-order", (event, id) => {
 });
 
 // ======= DELETE =======
-ipcMain.on("delete-order", async (event, id) => {
+ipcComPermissao("delete-order", "excluir", async (event, id) => {
   try {
     const os = await serviceOrderModel.findById(id);
     if (!os) return;
@@ -924,7 +962,7 @@ async function avisoOrcamentoFechado(janela, q) {
 }
 
 // ======= CREATE =======
-ipcMain.on("create-quote", async (event, q) => {
+ipcComPermissao("create-quote", "orcamentos", async (event, q) => {
   try {
     const orcamento = await quoteModel.create(await dadosOrcamento(q));
     avisarDashboard();
@@ -974,7 +1012,7 @@ ipcMain.on("search-quote", async (event, filtro) => {
 });
 
 // ======= UPDATE =======
-ipcMain.on("update-quote", async (event, q) => {
+ipcComPermissao("update-quote", "orcamentos", async (event, q) => {
   const janela = BrowserWindow.fromWebContents(event.sender);
   try {
     const orcamento = await quoteModel.findById(q._id);
@@ -1020,7 +1058,7 @@ ipcMain.on("print-quote", (event, id) => {
 });
 
 // ======= APROVAR (CONVERTER EM OS) =======
-ipcMain.on("convert-quote", async (event, id) => {
+ipcComPermissao("convert-quote", "orcamentos", async (event, id) => {
   const janela = BrowserWindow.fromWebContents(event.sender);
   try {
     const orcamento = await quoteModel.findById(id);
@@ -1080,7 +1118,7 @@ ipcMain.on("convert-quote", async (event, id) => {
 });
 
 // ======= RECUSAR =======
-ipcMain.on("refuse-quote", async (event, id) => {
+ipcComPermissao("refuse-quote", "orcamentos", async (event, id) => {
   const janela = BrowserWindow.fromWebContents(event.sender);
   try {
     const orcamento = await quoteModel.findById(id);
@@ -1104,7 +1142,7 @@ ipcMain.on("refuse-quote", async (event, id) => {
 });
 
 // ======= DELETE =======
-ipcMain.on("delete-quote", async (event, id) => {
+ipcComPermissao("delete-quote", "excluir", async (event, id) => {
   const janela = BrowserWindow.fromWebContents(event.sender);
   try {
     const orcamento = await quoteModel.findById(id).populate("osGerada", "numero");
@@ -1144,17 +1182,18 @@ const tiposRelatorio = {
   andamento: { montar: () => relatorios.osEmAndamento(), periodo: false },
   entregues: { montar: (ini, fim) => relatorios.osEntregues(ini, fim), periodo: true },
   todas: { montar: (ini, fim) => relatorios.todasOS(ini, fim), periodo: true },
-  faturamento: { montar: (ini, fim) => relatorios.faturamento(ini, fim), periodo: true },
+  faturamento: { montar: (ini, fim) => relatorios.faturamento(ini, fim), periodo: true , financeiro: true },
   produtos: { montar: (ini, fim) => relatorios.produtosMaisVendidos(ini, fim), periodo: true },
-  receber: { montar: () => relatorios.contasAReceber(), periodo: false },
-  recebimentos: { montar: (ini, fim) => relatorios.recebimentos(ini, fim), periodo: true },
+  receber: { montar: () => relatorios.contasAReceber(), periodo: false , financeiro: true },
+  recebimentos: { montar: (ini, fim) => relatorios.recebimentos(ini, fim), periodo: true , financeiro: true },
 };
 
 // pedido = { tipo, inicio: "AAAA-MM-DD", fim: "AAAA-MM-DD" }
-ipcMain.on("generate-report", async (event, pedido) => {
+ipcComPermissao("generate-report", "relatorios", async (event, pedido) => {
   const janela = BrowserWindow.fromWebContents(event.sender);
   const tipo = tiposRelatorio[pedido.tipo];
   if (!tipo) return;
+  if (tipo.financeiro && !pode("financeiro")) return avisoSemPermissao(event);
 
   try {
     // Período no horário local: do começo do dia inicial ao fim do dia final
@@ -1191,24 +1230,30 @@ ipcMain.on("generate-report", async (event, pedido) => {
 //
 app.commandLine.appendSwitch("log-level", "3");
 
+// Itens com "permissao" só aparecem para os perfis que têm essa permissão
+// (ver PERMISSOES e montarMenu()).
 const template = [
   {
     label: "Cadastro",
     submenu: [
       {
         label: "Cliente",
+        permissao: "clientes",
         click: () => costumerRegistrationWindow(),
       },
       {
         label: "Orçamento",
+        permissao: "orcamentos",
         click: () => quoteRegistrationWindow(),
       },
       {
         label: "OS",
+        permissao: "os",
         click: () => serviceOrderRegistrationWindow(),
       },
       {
         label: "Produto",
+        permissao: "produtos",
         click: () => productRegistrationWindow(),
       },
       {
@@ -1227,6 +1272,7 @@ const template = [
   },
   {
     label: "Relatórios",
+    permissao: "relatorios",
     submenu: [
       {
         label: "Clientes",
@@ -1249,6 +1295,7 @@ const template = [
       },
       {
         label: "Faturamento",
+        permissao: "financeiro",
         click: () => reportsWindow("faturamento"),
       },
       {
@@ -1260,10 +1307,12 @@ const template = [
       },
       {
         label: "Contas a receber",
+        permissao: "financeiro",
         click: () => reportsWindow("receber"),
       },
       {
         label: "Recebimentos",
+        permissao: "financeiro",
         click: () => reportsWindow("recebimentos"),
       },
     ]
@@ -1311,3 +1360,16 @@ const template = [
     ]
   }
 ]
+
+// Monta o menu do usuário logado: remove o que o perfil não pode usar e
+// os separadores que sobrarem no começo, no fim ou repetidos
+function montarMenu(itens = template) {
+  const visiveis = itens
+    .filter((item) => !item.permissao || pode(item.permissao))
+    .map(({ permissao, ...item }) => (item.submenu ? { ...item, submenu: montarMenu(item.submenu) } : item))
+    .filter((item) => !item.submenu || item.submenu.length > 0);
+  return visiveis.filter((item, i) =>
+    item.type !== "separator" ||
+    (i > 0 && i < visiveis.length - 1 && visiveis[i - 1].type !== "separator")
+  );
+}

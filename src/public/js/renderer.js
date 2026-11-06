@@ -57,11 +57,13 @@ function etiquetaSituacao(prazo) {
 api.receiveDashboard((event, dados) => {
   const { atrasadas, pendentes, entregues, lista, financeiro } = JSON.parse(dados)
 
-  // Indicadores financeiros
-  document.getElementById("kpiRecebido").textContent = formatoMoeda.format(financeiro.recebidoMes)
-  document.getElementById("kpiFaturado").textContent = formatoMoeda.format(financeiro.faturadoMes)
-  document.getElementById("kpiReceber").textContent = formatoMoeda.format(financeiro.aReceber)
-  document.getElementById("kpiOrcamentos").textContent = String(financeiro.orcamentosPendentes)
+  // Indicadores financeiros (vêm null para quem não tem permissão "financeiro")
+  if (financeiro) {
+    document.getElementById("kpiRecebido").textContent = formatoMoeda.format(financeiro.recebidoMes)
+    document.getElementById("kpiFaturado").textContent = formatoMoeda.format(financeiro.faturadoMes)
+    document.getElementById("kpiReceber").textContent = formatoMoeda.format(financeiro.aReceber)
+    document.getElementById("kpiOrcamentos").textContent = String(financeiro.orcamentosPendentes)
+  }
 
   // Gráfico
   grafico.data.datasets[0].data = [atrasadas, entregues, pendentes]

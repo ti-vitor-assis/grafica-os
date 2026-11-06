@@ -43,7 +43,7 @@
                     <span><b>Todas as OS</b><br />
                         <span class="text-sm text-[var(--color-text-secondary)]">Abertas no período, em qualquer status</span></span>
                 </label>
-                <label class="flex items-start gap-3 cursor-pointer">
+                <label class="flex items-start gap-3 cursor-pointer" data-permissao="financeiro">
                     <input type="radio" name="tipo" value="faturamento" data-periodo class="mt-1 accent-[var(--color-primary)]" />
                     <span><b>Faturamento</b><br />
                         <span class="text-sm text-[var(--color-text-secondary)]">Entregues no período, ticket médio, por cliente</span></span>
@@ -53,12 +53,12 @@
                     <span><b>Produtos mais vendidos</b><br />
                         <span class="text-sm text-[var(--color-text-secondary)]">Quantidade e valor vendidos no período</span></span>
                 </label>
-                <label class="flex items-start gap-3 cursor-pointer">
+                <label class="flex items-start gap-3 cursor-pointer" data-permissao="financeiro">
                     <input type="radio" name="tipo" value="receber" class="mt-1 accent-[var(--color-primary)]" />
                     <span><b>Contas a receber</b><br />
                         <span class="text-sm text-[var(--color-text-secondary)]">OS com saldo em aberto, hoje</span></span>
                 </label>
-                <label class="flex items-start gap-3 cursor-pointer">
+                <label class="flex items-start gap-3 cursor-pointer" data-permissao="financeiro">
                     <input type="radio" name="tipo" value="recebimentos" data-periodo class="mt-1 accent-[var(--color-primary)]" />
                     <span><b>Recebimentos</b><br />
                         <span class="text-sm text-[var(--color-text-secondary)]">Pagamentos lançados no período, por forma</span></span>

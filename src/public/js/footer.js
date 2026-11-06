@@ -41,6 +41,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // Mostra no rodapé quem está logado (na tela de login ainda não há ninguém)
 api.receiveSession((event, usuario) => {
   if (!usuario) return
+
+  // Esconde o que o perfil não pode usar (o main também bloqueia essas ações)
+  document.querySelectorAll('[data-permissao]').forEach((el) => {
+    if (!usuario.permissoes.includes(el.dataset.permissao)) el.style.display = 'none'
+  })
   const footer = document.querySelector('footer')
   const icone = document.getElementById('iconeDB')
   if (!footer || !icone || document.getElementById('footerUsuario')) return
