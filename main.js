@@ -95,23 +95,15 @@ function aboutWindow() {
 // FIM - Janelas
 app.whenReady().then(() => {
 
-  let errorCode = null
   createWindow();
+
+  // Cada janela pede a conexão ao carregar (preload.js) e recebe o status
+  // para atualizar o ícone do rodapé
   ipcMain.on("db-connect", async (event) => {
-
-    try {
-      await conectar();
-    } catch (error) {
-      errorCode = error.code
-    }
-    //console.log(errorCode)
-    if (errorCode === null) {
-      setTimeout(() => {
-        event.reply("db-status", "conectado")
-      }, 500)
-    }
-
-
+    const ok = await conectar();
+    setTimeout(() => {
+      event.reply("db-status", ok ? "conectado" : "desconectado")
+    }, 500)
   })
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {

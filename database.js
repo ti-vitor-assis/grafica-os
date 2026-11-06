@@ -4,7 +4,7 @@
  */
 
 const path = require('node:path')
-require('dotenv').config({ path: path.join(__dirname, '.env') })
+require('dotenv').config({ path: path.join(__dirname, '.env'), quiet: true })
 
 const mongoose = require('mongoose')
 
@@ -14,22 +14,28 @@ const url = process.env.MONGO_URL
 
 let conectado = false
 
+// Retorna true se a conexão estiver ativa e false se falhar
 const conectar = async () => {
     if (!conectado) {
+        if (!url) {
+            console.log("MONGO_URL não definida. Crie o arquivo .env (veja .env.example)")
+            return false
+        }
         try {
-            await mongoose.connect(url)
+            await mongoose.connect(url, { serverSelectionTimeoutMS: 10000 })
             conectado = true
             console.log("MongoDB Conectado!")
         } catch (error) {
             console.log(error)
         }
     }
+    return conectado
 }
 
 const desconectar = async () => {
     if (conectado) {
         try {
-            await mongoose.disconnect(url)
+            await mongoose.disconnect()
             conectado = false
             console.log("MongoDB Desconectado!")
         } catch (error) {
