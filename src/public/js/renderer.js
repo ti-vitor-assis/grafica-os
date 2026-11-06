@@ -19,6 +19,7 @@ document.querySelectorAll("[data-janela]").forEach((botao) => {
   botao.addEventListener("click", () => api.openWindow(botao.dataset.janela))
 })
 el("alertaEstoque").addEventListener("click", () => api.openWindow("estoque"))
+el("alertaBackup").addEventListener("click", () => api.makeBackup())
 
 // Pede os dados ao main
 function carregarDashboard() {
@@ -83,7 +84,19 @@ function desenharProducao(porEtapa, atrasadas, entreguesMes) {
 }
 
 api.receiveDashboard((event, dados) => {
-  const { atrasadas, lista, financeiro, estoqueBaixo, porEtapa, entreguesMes } = JSON.parse(dados)
+  const { atrasadas, lista, financeiro, estoqueBaixo, porEtapa, entreguesMes, backup } = JSON.parse(dados)
+
+  // Lembrete de backup: nunca feito ou com 7 dias ou mais (só administrador)
+  const DIAS_LEMBRETE_BACKUP = 7
+  const alertaBackup = el("alertaBackup")
+  if (backup && (backup.dias === null || backup.dias >= DIAS_LEMBRETE_BACKUP)) {
+    const titulo = document.createElement("b")
+    titulo.textContent = backup.dias === null ? "Nenhum backup feito ainda: " : `Último backup há ${backup.dias} dias: `
+    el("textoAlertaBackup").replaceChildren(titulo, "clique para fazer um agora e guarde-o fora deste computador")
+    alertaBackup.hidden = false
+  } else {
+    alertaBackup.hidden = true
+  }
 
   // Alerta de estoque baixo (vem null para quem não cuida do estoque)
   const alerta = el("alertaEstoque")

@@ -143,6 +143,7 @@ contextBridge.exposeInMainWorld("api", {
 
   // Relatórios: pedido = { tipo, inicio, fim }
   generateReport: (pedido) => ipcRenderer.send("generate-report", pedido),
+  makeBackup: () => ipcRenderer.send("make-backup"),
 
   // Aviso genérico (caixa de diálogo do sistema)
   warn: (mensagem) => ipcRenderer.send("show-warning", mensagem),

@@ -24,7 +24,8 @@ const usuarioModel = require('./src/model/Usuario.js')
 const fornecedorModel = require('./src/model/Fornecedor.js')
 const insumoModel = require('./src/model/Insumo.js')
 
-const { gerarPDF } = require('./src/print/pdf.js')
+const { gerarPDF, salvarArquivo } = require('./src/print/pdf.js')
+const { planilhaDoRelatorio } = require('./src/print/excel.js')
 const { htmlOS } = require('./src/print/osTemplate.js')
 const { htmlOrcamento } = require('./src/print/quoteTemplate.js')
 const { htmlRelatorio } = require('./src/print/reportTemplate.js')
@@ -38,6 +39,8 @@ const lgpd = require('./src/servicos/lgpd.js')
 const auditoria = require('./src/servicos/auditoria.js')
 const migracao = require('./src/servicos/migracao.js')
 const servicoOrcamentos = require('./src/servicos/orcamentos.js')
+const servicoBackup = require('./src/servicos/backup.js')
+const exportacao = require('./src/servicos/exportacao.js')
 const { moeda } = require('./src/print/formatar.js')
 
 let win
@@ -945,6 +948,119 @@ async function limpezaLgpd() {
   }
 }
 
+// ======== BACKUP E EXPORTAÇÃO (administrador) =========
+const hojeISO = () => new Date().toLocaleDateString("sv-SE"); // AAAA-MM-DD no horário local
+const janelaAtual = () => BrowserWindow.getFocusedWindow() || win;
+
+// Ferramentas > Fazer backup: arquivo cifrado com a chave deste banco
+async function fazerBackup(janela = janelaAtual()) {
+  if (!pode("configuracao")) return;
+  try {
+    const { conteudo, contagem } = await servicoBackup.gerarBackup();
+    const salvo = await salvarArquivo(conteudo, `grafica-os-backup-${hojeISO()}.json`, janela, {
+      nome: "Backup do Gráfica OS", extensao: "json", abrir: false, titulo: "Salvar backup",
+    });
+    if (!salvo) return;
+    auditar("backup feito", "", servicoBackup.descreverContagem(contagem));
+    avisarDashboard();
+    await dialog.showMessageBox(janela, {
+      type: "info",
+      title: "Backup",
+      message: "Backup salvo.",
+      detail:
+        `${servicoBackup.descreverContagem(contagem)}.\n\n` +
+        "Guarde uma cópia fora deste computador (pen drive ou nuvem). Para restaurar é preciso a chave de segurança " +
+        "deste banco: guarde junto o arquivo de chave (Ferramentas › Configurar banco de dados › Exportar chave).",
+      buttons: ["OK"],
+    });
+  } catch (error) {
+    console.error("Erro ao fazer backup:", error.message);
+    dialog.showMessageBox(janela, { type: "error", title: "Backup", message: "Não foi possível fazer o backup.", detail: error.message, buttons: ["OK"] });
+  }
+}
+
+// Ferramentas > Restaurar backup: substitui tudo pelo conteúdo do arquivo
+async function restaurarBackup(janela = janelaAtual()) {
+  if (!pode("configuracao")) return;
+  try {
+    const { canceled, filePaths } = await dialog.showOpenDialog(janela, {
+      title: "Escolher backup para restaurar",
+      defaultPath: app.getPath("documents"),
+      filters: [{ name: "Backup do Gráfica OS", extensions: ["json"] }],
+      properties: ["openFile"],
+    });
+    if (canceled || !filePaths || !filePaths[0]) return;
+    const lido = servicoBackup.lerBackup(require("node:fs").readFileSync(filePaths[0], "utf8"));
+
+    const result = await dialog.showMessageBox(janela, {
+      type: "warning",
+      title: "Restaurar backup",
+      message: `Restaurar o backup de ${lido.criadoEm.toLocaleString("pt-BR")}?`,
+      detail:
+        `O backup tem ${servicoBackup.descreverContagem(lido.contagem)}.\n\n` +
+        "TUDO o que está no banco agora será substituído pelo conteúdo do backup (o que foi feito depois dele se perde). " +
+        "Antes, o sistema guarda uma cópia do estado atual na pasta de backups.\n\n" +
+        "Se outros computadores estiverem usando o sistema, feche-os antes. Depois de restaurar, será preciso entrar de novo.",
+      buttons: ["Cancelar", "Restaurar"],
+      defaultId: 0,
+      cancelId: 0,
+    });
+    if (result.response !== 1) return;
+
+    // Cópia de segurança do estado atual, antes de apagar
+    const pasta = path.join(app.getPath("userData"), "backups");
+    require("node:fs").mkdirSync(pasta, { recursive: true });
+    const atual = await servicoBackup.gerarBackup();
+    const copia = path.join(pasta, `antes-de-restaurar-${new Date().toISOString().replace(/[:.]/g, "-")}.json`);
+    require("node:fs").writeFileSync(copia, atual.conteudo);
+
+    const quem = usuarioLogado && usuarioLogado.login;
+    await servicoBackup.restaurar(lido.dados);
+    await auditoria.registrar(quem, "backup restaurado", "", `backup de ${lido.criadoEm.toLocaleString("pt-BR")}`);
+    await dialog.showMessageBox(janela, {
+      type: "info",
+      title: "Restaurar backup",
+      message: "Backup restaurado.",
+      detail: `O estado anterior foi guardado em:\n${copia}`,
+      buttons: ["OK"],
+    });
+    trocarUsuario("restauracao");
+  } catch (error) {
+    console.error("Erro ao restaurar backup:", error.message);
+    dialog.showMessageBox(janela, { type: "error", title: "Restaurar backup", message: "Não foi possível restaurar.", detail: error.message, buttons: ["OK"] });
+  }
+}
+
+// Ferramentas > Exportar todos os dados para Excel (CPF/CNPJ legível)
+async function exportarTudoExcel(janela = janelaAtual()) {
+  if (!pode("configuracao")) return;
+  try {
+    const result = await dialog.showMessageBox(janela, {
+      type: "warning",
+      title: "Exportar todos os dados",
+      message: "Gerar uma planilha Excel com todos os dados do sistema?",
+      detail:
+        "A planilha terá clientes com CPF/CNPJ, contatos e endereços SEM proteção, além de OS, orçamentos, produtos, " +
+        "estoque, fornecedores e usuários (sem senhas). Serve para levar os dados a outro sistema ou ao contador.\n\n" +
+        "Guarde o arquivo em local seguro, não envie por canais abertos e apague-o quando não precisar mais (LGPD). " +
+        "A exportação fica registrada na auditoria.",
+      buttons: ["Cancelar", "Exportar"],
+      defaultId: 0,
+      cancelId: 0,
+    });
+    if (result.response !== 1) return;
+    const { buffer, contagem } = await exportacao.planilhaCompleta();
+    const salvo = await salvarArquivo(buffer, `grafica-os-dados-${hojeISO()}.xlsx`, janela, { nome: "Planilha do Excel", extensao: "xlsx" });
+    if (salvo) auditar("todos os dados exportados para Excel", "", Object.entries(contagem).map(([k, v]) => `${k}: ${v}`).join(", "));
+  } catch (error) {
+    console.error("Erro ao exportar para Excel:", error.message);
+    dialog.showMessageBox(janela, { type: "error", title: "Exportar", message: "Não foi possível gerar a planilha.", detail: error.message, buttons: ["OK"] });
+  }
+}
+
+// Botão "Fazer backup" do aviso no painel inicial
+ipcComPermissao("make-backup", "configuracao", (event) => fazerBackup(BrowserWindow.fromWebContents(event.sender)));
+
 // Cliente com OS ou orçamento não é excluído (o histórico fica): só desativado.
 // Excluir de vez só quem nunca teve OS nem orçamento (ex.: cadastro por engano).
 ipcComPermissao("delete-client", "excluir", async (event, id) => {
@@ -1407,6 +1523,8 @@ ipcOn("dashboard-data", async (event) => {
       },
       // Só quem cuida do estoque recebe o alerta
       estoqueBaixo: pode("estoque") ? estoqueBaixo : null,
+      // Lembrete de backup (só administrador): dias desde o último (null = nunca)
+      backup: pode("configuracao") ? { dias: await servicoBackup.diasDesdeUltimoBackup() } : null,
     }));
   } catch (error) {
     console.error("Erro ao carregar o dashboard:", error);
@@ -2021,7 +2139,12 @@ ipcComPermissao("generate-report", "relatorios", async (event, pedido) => {
       relatorio.periodo = `${inicio.toLocaleDateString("pt-BR")} a ${fim.toLocaleDateString("pt-BR")}`;
     }
     const hoje = new Date().toLocaleDateString("sv-SE"); // AAAA-MM-DD no horário local
-    await gerarPDF(htmlRelatorio(relatorio), `Relatorio-${pedido.tipo}-${hoje}.pdf`, janela);
+    if (pedido.formato === "xlsx") {
+      // Mesmo conteúdo do PDF (documentos mascarados), com números de verdade
+      await salvarArquivo(await planilhaDoRelatorio(relatorio), `Relatorio-${pedido.tipo}-${hoje}.xlsx`, janela, { nome: "Planilha do Excel", extensao: "xlsx" });
+    } else {
+      await gerarPDF(htmlRelatorio(relatorio), `Relatorio-${pedido.tipo}-${hoje}.pdf`, janela);
+    }
   } catch (error) {
     console.error("Erro ao gerar relatório:", error);
     dialog.showMessageBox(janela, {
@@ -2154,6 +2277,21 @@ const template = [
         label: "Configurar banco de dados",
         permissao: "configuracao",
         click: () => dbConfigWindow(),
+      },
+      {
+        label: "Fazer backup...",
+        permissao: "configuracao",
+        click: () => fazerBackup(),
+      },
+      {
+        label: "Restaurar backup...",
+        permissao: "configuracao",
+        click: () => restaurarBackup(),
+      },
+      {
+        label: "Exportar todos os dados para Excel...",
+        permissao: "configuracao",
+        click: () => exportarTudoExcel(),
       },
       {
         label: "Limpeza LGPD (dados antigos)",

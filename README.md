@@ -36,7 +36,8 @@ Sistema para gestão de uma gráfica: orçamentos, ordens de serviço, pagamento
 
 - **Orçamentos** com validade e prazo de produção; ao ser aprovado, vira uma OS automaticamente
 - **Ordens de serviço** com número sequencial, itens, prazo, etapas da produção, aprovação da arte e pagamentos (sinal, parcelas e quitação)
-- **Impressão em PDF** da OS, do orçamento e de 10 relatórios (faturamento, contas a receber, produtos mais vendidos, estoque, auditoria...)
+- **Impressão em PDF** da OS, do orçamento e de 10 relatórios (faturamento, contas a receber, produtos mais vendidos, estoque, auditoria...), que também saem em **Excel**
+- **Backup e restauração** (arquivo cifrado) e **exportação de todos os dados para Excel**, para levar a outro sistema
 - **Clientes** pessoa física (CPF) ou jurídica (CNPJ), com o documento cifrado no banco, busca exata por CPF/CNPJ e endereço preenchido pelo CEP
 - **Histórico preservado**: busca de OS e orçamentos pelo CPF/CNPJ (mesmo de clientes removidos); cliente com histórico é desativado, não excluído
 - **LGPD**: PDF com os dados do cliente, anonimização a pedido, limpeza após 5 anos e registro de auditoria
@@ -71,6 +72,13 @@ Em [Releases](https://github.com/ti-vitor-assis/grafica-os/releases) faça o dow
 3. **Cadastrar a equipe:** em **Usuários**, crie o acesso de cada funcionário com o perfil adequado.
 
 A configuração do banco fica salva neste computador (criptografada) e pode ser trocada depois pelo administrador em **Ferramentas › Configurar banco de dados**.
+
+### Backup
+Em **Ferramentas › Fazer backup** o administrador salva um arquivo com todos os dados, cifrado com a chave de segurança do banco. O painel inicial lembra quando o último backup tem mais de 7 dias. Para recuperar, use **Ferramentas › Restaurar backup** (o estado atual é guardado antes, por segurança).
+
+> O backup só abre com a chave de segurança do banco: guarde junto o arquivo de chave (veja abaixo).
+
+Para levar os dados a outro sistema, use **Ferramentas › Exportar todos os dados para Excel**: uma planilha com uma aba por assunto, com CPF/CNPJ legível.
 
 ### Mais de um computador na gráfica
 Os CPFs/CNPJs são cifrados com uma **chave de segurança** criada no primeiro computador. Para usar o mesmo banco em outro computador:
@@ -148,7 +156,7 @@ src/public/        CSS (app.css com os temas), ícones e scripts das telas
 src/print/         Modelos dos PDFs (OS, orçamento e relatórios)
 src/reports/       Consultas dos relatórios
 src/seguranca/     Criptografia do CPF/CNPJ, arquivo de chave e limpeza do IPC
-src/servicos/      Regras de clientes, LGPD, auditoria e migração do banco
+src/servicos/      Regras de clientes, orçamentos, LGPD, auditoria, backup, exportação e migração
 tests/             Testes de unidade e de ponta a ponta
 ```
 

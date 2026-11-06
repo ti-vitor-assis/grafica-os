@@ -14,9 +14,12 @@ const valor = (id) => document.getElementById(id).value;
 const parametros = new URLSearchParams(location.search);
 const motivo = parametros.get("motivo");
 if (motivo) {
-    document.getElementById("textoAvisoSessao").textContent = motivo === "bloqueio"
-        ? "A sessão foi encerrada porque a tela do Windows foi bloqueada. Entre novamente."
-        : `A sessão foi encerrada após ${parametros.get("minutos")} minutos sem uso. Entre novamente.`;
+    const textos = {
+        bloqueio: "A sessão foi encerrada porque a tela do Windows foi bloqueada. Entre novamente.",
+        restauracao: "O backup foi restaurado. Entre novamente com um usuário do backup.",
+        inatividade: `A sessão foi encerrada após ${parametros.get("minutos")} minutos sem uso. Entre novamente.`,
+    };
+    document.getElementById("textoAvisoSessao").textContent = textos[motivo] || textos.inatividade;
     document.getElementById("avisoSessao").hidden = false;
 }
 

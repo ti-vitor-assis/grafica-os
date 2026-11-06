@@ -37,8 +37,7 @@ function atualizarPeriodo() {
 opcoes.forEach((o) => o.addEventListener("change", atualizarPeriodo));
 atualizarPeriodo();
 
-frmRelatorio.addEventListener("submit", (event) => {
-    event.preventDefault();
+function gerar(formato) {
     if (!campoPeriodo.disabled && inputInicio.value > inputFim.value) {
         return api.warn("A data inicial não pode ser depois da data final.");
     }
@@ -46,5 +45,14 @@ frmRelatorio.addEventListener("submit", (event) => {
         tipo: tipoSelecionado().value,
         inicio: inputInicio.value,
         fim: inputFim.value,
+        formato,
     });
+}
+
+frmRelatorio.addEventListener("submit", (event) => {
+    event.preventDefault();
+    gerar("pdf");
+});
+document.getElementById("btnExcel").addEventListener("click", () => {
+    if (frmRelatorio.reportValidity()) gerar("xlsx");
 });

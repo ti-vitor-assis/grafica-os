@@ -9,6 +9,11 @@
 - **Usuários e perfis** (administrador, atendente e produção), tema claro e escuro.
 - **Configuração do banco pela própria tela**, sem precisar de arquivo `.env`.
 
+### Backup e exportação
+- **Ferramentas › Fazer backup / Restaurar backup** (administrador): arquivo com todos os dados, cifrado com a chave do banco. Antes de restaurar, o estado atual é guardado; a auditoria nunca volta no tempo. O painel lembra quando o último backup tem mais de 7 dias.
+- **Ferramentas › Exportar todos os dados para Excel** (administrador): uma aba por assunto (clientes com CPF/CNPJ legível, OS, itens, pagamentos, orçamentos, produtos, estoque, fornecedores e usuários sem senha), para levar a outro sistema. Fica registrado na auditoria.
+- Todos os relatórios também saem em **Excel**, com valores como números e documentos mascarados.
+
 ### Clientes
 - **Pessoa física** (nome, CPF, nascimento opcional) ou **jurídica** (razão social, nome fantasia, CNPJ, inscrição estadual opcional). E-mail e endereço são opcionais.
 - **CPF/CNPJ cifrado** no banco (AES-256-GCM), com busca exata, com ou sem pontuação, em Clientes, OS e Orçamentos.

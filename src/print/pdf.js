@@ -25,20 +25,25 @@ async function gerarPDF(html, nomeArquivo, janelaPai) {
             margins: { marginType: "default" },
         });
 
-        const { canceled, filePath } = await dialog.showSaveDialog(janelaPai, {
-            title: "Salvar PDF",
-            defaultPath: path.join(app.getPath("documents"), nomeArquivo),
-            filters: [{ name: "PDF", extensions: ["pdf"] }],
-        });
-        if (canceled || !filePath) return null;
-
-        await fs.writeFile(filePath, pdf);
         // Abre no leitor de PDF padrão, de onde o usuário pode imprimir
-        await shell.openPath(filePath);
-        return filePath;
+        return await salvarArquivo(pdf, nomeArquivo, janelaPai, { nome: "PDF", extensao: "pdf" });
     } finally {
         janela.destroy();
     }
 }
 
-module.exports = { gerarPDF };
+// Pergunta onde salvar, grava e (se abrir = true) abre no programa padrão.
+// Retorna o caminho salvo, ou null se o usuário cancelar.
+async function salvarArquivo(conteudo, nomeArquivo, janelaPai, { nome, extensao, abrir = true, titulo } = {}) {
+    const { canceled, filePath } = await dialog.showSaveDialog(janelaPai, {
+        title: titulo || `Salvar ${nome}`,
+        defaultPath: path.join(app.getPath("documents"), nomeArquivo),
+        filters: [{ name: nome, extensions: [extensao] }],
+    });
+    if (canceled || !filePath) return null;
+    await fs.writeFile(filePath, conteudo);
+    if (abrir) await shell.openPath(filePath);
+    return filePath;
+}
+
+module.exports = { gerarPDF, salvarArquivo };

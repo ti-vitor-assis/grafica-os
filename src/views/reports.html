@@ -18,7 +18,7 @@
             <span class="tela-icone"><i data-icone="relatorio" data-tamanho="20"></i></span>
             <div>
                 <h1>Relatórios</h1>
-                <p>Escolha o relatório e o período; o resultado sai em PDF</p>
+                <p>Escolha o relatório e o período; o resultado sai em PDF ou Excel</p>
             </div>
         </div>
     </header>
@@ -114,6 +114,9 @@
                 </fieldset>
                 <span id="avisoPeriodo" class="ajuda pb-2">Este relatório não usa período</span>
                 <span class="espacador"></span>
+                <button type="button" id="btnExcel" class="btn btn-secundario" title="Mesmo relatório em planilha do Excel">
+                    <i data-icone="relatorio" data-tamanho="16"></i> Gerar Excel
+                </button>
                 <button type="submit" id="btnGerar" class="btn btn-primario">
                     <i data-icone="pdf" data-tamanho="16"></i> Gerar PDF
                 </button>
