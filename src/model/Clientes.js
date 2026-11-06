@@ -32,9 +32,6 @@ const clientesSchema = new Schema({
     email: {
         type: String
     },
-    senha: {
-        type: String
-    },
     cep: {
         type: String
     },
@@ -55,13 +52,10 @@ const clientesSchema = new Schema({
     },
     estado: {
         type: String
-    },
-    serviceOrders:{
-        type:Array
     }
-
-
-
+    // As OS do cliente não ficam aqui: cada OS guarda o _id do cliente
+    // (campo "cliente" em ServiceOrder.js). Para listar as OS de um cliente:
+    // serviceOrderModel.find({ cliente: id })
 }, { versionKey: false })
 
 

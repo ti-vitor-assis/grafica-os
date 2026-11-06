@@ -14,7 +14,6 @@ let inputDataNasc = document.getElementById("inputDataNasc");
 let inputTelefone = document.getElementById("inputTelefone");
 let inputTelefone2 = document.getElementById("inputTelefone2");
 let inputEmail = document.getElementById("inputEmail");
-let inputSenha = document.getElementById("inputSenha");
 let inputCep = document.getElementById("inputCep");
 let inputEndereco = document.getElementById("inputEndereco");
 let inputNum = document.getElementById("inputNum");
@@ -132,7 +131,6 @@ frmCli.addEventListener("submit", async (event) => {
             telefoneCli: inputTelefone.value,
             telefone2Cli: inputTelefone2.value,
             emailCli: inputEmail.value,
-            senhaCli: inputSenha.value,
             cepCli: inputCep.value,
             enderecoCli: inputEndereco.value,
             numCli: inputNum.value,
@@ -157,7 +155,6 @@ frmCli.addEventListener("submit", async (event) => {
             telefoneCli: inputTelefone.value,
             telefone2Cli: inputTelefone2.value,
             emailCli: inputEmail.value,
-            senhaCli: inputSenha.value,
             cepCli: inputCep.value,
             enderecoCli: inputEndereco.value,
             numCli: inputNum.value,
@@ -274,7 +271,6 @@ api.renderClient((event, client) => {
         inputTelefone.value = c.telefone;
         inputTelefone2.value = c.telefone2;
         inputEmail.value = c.email;
-        inputSenha.value = c.senha;
         inputCep.value = c.cep;
         inputEndereco.value = c.endereco;
         inputNum.value = c.numero;
