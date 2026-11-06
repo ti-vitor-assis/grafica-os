@@ -999,7 +999,7 @@ ipcMain.on("dashboard-data", async (event) => {
 
     const inicioMes = new Date(inicioHoje.getFullYear(), inicioHoje.getMonth(), 1);
 
-    const [atrasadas, pendentes, entregues, lista, recebido, faturado, aReceber, orcamentosPendentes, estoqueBaixo] = await Promise.all([
+    const [atrasadas, pendentes, entregues, lista, recebido, faturado, aReceber, orcamentosPendentes, estoqueBaixo, etapas, entreguesMes] = await Promise.all([
       serviceOrderModel.countDocuments({ ...emAndamento, prazoFinal: { $lt: inicioHoje } }),
       serviceOrderModel.countDocuments({ ...emAndamento, prazoFinal: { $gte: inicioHoje } }),
       serviceOrderModel.countDocuments({ status: "entregue" }),
@@ -1031,7 +1031,19 @@ ipcMain.on("dashboard-data", async (event) => {
         .find({ ativo: true, estoqueMinimo: { $gt: 0 }, $expr: { $lt: ["$quantidade", "$estoqueMinimo"] } })
         .select("nome quantidade unidade estoqueMinimo")
         .sort({ nome: 1 }),
+      // OS em andamento por etapa da produção
+      serviceOrderModel.aggregate([
+        { $match: emAndamento },
+        { $group: { _id: "$status", total: { $sum: 1 } } },
+      ]),
+      serviceOrderModel.countDocuments({ status: "entregue", dataEntregaReal: { $gte: inicioMes } }),
     ]);
+
+    // Na ordem do fluxo da gráfica (etapas sem OS aparecem com 0)
+    const porEtapa = ["aberta", "aguardando arte", "em produção", "pronta"].map((etapa) => ({
+      etapa,
+      total: (etapas.find((e) => e._id === etapa) || {}).total || 0,
+    }));
 
     const soma = (resultado) => Math.round(((resultado[0] && resultado[0].total) || 0) * 100) / 100;
     event.reply("dashboard-data", JSON.stringify({
@@ -1039,6 +1051,8 @@ ipcMain.on("dashboard-data", async (event) => {
       pendentes,
       entregues,
       lista,
+      porEtapa,
+      entreguesMes,
       // Só quem tem permissão "financeiro" recebe os valores
       financeiro: !pode("financeiro") ? null : {
         recebidoMes: soma(recebido),

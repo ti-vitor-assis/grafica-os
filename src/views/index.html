@@ -4,181 +4,174 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Só scripts/estilos do próprio app; conexão externa apenas com o ViaCEP (busca de CEP).
-         'unsafe-inline' em script-src é necessário por causa dos onclick="" nas telas -->
+    <!-- Só scripts/estilos do próprio app (esta tela não tem onclick) -->
     <meta http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://viacep.com.br" />
-    <link href="../public/css/style.css" rel="stylesheet">
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:" />
+    <link href="../public/css/app.css" rel="stylesheet" />
     <link href="../public/css/tailwind.css" rel="stylesheet" />
     <title>Bem vindo</title>
 </head>
 
-<body>
-    <div class="base">
+<body class="painel">
 
-        <div class="left_side">
-            <button id="btnClientes" data-permissao="clientes" onclick="api.openWindow('clientes')" class="text-white px-4 py-2 rounded hover:bg-purple-700 transition btn-sm btnStyle mt-1">
-                <div class="row">
-                    <div class="col imageColumn">
-                        <img src="../public/img/clientsIcon.png" alt="Clients Icon" class="clientsIcon">
-                    </div>
-                    <div class="col">
-                        <p class="menuLabels">Clientes</p>
-                    </div>
-                </div>
-            </button>
-
-            <button id="btnOrcamentos" data-permissao="orcamentos" onclick="api.openWindow('orcamentos')" class="text-white px-4 py-2 rounded hover:bg-purple-700 transition btn-sm btnStyle mt-1">
-                <div class="row">
-                    <div class="col imageColumn">
-                        <!-- Ícone de orçamento (folha com cifrão), no estilo de linha branca -->
-                        <svg class="soIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"
-                            stroke-linecap="round" stroke-linejoin="round" aria-label="Quotes Icon">
-                            <path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z" />
-                            <path d="M14 3v5h5" />
-                            <path d="M14 11.5c-.4-.6-1.1-1-2-1-1.1 0-2 .6-2 1.5s.9 1.3 2 1.5 2 .6 2 1.5-.9 1.5-2 1.5c-.9 0-1.6-.4-2-1" />
-                            <path d="M12 9.5v1M12 16.5v1" />
-                        </svg>
-                    </div>
-                    <div class="col">
-                        <p class="menuLabels">Orçamentos</p>
-                    </div>
-                </div>
-            </button>
-
-            <button id="btnOS" data-permissao="os" onclick="api.openWindow('os')" class="text-white px-4 py-2 rounded hover:bg-purple-700 transition btn-sm btnStyle mt-1">
-                <div class="row">
-                    <div class="col imageColumn">
-                        <img src="../public/img/serviceOrderIcon.png" alt="Service Order Icon" class="soIcon">
-                    </div>
-                    <div class="col">
-                        <p class="menuLabels">Serviços</p>
-                    </div>
-                </div>
-            </button>
-
-            <button id="btnProdutos" data-permissao="produtos" onclick="api.openWindow('produtos')" class="text-white px-4 py-2 rounded hover:bg-purple-700 transition btn-sm btnStyle mt-1">
-                <div class="row">
-                    <div class="col imageColumn">
-                        <!-- Ícone de produto (caixa), no mesmo estilo de linha branca dos outros -->
-                        <svg class="soIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"
-                            stroke-linecap="round" stroke-linejoin="round" aria-label="Products Icon">
-                            <path d="M21 8l-9-5-9 5 9 5 9-5z" />
-                            <path d="M3 8v8l9 5 9-5V8" />
-                            <path d="M12 13v8" />
-                            <path d="M7.5 5.5l9 5" />
-                        </svg>
-                    </div>
-                    <div class="col">
-                        <p class="menuLabels">Produtos</p>
-                    </div>
-                </div>
-            </button>
-
-            <button id="btnEstoque" data-permissao="estoque" onclick="api.openWindow('estoque')" class="text-white px-4 py-2 rounded hover:bg-purple-700 transition btn-sm btnStyle mt-1">
-                <div class="row">
-                    <div class="col imageColumn">
-                        <!-- Ícone de estoque (pilha de folhas), no estilo de linha branca -->
-                        <svg class="soIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"
-                            stroke-linecap="round" stroke-linejoin="round" aria-label="Stock Icon">
-                            <path d="M12 3 3 7.5 12 12l9-4.5z" />
-                            <path d="M3 12l9 4.5 9-4.5" />
-                            <path d="M3 16.5 12 21l9-4.5" />
-                        </svg>
-                    </div>
-                    <div class="col">
-                        <p class="menuLabels">Estoque</p>
-                    </div>
-                </div>
-            </button>
-
-            <button id="btnRelatorios" data-permissao="relatorios" onclick="api.openWindow('relatorios')" class="text-white px-4 py-2 rounded hover:bg-purple-700 transition btn-sm btnStyle mt-1">
-                <div class="row">
-                    <div class="col imageColumn">
-                        <img src="../public/img/reportsIcon.png" alt="Service Order Icon" class="soIcon">
-                    </div>
-                    <div class="col ">
-                        <p class="menuLabels">Relatórios</p>
-                    </div>
-                </div>
-            </button>
+    <!-- ========== Navegação ========== -->
+    <nav class="lateral">
+        <div class="lateral-marca">
+            <span class="lateral-logo"><i data-icone="grafica" data-tamanho="20"></i></span>
+            <span>Gráfica OS</span>
         </div>
 
-        <div class="right_side">
+        <button class="lateral-item ativo" type="button" aria-current="page">
+            <i data-icone="inicio"></i> Visão geral
+        </button>
 
-            <section class="right_top">
-                <div class="grafico-container">
-                    <h2 class="titulo text-white">Visão Geral</h2>
-                    <!-- O canvas fica dentro de uma div: é a div que some quando não há OS
-                         (o Chart.js força display: block no canvas, anulando o "hidden") -->
-                    <div id="areaGrafico">
-                        <canvas id="pieChart" width="400" height="400"></canvas>
-                    </div>
-                    <p id="semOS" class="text-sm text-[var(--color-text-secondary)] px-2" hidden>
-                        Nenhuma OS em andamento ou entregue ainda.
-                    </p>
+        <p class="lateral-grupo">Atendimento</p>
+        <button id="btnClientes" class="lateral-item" type="button" data-janela="clientes" data-permissao="clientes">
+            <i data-icone="clientes"></i> Clientes
+        </button>
+        <button id="btnOrcamentos" class="lateral-item" type="button" data-janela="orcamentos" data-permissao="orcamentos">
+            <i data-icone="orcamento"></i> Orçamentos
+        </button>
+        <button id="btnOS" class="lateral-item" type="button" data-janela="os" data-permissao="os">
+            <i data-icone="os"></i> Ordens de serviço
+        </button>
+
+        <p class="lateral-grupo">Cadastros</p>
+        <button id="btnProdutos" class="lateral-item" type="button" data-janela="produtos" data-permissao="produtos">
+            <i data-icone="produto"></i> Produtos e serviços
+        </button>
+        <button id="btnEstoque" class="lateral-item" type="button" data-janela="estoque" data-permissao="estoque">
+            <i data-icone="estoque"></i> Estoque de insumos
+        </button>
+        <button id="btnFornecedores" class="lateral-item" type="button" data-janela="fornecedores" data-permissao="estoque">
+            <i data-icone="fornecedor"></i> Fornecedores
+        </button>
+
+        <p class="lateral-grupo">Gestão</p>
+        <button id="btnRelatorios" class="lateral-item" type="button" data-janela="relatorios" data-permissao="relatorios">
+            <i data-icone="relatorio"></i> Relatórios
+        </button>
+        <button id="btnUsuarios" class="lateral-item" type="button" data-janela="usuarios" data-permissao="usuarios">
+            <i data-icone="usuarios"></i> Usuários
+        </button>
+    </nav>
+
+    <!-- ========== Conteúdo ========== -->
+    <div class="tela">
+        <header class="tela-cabecalho">
+            <div class="tela-titulo">
+                <div>
+                    <h1>Visão geral</h1>
+                    <p>Resumo da produção e do caixa</p>
                 </div>
+            </div>
+            <span class="espacador"></span>
+            <button class="btn btn-secundario" type="button" data-janela="os" data-permissao="os">
+                <i data-icone="os" data-tamanho="16"></i> Nova OS
+            </button>
+            <button class="btn btn-primario" type="button" data-janela="orcamentos" data-permissao="orcamentos">
+                <i data-icone="mais" data-tamanho="16"></i> Novo orçamento
+            </button>
+        </header>
 
-                <div class="delayedservices text-white flex flex-col">
-                    <h1 class="font-bold text-center text-xl mb-2">Serviços Atrasados / Próximos do Prazo</h1>
-                    <div class="flex-1 overflow-y-auto mx-2 mb-2 rounded-lg">
-                        <table class="w-full table-fixed text-sm">
-                            <thead class="sticky top-0">
+        <main class="tela-conteudo flex flex-col gap-5">
+
+            <!-- Alerta de estoque baixo (clicar abre o estoque) -->
+            <button id="alertaEstoque" type="button" class="alerta alerta-aviso" hidden>
+                <i data-icone="alerta"></i>
+                <span id="textoAlertaEstoque"></span>
+            </button>
+
+            <!-- Indicadores financeiros -->
+            <section class="kpis" data-permissao="financeiro" aria-label="Indicadores financeiros">
+                <div class="card kpi">
+                    <span class="kpi-rotulo"><i data-icone="dinheiro" data-tamanho="16"></i> Recebido no mês</span>
+                    <b id="kpiRecebido" class="kpi-valor">—</b>
+                    <span class="kpi-ajuda">Pagamentos lançados desde o dia 1º</span>
+                </div>
+                <div class="card kpi">
+                    <span class="kpi-rotulo"><i data-icone="check" data-tamanho="16"></i> Faturado no mês</span>
+                    <b id="kpiFaturado" class="kpi-valor">—</b>
+                    <span class="kpi-ajuda">Valor das OS entregues desde o dia 1º</span>
+                </div>
+                <div class="card kpi">
+                    <span class="kpi-rotulo"><i data-icone="relogio" data-tamanho="16"></i> A receber</span>
+                    <b id="kpiReceber" class="kpi-valor">—</b>
+                    <span class="kpi-ajuda">Saldo das OS não quitadas</span>
+                </div>
+                <div class="card kpi">
+                    <span class="kpi-rotulo"><i data-icone="orcamento" data-tamanho="16"></i> Orçamentos pendentes</span>
+                    <b id="kpiOrcamentos" class="kpi-valor">—</b>
+                    <span class="kpi-ajuda">Aguardando resposta do cliente</span>
+                </div>
+            </section>
+
+            <div class="grade-painel">
+                <!-- Produção: OS em andamento por etapa -->
+                <section class="card">
+                    <div class="card-cabecalho">
+                        <div>
+                            <h2>Produção</h2>
+                            <p>Ordens de serviço em andamento, por etapa</p>
+                        </div>
+                    </div>
+                    <div class="card-corpo">
+                        <div class="producao-numeros">
+                            <div>
+                                <b id="totalAndamento" class="numero">0</b>
+                                <span>em andamento</span>
+                            </div>
+                            <div>
+                                <b id="totalAtrasadas" class="numero">0</b>
+                                <span>atrasadas</span>
+                            </div>
+                            <div>
+                                <b id="totalEntreguesMes" class="numero">0</b>
+                                <span>entregues no mês</span>
+                            </div>
+                        </div>
+
+                        <!-- Barra segmentada (as quantidades estão na lista abaixo) -->
+                        <div id="barraEtapas" class="barra-etapas" role="img"></div>
+                        <ul id="listaEtapas" class="lista-etapas"></ul>
+
+                    </div>
+                </section>
+
+                <!-- Prazos -->
+                <section class="card flex flex-col min-h-0">
+                    <div class="card-cabecalho">
+                        <div>
+                            <h2>Prazos</h2>
+                            <p>OS atrasadas ou que vencem nos próximos 3 dias</p>
+                        </div>
+                    </div>
+                    <div class="flex-1 min-h-0 overflow-auto">
+                        <table class="tabela">
+                            <thead>
                                 <tr>
-                                    <th class="w-[60px] py-2 px-3 text-left font-bold uppercase">Nº</th>
-                                    <th class="py-2 px-3 text-left font-bold uppercase">Cliente</th>
-                                    <th class="w-[95px] py-2 px-3 text-left font-bold uppercase">Prazo</th>
-                                    <th class="w-[135px] py-2 px-3 text-left font-bold uppercase">Situação</th>
+                                    <th class="w-[64px]">Nº</th>
+                                    <th>Cliente</th>
+                                    <th class="w-[90px]">Prazo</th>
+                                    <th class="w-[170px]">Situação</th>
                                 </tr>
                             </thead>
-                            <!-- Preenchida pelo renderer.js com dados do banco -->
                             <tbody id="tabelaPrazos"></tbody>
                         </table>
-                        <p id="semPrazos" class="text-center text-sm text-[var(--color-text-secondary)] pt-6" hidden>
-                            Nenhuma OS atrasada ou vencendo nos próximos 3 dias. 🎉
+                        <p id="semPrazos" class="vazio" hidden>
+                            <i data-icone="check" data-tamanho="22"></i>
+                            Nenhuma OS atrasada ou vencendo nos próximos 3 dias.
                         </p>
                     </div>
-                </div>
-            </section>
+                </section>
+            </div>
+        </main>
 
-            <!-- Alerta de estoque baixo (preenchido pelo renderer.js; clicar abre o estoque) -->
-            <button id="alertaEstoque" type="button" style="display: none"
-                class="w-[calc(100%-10px)] m-[5px] mb-0 rounded-[5px] bg-red-900/60 border border-red-500 px-4 py-2 text-left text-white text-sm hover:brightness-125">
-            </button>
-
-            <!-- Indicadores financeiros (preenchidos pelo renderer.js) -->
-            <section class="grid grid-cols-2 gap-[5px] m-[5px] text-white" data-permissao="financeiro">
-                <div class="rounded-[5px] bg-[var(--color-background)] p-4">
-                    <p class="text-sm text-[var(--color-text-secondary)]">Recebido no mês</p>
-                    <p id="kpiRecebido" class="text-2xl font-bold mt-1">—</p>
-                    <p class="text-xs text-[var(--color-text-secondary)] mt-1">Pagamentos lançados desde o dia 1º</p>
-                </div>
-                <div class="rounded-[5px] bg-[var(--color-background)] p-4">
-                    <p class="text-sm text-[var(--color-text-secondary)]">Faturado no mês</p>
-                    <p id="kpiFaturado" class="text-2xl font-bold mt-1">—</p>
-                    <p class="text-xs text-[var(--color-text-secondary)] mt-1">Valor das OS entregues desde o dia 1º</p>
-                </div>
-                <div class="rounded-[5px] bg-[var(--color-background)] p-4">
-                    <p class="text-sm text-[var(--color-text-secondary)]">A receber</p>
-                    <p id="kpiReceber" class="text-2xl font-bold mt-1 text-[#facc15]">—</p>
-                    <p class="text-xs text-[var(--color-text-secondary)] mt-1">Saldo das OS não quitadas</p>
-                </div>
-                <div class="rounded-[5px] bg-[var(--color-background)] p-4">
-                    <p class="text-sm text-[var(--color-text-secondary)]">Orçamentos pendentes</p>
-                    <p id="kpiOrcamentos" class="text-2xl font-bold mt-1">—</p>
-                    <p class="text-xs text-[var(--color-text-secondary)] mt-1">Aguardando resposta, dentro da validade</p>
-                </div>
-            </section>
-        </div>
-
-        <footer>
-            <p id="footerRealTime"></p>
-            <img src="../public/img/dboffRed.png" alt="Icone banco de dados" id="iconeDB">
-        </footer>
+        <footer class="statusbar"></footer>
     </div>
 
     <!-- SCRIPTS -->
-    <script src="../../node_modules/chart.js/dist/chart.umd.js"></script>
+    <script src="../public/js/icones.js"></script>
     <script src="../public/js/renderer.js"></script>
     <script src="../public/js/footer.js"></script>
 

@@ -884,3 +884,226 @@ svg.icone {
         display: none;
     }
 }
+
+/* ============ Tela inicial (painel) ============ */
+.painel {
+    display: grid;
+    grid-template-columns: 232px minmax(0, 1fr);
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Barra lateral de navegação (escura nos dois temas) */
+.lateral {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 14px 12px;
+    background: var(--sidebar-bg);
+    border-right: 1px solid var(--sidebar-border);
+    overflow-y: auto;
+}
+
+.lateral-marca {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px 16px;
+    color: #FFFFFF;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.lateral-logo {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: #7C3AED;
+    color: #FFFFFF;
+}
+
+.lateral-grupo {
+    margin: 14px 10px 4px;
+    font-size: 11px;
+    font-weight: 650;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #6E6D86;
+}
+
+.lateral-item {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    width: 100%;
+    height: 38px;
+    padding: 0 10px;
+    border-radius: 8px;
+    color: var(--sidebar-text);
+    font: inherit;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+}
+
+.lateral-item:hover {
+    background: var(--sidebar-hover);
+    color: var(--sidebar-text-hover);
+}
+
+.lateral-item.ativo {
+    background: rgba(124, 58, 237, 0.22);
+    color: #FFFFFF;
+    box-shadow: inset 3px 0 0 #8B5CF6;
+}
+
+.lateral-item:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px #8B5CF6;
+}
+
+/* Indicadores (KPIs) */
+.kpis {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.kpi {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 14px 18px;
+}
+
+.kpi-rotulo {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.kpi-rotulo svg {
+    color: var(--primary);
+}
+
+.kpi-valor {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+}
+
+.kpi-ajuda {
+    font-size: 12px;
+    color: var(--text-faint);
+}
+
+.grade-painel {
+    display: grid;
+    grid-template-columns: minmax(300px, 2fr) minmax(0, 3fr);
+    gap: 16px;
+    align-items: stretch;
+    min-height: 300px;
+}
+
+/* Produção: barra segmentada por etapa (um tom de roxo, do mais claro
+   ao mais escuro, seguindo a ordem do fluxo) */
+:root,
+:root[data-theme="claro"] {
+    --etapa-1: #C4B5FD;
+    --etapa-2: #A78BFA;
+    --etapa-3: #7C3AED;
+    --etapa-4: #4C1D95;
+}
+
+:root[data-theme="escuro"] {
+    --etapa-1: #4C1D95;
+    --etapa-2: #6D28D9;
+    --etapa-3: #8B5CF6;
+    --etapa-4: #C4B5FD;
+}
+
+.etapa-1 { background: var(--etapa-1); }
+.etapa-2 { background: var(--etapa-2); }
+.etapa-3 { background: var(--etapa-3); }
+.etapa-4 { background: var(--etapa-4); }
+
+.producao-numeros {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.producao-numeros > div {
+    display: flex;
+    flex-direction: column;
+}
+
+.producao-numeros b {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.producao-numeros span {
+    font-size: 12.5px;
+    color: var(--text-muted);
+}
+
+.barra-etapas {
+    display: flex;
+    gap: 2px;
+    height: 12px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--neutral-soft);
+}
+
+.barra-etapas span {
+    flex-basis: 0;
+    min-width: 6px;
+}
+
+.lista-etapas {
+    list-style: none;
+    margin: 14px 0 0;
+    padding: 0;
+}
+
+.lista-etapas li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.lista-etapas li b {
+    margin-left: auto;
+}
+
+.amostra {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 1180px) {
+    .kpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 1100px) {
+    .grade-painel {
+        grid-template-columns: 1fr;
+    }
+}

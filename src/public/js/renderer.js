@@ -1,36 +1,24 @@
 /**
- * Tela inicial (dashboard)
+ * Tela inicial (visão geral)
  * @Author Vitor de Assis Passos
  */
 
-console.log("Processo de renderização")
-
-const tabelaPrazos = document.getElementById("tabelaPrazos")
-const semPrazos = document.getElementById("semPrazos")
-const semOS = document.getElementById("semOS")
-const canvas = document.getElementById("pieChart")
+const el = (id) => document.getElementById(id)
 const formatoMoeda = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" })
 
-// Gráfico criado vazio; os números chegam do banco em api.receiveDashboard
-const grafico = new Chart(canvas.getContext("2d"), {
-  type: "pie",
-  data: {
-    labels: ["Serviços Atrasados", "Serviços Entregues", "Serviços Pendentes"],
-    datasets: [{
-      data: [0, 0, 0],
-      backgroundColor: ["#f87171", "#60a5fa", "#facc15"],
-    }]
-  },
-  options: {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: "bottom",
-        labels: { color: "#E0E0E0" },
-      }
-    }
-  }
+// Nome de cada etapa como aparece na tela
+const NOME_ETAPA = {
+  "aberta": "Abertas",
+  "aguardando arte": "Aguardando arte",
+  "em produção": "Em produção",
+  "pronta": "Prontas para entrega",
+}
+
+// Botões da barra lateral e do cabeçalho abrem as janelas pelo nome
+document.querySelectorAll("[data-janela]").forEach((botao) => {
+  botao.addEventListener("click", () => api.openWindow(botao.dataset.janela))
 })
+el("alertaEstoque").addEventListener("click", () => api.openWindow("estoque"))
 
 // Pede os dados ao main
 function carregarDashboard() {
@@ -47,74 +35,108 @@ function diasAtePrazo(prazo) {
 }
 
 // Etiqueta da coluna "Situação"
-function etiquetaSituacao(prazo) {
+function situacao(prazo) {
   const dias = diasAtePrazo(prazo)
-  if (dias < 0) return { texto: `ATRASADA ${-dias} DIA${dias < -1 ? "S" : ""}`, cor: "bg-red-500" }
-  if (dias === 0) return { texto: "VENCE HOJE", cor: "bg-orange-500" }
-  return { texto: `VENCE EM ${dias} DIA${dias > 1 ? "S" : ""}`, cor: "bg-yellow-600" }
+  if (dias < 0) return { texto: `Atrasada ${-dias} dia${dias < -1 ? "s" : ""}`, classe: "badge-perigo" }
+  if (dias === 0) return { texto: "Vence hoje", classe: "badge-aviso" }
+  return { texto: `Vence em ${dias} dia${dias > 1 ? "s" : ""}`, classe: "badge-info" }
+}
+
+// Produção: barra segmentada por etapa + lista com as quantidades
+function desenharProducao(porEtapa, atrasadas, entreguesMes) {
+  const total = porEtapa.reduce((soma, e) => soma + e.total, 0)
+  el("totalAndamento").textContent = total
+  el("totalAtrasadas").textContent = atrasadas
+  el("totalAtrasadas").classList.toggle("texto-perigo", atrasadas > 0)
+  el("totalEntreguesMes").textContent = entreguesMes
+
+  const barra = el("barraEtapas")
+  const lista = el("listaEtapas")
+  barra.innerHTML = ""
+  lista.innerHTML = ""
+  barra.setAttribute(
+    "aria-label",
+    porEtapa.map((e) => `${NOME_ETAPA[e.etapa]}: ${e.total}`).join(", ")
+  )
+
+  porEtapa.forEach((e, i) => {
+    if (e.total > 0) {
+      const segmento = document.createElement("span")
+      segmento.className = `etapa-${i + 1}`
+      segmento.style.flexGrow = e.total
+      segmento.title = `${NOME_ETAPA[e.etapa]}: ${e.total}`
+      barra.appendChild(segmento)
+    }
+
+    const li = document.createElement("li")
+    const amostra = document.createElement("span")
+    amostra.className = `amostra etapa-${i + 1}`
+    const nome = document.createElement("span")
+    nome.textContent = NOME_ETAPA[e.etapa]
+    const valor = document.createElement("b")
+    valor.className = "numero"
+    valor.textContent = e.total
+    li.append(amostra, nome, valor)
+    lista.appendChild(li)
+  })
+  barra.classList.toggle("vazia", total === 0)
 }
 
 api.receiveDashboard((event, dados) => {
-  const { atrasadas, pendentes, entregues, lista, financeiro, estoqueBaixo } = JSON.parse(dados)
+  const { atrasadas, lista, financeiro, estoqueBaixo, porEtapa, entreguesMes } = JSON.parse(dados)
 
   // Alerta de estoque baixo (vem null para quem não cuida do estoque)
-  const alerta = document.getElementById("alertaEstoque")
+  const alerta = el("alertaEstoque")
   if (estoqueBaixo && estoqueBaixo.length > 0) {
     const itens = estoqueBaixo
       .map((i) => `${i.nome} (${i.quantidade.toLocaleString("pt-BR")} ${i.unidade})`)
       .join(", ")
-    alerta.textContent = `⚠ Estoque baixo: ${itens}`
-    alerta.style.display = "block"
+    el("textoAlertaEstoque").innerHTML = ""
+    const titulo = document.createElement("b")
+    titulo.textContent = "Estoque baixo: "
+    el("textoAlertaEstoque").append(titulo, itens, " · clique para abrir o estoque")
+    alerta.hidden = false
   } else {
-    alerta.style.display = "none"
+    alerta.hidden = true
   }
 
   // Indicadores financeiros (vêm null para quem não tem permissão "financeiro")
   if (financeiro) {
-    document.getElementById("kpiRecebido").textContent = formatoMoeda.format(financeiro.recebidoMes)
-    document.getElementById("kpiFaturado").textContent = formatoMoeda.format(financeiro.faturadoMes)
-    document.getElementById("kpiReceber").textContent = formatoMoeda.format(financeiro.aReceber)
-    document.getElementById("kpiOrcamentos").textContent = String(financeiro.orcamentosPendentes)
+    el("kpiRecebido").textContent = formatoMoeda.format(financeiro.recebidoMes)
+    el("kpiFaturado").textContent = formatoMoeda.format(financeiro.faturadoMes)
+    el("kpiReceber").textContent = formatoMoeda.format(financeiro.aReceber)
+    el("kpiOrcamentos").textContent = String(financeiro.orcamentosPendentes)
   }
 
-  // Gráfico
-  grafico.data.datasets[0].data = [atrasadas, entregues, pendentes]
-  grafico.update()
-  const vazio = atrasadas + entregues + pendentes === 0
-  document.getElementById("areaGrafico").style.display = vazio ? "none" : "block"
-  semOS.hidden = !vazio
-  if (!vazio) grafico.resize()
+  desenharProducao(porEtapa, atrasadas, entreguesMes)
 
   // Tabela de prazos
-  tabelaPrazos.innerHTML = ""
+  const tabela = el("tabelaPrazos")
+  tabela.innerHTML = ""
   lista.forEach((os) => {
     const linha = document.createElement("tr")
-    const { texto, cor } = etiquetaSituacao(os.prazoFinal)
-
+    const { texto, classe } = situacao(os.prazoFinal)
     const colunas = [
-      String(os.numero),
-      os.cliente ? os.cliente.nome : "(cliente excluído)",
+      [String(os.numero), "numero"],
+      [os.cliente ? os.cliente.nome : "(cliente excluído)", "truncate max-w-[1px]"],
       // Só dia/mês: os prazos desta lista são sempre próximos de hoje
-      new Date(os.prazoFinal).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
+      [new Date(os.prazoFinal).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }), "numero"],
     ]
-    colunas.forEach((valor) => {
+    colunas.forEach(([valor, classeTd]) => {
       const td = document.createElement("td")
-      td.className = "py-2 px-3 border-b border-gray-600 truncate"
+      td.className = classeTd
       td.textContent = valor
       linha.appendChild(td)
     })
-
-    const tdSituacao = document.createElement("td")
-    tdSituacao.className = "py-2 px-3 border-b border-gray-600"
+    const td = document.createElement("td")
     const etiqueta = document.createElement("span")
-    etiqueta.className = `${cor} text-white py-1 px-2 rounded-full text-xs whitespace-nowrap`
+    etiqueta.className = `badge ${classe}`
     etiqueta.textContent = texto
-    tdSituacao.appendChild(etiqueta)
-    linha.appendChild(tdSituacao)
-
-    tabelaPrazos.appendChild(linha)
+    td.appendChild(etiqueta)
+    linha.appendChild(td)
+    tabela.appendChild(linha)
   })
-  semPrazos.hidden = lista.length > 0
+  el("semPrazos").hidden = lista.length > 0
 })
 
 // Recarrega quando alguma OS é criada, alterada ou excluída
@@ -124,6 +146,3 @@ api.onDashboardChanged(() => carregarDashboard())
 api.dbStatus((event, status) => {
   if (status === "conectado") carregarDashboard()
 })
-
-// Clicar no alerta abre a tela de estoque
-document.getElementById("alertaEstoque").addEventListener("click", () => api.openWindow("estoque"))

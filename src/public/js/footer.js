@@ -13,6 +13,16 @@
     document.querySelectorAll('[data-permissao]').forEach((el) => {
       if (!usuario.permissoes.includes(el.dataset.permissao)) el.style.display = 'none'
     })
+    // Títulos de grupo da barra lateral que ficaram sem nenhum item visível
+    document.querySelectorAll('.lateral-grupo').forEach((titulo) => {
+      let item = titulo.nextElementSibling
+      let temVisivel = false
+      while (item && !item.classList.contains('lateral-grupo')) {
+        if (item.style.display !== 'none') temVisivel = true
+        item = item.nextElementSibling
+      }
+      if (!temVisivel) titulo.style.display = 'none'
+    })
   })
 
   const barra = document.querySelector('footer.statusbar')
