@@ -18,6 +18,7 @@ const serviceOrderModel = require('./src/model/ServiceOrder.js')
 const productModel = require('./src/model/Products.js')
 const quoteModel = require('./src/model/Quote.js')
 const usuarioModel = require('./src/model/Usuario.js')
+const fornecedorModel = require('./src/model/Fornecedor.js')
 
 const { gerarPDF } = require('./src/print/pdf.js')
 const { htmlOS } = require('./src/print/osTemplate.js')
@@ -33,9 +34,9 @@ let janelaLogin = null
 
 // O que cada perfil pode fazer
 const PERMISSOES = {
-  administrador: ["clientes", "orcamentos", "os", "produtos", "relatorios", "financeiro", "excluir", "usuarios"],
+  administrador: ["clientes", "orcamentos", "os", "produtos", "relatorios", "financeiro", "excluir", "usuarios", "estoque"],
   atendente: ["clientes", "orcamentos", "os", "relatorios"],
-  "produção": ["os"],
+  "produção": ["os", "estoque"],
 }
 
 function pode(permissao) {
@@ -140,6 +141,11 @@ function quoteRegistrationWindow() {
   return modalWindow("./src/views/quoteRegistration.html");
 }
 
+// Fornecedores
+function supplierRegistrationWindow() {
+  return modalWindow("./src/views/supplierRegistration.html");
+}
+
 // Usuários (só administrador)
 function userRegistrationWindow() {
   return modalWindow("./src/views/userRegistration.html", { width: 900, height: 600 });
@@ -164,11 +170,14 @@ const janelasPorNome = {
   orcamentos: quoteRegistrationWindow,
   relatorios: () => reportsWindow(),
   usuarios: userRegistrationWindow,
+  fornecedores: supplierRegistrationWindow,
 };
+// Janelas cujo nome não é igual à permissão
+const permissaoDaJanela = { fornecedores: "estoque" };
 ipcMain.on("open-window", (event, nome) => {
   const abrir = janelasPorNome[nome];
   if (!abrir) return;
-  if (!pode(nome)) return avisoSemPermissao(event);
+  if (!pode(permissaoDaJanela[nome] || nome)) return avisoSemPermissao(event);
   abrir();
 });
 
@@ -945,6 +954,84 @@ ipcComPermissao("delete-order", "excluir", async (event, id) => {
 
 
 // =============================
+// ======= FORNECEDORES ========
+
+function dadosFornecedor(f) {
+  return {
+    nome: f.nome,
+    documento: f.documento,
+    contato: f.contato,
+    telefone: f.telefone,
+    email: f.email,
+    fornece: f.fornece,
+    observacoes: f.observacoes,
+    ativo: f.ativo !== false,
+  };
+}
+
+ipcComPermissao("create-supplier", "estoque", async (event, f) => {
+  try {
+    await fornecedorModel.create(dadosFornecedor(f));
+    await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
+      type: "info",
+      title: "Aviso",
+      message: "Fornecedor adicionado com sucesso",
+      buttons: ["OK"],
+    });
+    event.reply("reset-form");
+  } catch (error) {
+    console.log(error);
+    avisoErroValidacao(error);
+  }
+});
+
+// Busca por nome, documento ou pelo que fornece; termo vazio lista todos
+ipcComPermissao("search-supplier", "estoque", async (event, termo) => {
+  try {
+    const regex = new RegExp(escapeRegex(termo || ""), "i");
+    const lista = await fornecedorModel
+      .find({ $or: [{ nome: regex }, { documento: regex }, { fornece: regex }] })
+      .sort({ nome: 1 });
+    event.reply("supplier-result", JSON.stringify(lista));
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+ipcComPermissao("update-supplier", "estoque", async (event, f) => {
+  try {
+    await fornecedorModel.findByIdAndUpdate(f._id, dadosFornecedor(f), { runValidators: true });
+    await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
+      type: "info",
+      title: "Aviso",
+      message: "Dados do fornecedor alterados com sucesso",
+      buttons: ["OK"],
+    });
+    event.reply("reset-form");
+  } catch (error) {
+    console.log(error);
+    avisoErroValidacao(error);
+  }
+});
+
+ipcComPermissao("delete-supplier", "excluir", async (event, id) => {
+  try {
+    const result = await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
+      type: "warning",
+      title: "Atenção!",
+      message: "Tem certeza que deseja excluir este fornecedor?\nEsta ação não poderá ser desfeita.",
+      buttons: ["Cancelar", "Excluir"],
+    });
+    if (result.response === 1) {
+      await fornecedorModel.findByIdAndDelete(id);
+      event.reply("reset-form");
+    }
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+// =============================
 // ========= USUÁRIOS ==========
 
 function enviarUsuarios(event) {
@@ -1355,6 +1442,11 @@ const template = [
         label: "Produto",
         permissao: "produtos",
         click: () => productRegistrationWindow(),
+      },
+      {
+        label: "Fornecedor",
+        permissao: "estoque",
+        click: () => supplierRegistrationWindow(),
       },
       {
         label: "Usuários",

@@ -34,6 +34,13 @@ contextBridge.exposeInMainWorld("api", {
   getSession: () => ipcRenderer.send("get-session"),
   receiveSession: (args) => ipcRenderer.on("session", args),
 
+  // Fornecedores
+  createSupplier: (f) => ipcRenderer.send("create-supplier", f),
+  searchSupplier: (termo) => ipcRenderer.send("search-supplier", termo),
+  updateSupplier: (f) => ipcRenderer.send("update-supplier", f),
+  deleteSupplier: (id) => ipcRenderer.send("delete-supplier", id),
+  receiveSuppliers: (args) => ipcRenderer.on("supplier-result", args),
+
   // Usuários (administrador)
   listUsers: () => ipcRenderer.send("list-users"),
   receiveUsers: (args) => ipcRenderer.on("users-list", args),

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Só scripts/estilos do próprio app (esta tela não tem onclick) -->
+    <meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:" />
+    <link href="../public/css/costumerRegistrationStyle.css" rel="stylesheet" />
+    <link href="../public/css/tailwind.css" rel="stylesheet" />
+    <title>Fornecedores</title>
+</head>
+
+<body class="text-[var(--color-text-primary)]">
+
+    <div class="base">
+
+        <!-- SEARCH SECTION -->
+        <section class="searchSection flex items-center px-4">
+            <form id="frmSearchSupplier" class="flex items-center gap-4 w-full">
+                <input type="text" class="inputStyle w-[500px] mt-[5px] ml-[10px]" id="searchSupplierInput"
+                    placeholder="  Buscar por nome, CNPJ/CPF ou o que fornece... (vazio lista todos)" />
+                <button type="submit" class="btns">BUSCAR</button>
+            </form>
+        </section>
+
+        <hr class="blockDivision border-t-2 border-[var(--color-primary)] mx-auto mt-2 opacity-40 rounded" />
+
+        <!-- REGISTER SECTION -->
+        <section class="registerSection">
+
+            <section class="w-[620px] p-4">
+                <form id="frmSupplier" class="w-full space-y-3">
+                    <h1 class="text-xl font-semibold pt-1 mb-2">Cadastro de Fornecedores</h1>
+
+                    <input type="text" id="inputIdSupplier" hidden />
+                    <input type="text" class="inputStyle w-full" id="inputNome" placeholder="  Nome / razão social *"
+                        required />
+
+                    <div class="flex gap-4">
+                        <input type="text" class="inputStyle flex-1" id="inputDocumento" placeholder="  CNPJ ou CPF" />
+                        <input type="text" class="inputStyle flex-1" id="inputContato"
+                            placeholder="  Pessoa de contato" />
+                    </div>
+
+                    <div class="flex gap-4">
+                        <input type="tel" class="inputStyle flex-1" id="inputTelefone" placeholder="  Telefone" />
+                        <input type="email" class="inputStyle flex-1" id="inputEmail" placeholder="  E-mail" />
+                    </div>
+
+                    <input type="text" class="inputStyle w-full" id="inputFornece"
+                        placeholder="  O que fornece (ex.: papéis couché, tintas, lona)" />
+
+                    <textarea class="inputStyle w-full h-[90px] pt-2 resize-none" id="inputObs"
+                        placeholder="Observações (ex.: prazo de entrega, condições de pagamento)"></textarea>
+
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" id="inputAtivo" class="w-4 h-4 accent-[var(--color-primary)]" checked />
+                        Ativo
+                    </label>
+
+                    <div class="flex flex-wrap gap-4 pt-2">
+                        <button type="submit" id="btnCreate"
+                            class="inputStyle px-4 py-1 rounded text-white hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed">
+                            Cadastrar
+                        </button>
+                        <button type="submit" id="btnUpdate"
+                            class="inputStyle px-4 py-1 rounded text-white hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed">
+                            Editar
+                        </button>
+                        <button type="button" id="btnDelete" data-permissao="excluir"
+                            class="inputStyle px-4 py-1 rounded text-white hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed">
+                            Excluir
+                        </button>
+                        <button type="button" id="btnReset"
+                            class="inputStyle px-2 py-1 rounded text-white hover:brightness-110">
+                            Limpar
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Lista -->
+            <section class="flex-1 p-4 pl-0">
+                <div class="h-full rounded-[5px] bg-[var(--color-background)] p-3 flex flex-col">
+                    <h2 class="font-semibold mb-2">Fornecedores</h2>
+                    <p id="semResultados" class="text-[var(--color-text-secondary)] text-sm" hidden>
+                        Nenhum fornecedor encontrado.
+                    </p>
+                    <ul id="listaResultados" class="overflow-y-auto space-y-2"></ul>
+                </div>
+            </section>
+        </section>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+        <p id="footerRealTime"></p>
+        <img src="../public/img/dboffRed.png" alt="Icone banco de dados" id="iconeDB" />
+    </footer>
+
+    <!-- SCRIPTS -->
+    <script src="../public/js/supplierRegistrationRenderer.js"></script>
+    <script src="../public/js/footer.js"></script>
+</body>
+
+</html>
