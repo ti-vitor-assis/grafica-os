@@ -854,6 +854,66 @@ ipcMain.on("update-quote", async (event, q) => {
   }
 });
 
+// ======= APROVAR (CONVERTER EM OS) =======
+ipcMain.on("convert-quote", async (event, id) => {
+  const janela = BrowserWindow.fromWebContents(event.sender);
+  try {
+    const orcamento = await quoteModel.findById(id);
+    if (!orcamento) return;
+    if (orcamento.status !== "pendente") return avisoOrcamentoFechado(janela, orcamento);
+
+    // Prazo da OS = hoje + prazo de produção do orçamento
+    const prazo = new Date();
+    prazo.setDate(prazo.getDate() + orcamento.prazoProducaoDias);
+    prazo.setHours(12, 0, 0, 0);
+
+    const aviso = quoteModel.estaVencido(orcamento)
+      ? `Atenção: a validade venceu em ${orcamento.validade.toLocaleDateString("pt-BR")}. Confira se os preços ainda valem.\n\n`
+      : "";
+    const confirmacao = await dialog.showMessageBox(janela, {
+      type: "question",
+      title: "Aprovar orçamento",
+      message: `Aprovar o orçamento nº ${orcamento.numero} e gerar a Ordem de Serviço?`,
+      detail: `${aviso}Prazo de entrega da OS: ${prazo.toLocaleDateString("pt-BR")} (${orcamento.prazoProducaoDias} dias).`,
+      buttons: ["Cancelar", "Aprovar e gerar OS"],
+    });
+    if (confirmacao.response !== 1) return;
+
+    const os = await serviceOrderModel.create({
+      cliente: orcamento.cliente,
+      produtos: orcamento.produtos.map((i) => ({
+        produto: i.produto,
+        descricao: i.descricao,
+        quantidade: i.quantidade,
+        valorUnitario: i.valorUnitario,
+      })),
+      prazoFinal: prazo,
+      status: "aberta",
+      observacoes: [`Gerada a partir do orçamento nº ${orcamento.numero}.`, orcamento.observacoes]
+        .filter(Boolean)
+        .join("\n"),
+    });
+    orcamento.status = "aprovado";
+    orcamento.osGerada = os._id;
+    await orcamento.save();
+    avisarDashboard();
+
+    const result = await dialog.showMessageBox(janela, {
+      type: "info",
+      title: "Aviso",
+      message: `Orçamento nº ${orcamento.numero} aprovado: OS nº ${os.numero} criada.`,
+      buttons: ["OK", "Imprimir OS"],
+    });
+    if (result.response === 1) {
+      await imprimirOS(os._id, janela);
+    }
+    event.reply("reset-form");
+  } catch (error) {
+    console.log(error);
+    avisoErroValidacao(error);
+  }
+});
+
 // ======= RECUSAR =======
 ipcMain.on("refuse-quote", async (event, id) => {
   const janela = BrowserWindow.fromWebContents(event.sender);

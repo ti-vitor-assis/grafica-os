@@ -23,6 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
     btnUpdate.disabled = true;
     btnDelete.disabled = true;
     btnRefuse.disabled = true;
+    btnConvert.disabled = true;
     btnCreate.disabled = false;
 
     const validade = new Date();
@@ -97,10 +98,11 @@ function carregarOrcamento(q) {
     };
     textoSituacao.textContent = textos[s];
 
-    // Só orçamento pendente (vencido ou não) pode ser editado ou recusado
+    // Só orçamento pendente (vencido ou não) pode ser editado, aprovado ou recusado
     const aberto = q.status === "pendente";
     btnCreate.disabled = true;
     btnUpdate.disabled = !aberto;
+    btnConvert.disabled = !aberto;
     btnRefuse.disabled = !aberto;
     btnDelete.disabled = !!q.osGerada;
 }
@@ -136,7 +138,13 @@ frmQuote.addEventListener("submit", (event) => {
 });
 
 // ============================
-// ===== RECUSAR / EXCLUIR ====
+// == APROVAR / RECUSAR / EXCLUIR
+
+// Aprovação usa o orçamento como está salvo: salve as alterações antes
+function convertQuote() {
+    aguardandoReset = true;
+    api.convertQuote(inputIdQuote.value);
+}
 
 function refuseQuote() {
     aguardandoReset = true;
