@@ -5,7 +5,7 @@
 
 console.log("Executando Processo Principal")
 
-const { app, BrowserWindow, nativeTheme, Menu, ipcMain, dialog, shell, powerMonitor } = require("electron/main")
+const { app, BrowserWindow, nativeTheme, Menu, ipcMain, dialog, shell, powerMonitor, session } = require("electron/main")
 
 const path = require("node:path")
 
@@ -71,7 +71,13 @@ function ipcComPermissao(canal, permissao, handler) {
 // Todo handler IPC do app é registrado por aqui: os argumentos que chegam
 // das telas passam por limparEntrada() (sem operadores "$" nem __proto__)
 function ipcOn(canal, handler) {
-  ipcMain.on(canal, (event, ...args) => handler(event, ...args.map((arg) => limparEntrada(arg))))
+  ipcMain.on(canal, (event, ...args) => {
+    if (!origemConfiavel(event)) {
+      console.log(`IPC "${canal}" recusado: origem desconhecida`)
+      return
+    }
+    return handler(event, ...args.map((arg) => limparEntrada(arg)))
+  })
 }
 
 // =============================
@@ -112,13 +118,40 @@ ipcOn("toggle-theme", () => {
 // modo de desenvolvimento se comportar como o instalado (usado nos testes).
 const modoDesenvolvimento = !app.isPackaged && process.env.GRAFICA_SIMULAR_INSTALADO !== "1"
 
-// Opções das telas do app (todas usam o mesmo preload)
+// Opções das telas do app (todas usam o mesmo preload). As três primeiras
+// já são o padrão do Electron, mas ficam explícitas: a tela não tem acesso
+// ao Node, roda isolada e só fala com o main pelo preload (window.api)
 function preferenciasJanela() {
   return {
     preload: path.join(__dirname, "preload.js"),
+    sandbox: true,
+    contextIsolation: true,
+    nodeIntegration: false,
     devTools: modoDesenvolvimento,
   }
 }
+
+// Só as telas do próprio app (arquivos de src/views) podem conversar com o main
+function origemConfiavel(event) {
+  const frame = event.senderFrame
+  if (!frame || !frame.url) return false
+  try {
+    const url = new URL(frame.url)
+    return url.protocol === "file:" && decodeURIComponent(url.pathname).replace(/\\/g, "/").includes("/src/views/")
+  } catch (erro) {
+    return false
+  }
+}
+
+// Nenhuma tela abre janelas novas nem navega para fora do app (um link ou
+// script malicioso não leva o usuário a um site falso dentro do programa)
+app.on("web-contents-created", (_, conteudo) => {
+  conteudo.setWindowOpenHandler(() => ({ action: "deny" }))
+  conteudo.on("will-navigate", (evento, url) => {
+    if (!url.startsWith("file://")) evento.preventDefault()
+  })
+  conteudo.on("will-attach-webview", (evento) => evento.preventDefault())
+})
 
 // Tela de login: é a primeira janela do app
 // motivo (opcional): por que a sessão anterior terminou ("inatividade", "bloqueio")
@@ -360,6 +393,10 @@ app.whenReady().then(() => {
 
   // Bloquear a tela do Windows (Win+L) encerra a sessão do app
   powerMonitor.on("lock-screen", () => encerrarSessao("bloqueio"));
+
+  // O app não usa câmera, microfone, localização, notificações etc.: nega tudo
+  session.defaultSession.setPermissionRequestHandler((conteudo, permissao, responder) => responder(false));
+  session.defaultSession.setPermissionCheckHandler(() => false);
 
   // Sem banco configurado: começa pela configuração em vez do login
   if (temUrl()) {
