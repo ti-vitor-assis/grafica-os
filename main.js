@@ -19,6 +19,8 @@ const productModel = require('./src/model/Products.js')
 
 const { gerarPDF } = require('./src/print/pdf.js')
 const { htmlOS } = require('./src/print/osTemplate.js')
+const { htmlRelatorio } = require('./src/print/reportTemplate.js')
+const relatorios = require('./src/reports/relatorios.js')
 
 let win
 
@@ -38,12 +40,13 @@ const createWindow = () => {
 }
 
 // Cria uma janela modal (filha da janela principal) com o arquivo HTML informado.
-// Todas as telas de cadastro usam o mesmo tamanho e as mesmas opções.
-function modalWindow(arquivoHtml) {
+// As telas de cadastro usam o tamanho padrão; "opcoes" permite mudar o
+// tamanho e passar parâmetros na URL (query), lidos pela tela em location.search
+function modalWindow(arquivoHtml, opcoes = {}) {
   if (!win) return null;
   const janela = new BrowserWindow({
-    width: 1010,
-    height: 720,
+    width: opcoes.width || 1010,
+    height: opcoes.height || 720,
     autoHideMenuBar: true,
     resizable: false,
     minimizable: false,
@@ -53,7 +56,7 @@ function modalWindow(arquivoHtml) {
       preload: path.join(__dirname, "preload.js"),
     },
   });
-  janela.loadFile(arquivoHtml);
+  janela.loadFile(arquivoHtml, { query: opcoes.query || {} });
   return janela;
 }
 
@@ -72,12 +75,22 @@ function productRegistrationWindow() {
   return modalWindow("./src/views/productRegistration.html");
 }
 
+// Relatórios (tipo = relatório já selecionado ao abrir, ex.: "entregues")
+function reportsWindow(tipo) {
+  return modalWindow("./src/views/reports.html", {
+    width: 560,
+    height: 560,
+    query: tipo ? { tipo } : {},
+  });
+}
+
 // Botões da tela inicial pedem para abrir uma janela pelo nome.
 // Só os nomes desta lista são aceitos.
 const janelasPorNome = {
   clientes: costumerRegistrationWindow,
   os: serviceOrderRegistrationWindow,
   produtos: productRegistrationWindow,
+  relatorios: () => reportsWindow(),
 };
 ipcMain.on("open-window", (event, nome) => {
   const abrir = janelasPorNome[nome];
@@ -740,6 +753,55 @@ ipcMain.on("delete-order", async (event, id) => {
 });
 
 
+// =============================
+// ======== RELATÓRIOS =========
+
+// Tipos de relatório: função que monta os dados e se usa período
+const tiposRelatorio = {
+  clientes: { montar: () => relatorios.clientes(), periodo: false },
+  andamento: { montar: () => relatorios.osEmAndamento(), periodo: false },
+  entregues: { montar: (ini, fim) => relatorios.osEntregues(ini, fim), periodo: true },
+  todas: { montar: (ini, fim) => relatorios.todasOS(ini, fim), periodo: true },
+};
+
+// pedido = { tipo, inicio: "AAAA-MM-DD", fim: "AAAA-MM-DD" }
+ipcMain.on("generate-report", async (event, pedido) => {
+  const janela = BrowserWindow.fromWebContents(event.sender);
+  const tipo = tiposRelatorio[pedido.tipo];
+  if (!tipo) return;
+
+  try {
+    // Período no horário local: do começo do dia inicial ao fim do dia final
+    const inicio = new Date(`${pedido.inicio}T00:00:00`);
+    const fim = new Date(`${pedido.fim}T23:59:59.999`);
+    if (tipo.periodo && (isNaN(inicio) || isNaN(fim) || inicio > fim)) {
+      await dialog.showMessageBox(janela, {
+        type: "warning",
+        title: "Atenção",
+        message: "Informe um período válido (a data inicial não pode ser depois da final).",
+        buttons: ["OK"],
+      });
+      return;
+    }
+
+    const relatorio = await tipo.montar(inicio, fim);
+    if (tipo.periodo) {
+      relatorio.periodo = `${inicio.toLocaleDateString("pt-BR")} a ${fim.toLocaleDateString("pt-BR")}`;
+    }
+    const hoje = new Date().toLocaleDateString("sv-SE"); // AAAA-MM-DD no horário local
+    await gerarPDF(htmlRelatorio(relatorio), `Relatorio-${pedido.tipo}-${hoje}.pdf`, janela);
+  } catch (error) {
+    console.error("Erro ao gerar relatório:", error);
+    dialog.showMessageBox(janela, {
+      type: "error",
+      title: "Erro",
+      message: "Não foi possível gerar o relatório.",
+      detail: error.message,
+      buttons: ["OK"],
+    });
+  }
+});
+
 //
 app.commandLine.appendSwitch("log-level", "3");
 
@@ -767,6 +829,27 @@ const template = [
         accelerator: "Alt+F4",
         click: () => app.quit()
       }
+    ]
+  },
+  {
+    label: "Relatórios",
+    submenu: [
+      {
+        label: "Clientes",
+        click: () => reportsWindow("clientes"),
+      },
+      {
+        label: "OS em andamento",
+        click: () => reportsWindow("andamento"),
+      },
+      {
+        label: "OS entregues",
+        click: () => reportsWindow("entregues"),
+      },
+      {
+        label: "Todas as OS",
+        click: () => reportsWindow("todas"),
+      },
     ]
   },
   {

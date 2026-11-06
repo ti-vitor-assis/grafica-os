@@ -65,6 +65,9 @@ contextBridge.exposeInMainWorld("api", {
   receiveDashboard: (args) => ipcRenderer.on("dashboard-data", args),
   onDashboardChanged: (args) => ipcRenderer.on("dashboard-changed", args),
 
+  // Relatórios: pedido = { tipo, inicio, fim }
+  generateReport: (pedido) => ipcRenderer.send("generate-report", pedido),
+
   // Aviso genérico (caixa de diálogo do sistema)
   warn: (mensagem) => ipcRenderer.send("show-warning", mensagem),
 });

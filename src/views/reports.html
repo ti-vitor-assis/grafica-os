@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="../public/css/costumerRegistrationStyle.css" rel="stylesheet" />
+    <title>Relatórios</title>
+</head>
+
+<body class="text-[var(--color-text-primary)]">
+
+    <section class="m-[5px] mb-[45px] rounded-[5px] bg-[var(--color-panel)] p-5">
+        <h1 class="text-xl font-semibold mb-4">Relatórios</h1>
+
+        <form id="frmRelatorio" class="space-y-4">
+
+            <!-- Tipo de relatório -->
+            <fieldset class="space-y-2">
+                <legend class="text-sm text-[var(--color-text-secondary)] mb-1">Escolha o relatório</legend>
+                <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="radio" name="tipo" value="clientes" class="mt-1 accent-[var(--color-primary)]" />
+                    <span><b>Clientes cadastrados</b><br />
+                        <span class="text-sm text-[var(--color-text-secondary)]">Lista com contato e quantidade de OS</span></span>
+                </label>
+                <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="radio" name="tipo" value="andamento" class="mt-1 accent-[var(--color-primary)]" checked />
+                    <span><b>OS em andamento</b><br />
+                        <span class="text-sm text-[var(--color-text-secondary)]">Ainda não entregues, com atrasadas e saldo a receber</span></span>
+                </label>
+                <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="radio" name="tipo" value="entregues" data-periodo class="mt-1 accent-[var(--color-primary)]" />
+                    <span><b>OS entregues</b><br />
+                        <span class="text-sm text-[var(--color-text-secondary)]">Entregues no período, com % no prazo</span></span>
+                </label>
+                <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="radio" name="tipo" value="todas" data-periodo class="mt-1 accent-[var(--color-primary)]" />
+                    <span><b>Todas as OS</b><br />
+                        <span class="text-sm text-[var(--color-text-secondary)]">Abertas no período, em qualquer status</span></span>
+                </label>
+            </fieldset>
+
+            <!-- Período (só para os relatórios marcados com data-periodo) -->
+            <fieldset id="campoPeriodo" class="flex items-center gap-3 disabled:opacity-40">
+                <legend class="text-sm text-[var(--color-text-secondary)] mb-1">Período</legend>
+                <input type="date" id="inputInicio" class="inputStyle w-[170px] pr-3" required />
+                <span>a</span>
+                <input type="date" id="inputFim" class="inputStyle w-[170px] pr-3" required />
+            </fieldset>
+
+            <button type="submit" id="btnGerar"
+                class="inputStyle px-6 py-1 rounded text-white hover:brightness-110 disabled:opacity-40">
+                Gerar PDF
+            </button>
+        </form>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="!w-[530px]">
+        <p id="footerRealTime"></p>
+        <img src="../public/img/dboffRed.png" alt="Icone banco de dados" id="iconeDB" />
+    </footer>
+
+    <!-- SCRIPTS -->
+    <script src="../public/js/reportsRenderer.js"></script>
+    <script src="../public/js/footer.js"></script>
+</body>
+
+</html>
