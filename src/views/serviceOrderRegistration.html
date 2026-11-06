@@ -5,41 +5,166 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link href="../public/css/serviceOrderRegistrationStyle.css" rel="stylesheet" />
+  <link href="../public/css/costumerRegistrationStyle.css" rel="stylesheet" />
   <title>Ordem de Serviço</title>
 </head>
 
 <body>
-  <div class="panel">
+  <div class="base">
 
-    <!-- SEARCH SECTION -->
-    <section class="searchSection flex items-center px-4">
-      <form id="frmSearchClient" class="flex items-center gap-4 w-full">
-        <input type="text" name="searchName" class="inputStyle" id="searchClientsInput"
-          placeholder="  Buscar...                                                                                       🔍︎" />
-        <button type="submit" id="searchBtn" onclick="searchClients()" class="btns">BUSCAR</button>
+    <!-- SEARCH SECTION: cliente à esquerda, número da OS à direita -->
+    <section class="searchSection flex items-center px-4 gap-4">
+      <form id="frmSearchClient" class="flex items-center gap-3">
+        <input type="text" class="inputStyle w-[420px]" id="searchClientsInput"
+          placeholder="  Buscar cliente por nome ou CPF...                                              🔍︎" />
+        <button type="submit" class="btns">BUSCAR</button>
+      </form>
+      <form id="frmSearchOrder" class="flex items-center gap-3 ml-auto">
+        <input type="number" min="1" step="1" class="inputStyle w-[150px]" id="searchOrderInput"
+          placeholder="  Nº da OS" />
+        <button type="submit" class="btns">ABRIR</button>
       </form>
     </section>
 
     <hr class="blockDivision border-t-2 border-[var(--color-primary)] mx-auto mt-2 opacity-40 rounded" />
 
+    <!-- REGISTER SECTION -->
+    <section class="registerSection text-[var(--color-text-primary)]">
 
-    <section class="osSection">
+      <!-- Formulário da OS -->
+      <section class="w-[640px] p-4">
+        <form id="frmOS" class="space-y-2">
 
-      <form id="osForm" class="">
+          <div class="flex items-center justify-between">
+            <h1 class="text-xl font-semibold">
+              Ordem de Serviço <span id="numeroOS" class="text-[var(--color-text-secondary)]">(nova)</span>
+            </h1>
+            <select id="inputStatus" class="inputStyle w-[200px]">
+              <option value="aberta">Aberta</option>
+              <option value="aguardando arte">Aguardando arte</option>
+              <option value="em produção">Em produção</option>
+              <option value="pronta">Pronta</option>
+              <option value="entregue">Entregue</option>
+              <option value="cancelada">Cancelada</option>
+            </select>
+          </div>
 
-        <!-- ID oculto -->
-        <input type="text" id="inputIdClient" class="inputStyle w-full" readonly />
-        <!-- Nome -->
-        <input type="text" class="inputStyle" id="inputNome" placeholder="  Nome *" required readonly />
+          <!-- IDs ocultos -->
+          <input type="text" id="inputIdOS" hidden />
+          <input type="text" id="inputIdClient" hidden />
 
-      </form>
+          <!-- Cliente -->
+          <input type="text" class="inputStyle w-full" id="inputNome" readonly
+            placeholder="  Cliente * (use a busca acima)" />
+
+          <!-- Adicionar item: os campos usam form="frmItem" para NÃO entrarem na
+               validação do formulário da OS (um "0" esquecido na quantidade
+               bloquearia o botão Criar OS) -->
+          <div class="flex gap-2">
+            <select id="selectProduto" form="frmItem" class="inputStyle flex-1 min-w-0">
+              <option value="">Selecione um produto...</option>
+            </select>
+            <input type="number" id="inputQtd" form="frmItem" min="1" step="1" class="inputStyle w-[90px]" placeholder="  Qtd" />
+            <input type="number" id="inputValorUn" form="frmItem" min="0" step="0.01" class="inputStyle w-[120px]"
+              placeholder="  Valor un." />
+            <button type="button" id="btnAddItem" class="btns !w-[90px]">+ Item</button>
+          </div>
+
+          <!-- Itens da OS -->
+          <div class="h-[130px] overflow-y-auto rounded-[10px] bg-[var(--color-background)]">
+            <table class="w-full text-sm">
+              <thead class="sticky top-0 bg-[var(--color-background)] text-[var(--color-text-secondary)]">
+                <tr>
+                  <th class="text-left px-3 py-1 font-normal">Produto</th>
+                  <th class="text-right px-2 py-1 font-normal">Qtd</th>
+                  <th class="text-right px-2 py-1 font-normal">Valor un.</th>
+                  <th class="text-right px-2 py-1 font-normal">Subtotal</th>
+                  <th class="w-[36px]"></th>
+                </tr>
+              </thead>
+              <tbody id="tabelaItens"></tbody>
+            </table>
+            <p id="semItens" class="text-center text-sm text-[var(--color-text-secondary)] pt-6">
+              Nenhum item adicionado.
+            </p>
+          </div>
+
+          <!-- Totais -->
+          <div class="flex items-baseline justify-between">
+            <span id="textoSaldo" class="text-sm text-[var(--color-text-secondary)]"></span>
+            <span class="text-lg font-semibold">Total: <span id="valorTotal">R$ 0,00</span></span>
+          </div>
+
+          <!-- Prazo e arte -->
+          <div class="flex gap-2 items-center">
+            <label for="inputPrazo" class="text-sm">Prazo *</label>
+            <input type="date" id="inputPrazo" class="inputStyle w-[170px] pr-3" required />
+            <select id="inputArteOrigem" class="inputStyle flex-1 min-w-0">
+              <option value="cliente">Arte enviada pelo cliente</option>
+              <option value="gráfica">Arte criada pela gráfica</option>
+            </select>
+            <label class="flex items-center gap-2 text-sm whitespace-nowrap">
+              <input type="checkbox" id="inputArteAprovada" class="w-4 h-4 accent-[var(--color-primary)]" />
+              Arte aprovada
+            </label>
+          </div>
+
+          <!-- Pagamento -->
+          <div class="flex gap-2 items-center">
+            <label for="inputSinal" class="text-sm">Sinal R$</label>
+            <input type="number" id="inputSinal" min="0" step="0.01" class="inputStyle w-[130px]"
+              placeholder="  0,00" />
+            <select id="inputFormaPagamento" class="inputStyle flex-1 min-w-0">
+              <option value="">Forma de pagamento...</option>
+              <option value="dinheiro">Dinheiro</option>
+              <option value="pix">Pix</option>
+              <option value="cartão de débito">Cartão de débito</option>
+              <option value="cartão de crédito">Cartão de crédito</option>
+              <option value="boleto">Boleto</option>
+            </select>
+            <label class="flex items-center gap-2 text-sm whitespace-nowrap">
+              <input type="checkbox" id="inputPago" class="w-4 h-4 accent-[var(--color-primary)]" />
+              Pago (quitado)
+            </label>
+          </div>
+
+          <!-- Observações -->
+          <textarea id="inputObs" class="inputStyle w-full h-[50px] pt-2 resize-none"
+            placeholder="Observações (ex.: detalhes da arte, forma de entrega)"></textarea>
+
+          <!-- Botões -->
+          <div class="flex flex-wrap gap-3">
+            <button type="submit" class="inputStyle px-4 py-1 rounded text-white hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed" id="btnCreate">
+              Criar OS
+            </button>
+            <button type="submit" class="inputStyle px-4 py-1 rounded text-white hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed" id="btnUpdate">
+              Salvar alterações
+            </button>
+            <button type="button" class="inputStyle px-4 py-1 rounded text-white hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed" id="btnDelete"
+              onclick="removeOrder()">
+              Excluir
+            </button>
+            <button type="button" class="inputStyle px-2 py-1 rounded text-white hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed" id="btnReset"
+              onclick="resetForm()">
+              Limpar
+            </button>
+          </div>
+        </form>
+        <form id="frmItem"></form>
+      </section>
+
+      <!-- Lista ao lado: clientes encontrados ou OS do cliente -->
+      <section class="flex-1 p-4 pl-0">
+        <div class="h-full rounded-[5px] bg-[var(--color-background)] p-3 flex flex-col">
+          <h2 id="tituloLista" class="font-semibold mb-2">Ordens de Serviço</h2>
+          <p id="semResultados" class="text-[var(--color-text-secondary)] text-sm">
+            Busque um cliente para ver as OS dele, ou digite o número de uma OS.
+          </p>
+          <ul id="listaResultados" class="overflow-y-auto space-y-2"></ul>
+        </div>
+      </section>
+    </section>
   </div>
-
-  </section>
-  <h1 class="text-2xl mb-4 font-semibold">Cadastro de Ordem de Serviço</h1>
-
 
   <!-- FOOTER -->
   <footer>
