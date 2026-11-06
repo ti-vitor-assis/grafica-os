@@ -39,6 +39,9 @@ contextBridge.exposeInMainWorld("api", {
     if (dbStatusAtual !== null) callback(null, dbStatusAtual)
   },
 
+  // Avisa o main que o usuário está usando o app (fim de sessão por inatividade)
+  atividade: () => ipcRenderer.send('user-activity'),
+
   // Tema
   getTheme: () => temaAtual,
   toggleTheme: () => ipcRenderer.send('toggle-theme'),

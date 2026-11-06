@@ -111,6 +111,25 @@ describe("Usuário", () => {
         assert.equal(u.publico().senhaHash, undefined);
     });
 
+    it("exige senha com 8 caracteres, letras e números", () => {
+        assert.match(Usuario.problemaNaSenha("abc1234"), /pelo menos 8/);
+        assert.match(Usuario.problemaNaSenha("abcdefgh"), /letras e números/);
+        assert.match(Usuario.problemaNaSenha("12345678"), /letras e números/);
+        assert.equal(Usuario.problemaNaSenha("grafica2026"), null);
+    });
+
+    it("bloqueia depois de 5 senhas erradas e libera depois", () => {
+        const u = new Usuario({ nome: "A", login: "ana" });
+        for (let i = 0; i < 4; i++) u.registrarFalha();
+        assert.equal(u.estaBloqueado(), false);
+        u.registrarFalha();
+        assert.equal(u.estaBloqueado(), true);
+        assert.ok(u.bloqueadoAte - Date.now() > 4 * 60000);
+        assert.equal(u.publico().bloqueado, true);
+        u.liberarAcesso();
+        assert.equal(u.estaBloqueado(), false);
+    });
+
     it("recusa senha curta, login inválido e login repetido", async () => {
         const u = new Usuario({ nome: "A", login: "ana" });
         await assert.rejects(u.definirSenha("123"));

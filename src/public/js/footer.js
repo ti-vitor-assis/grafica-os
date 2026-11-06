@@ -25,6 +25,19 @@
     })
   })
 
+  // Uso do app (mouse/teclado) mantém a sessão aberta. Avisa o main no
+  // máximo a cada 20 s para não sobrecarregar
+  let ultimoAviso = 0
+  const registrarAtividade = () => {
+    const agora = Date.now()
+    if (agora - ultimoAviso > 20000) {
+      ultimoAviso = agora
+      api.atividade()
+    }
+  }
+  ;['mousedown', 'keydown', 'wheel', 'mousemove'].forEach((evento) =>
+    window.addEventListener(evento, registrarAtividade, { passive: true }))
+
   const barra = document.querySelector('footer.statusbar')
   if (!barra) {
     api.getSession()

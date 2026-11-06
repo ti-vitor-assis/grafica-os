@@ -31,8 +31,14 @@ api.receiveUsers((event, dados) => {
         const texto = document.createElement("span");
         texto.textContent = u.nome;
         const perfil = document.createElement("span");
-        perfil.className = u.ativo ? (u.perfil === "administrador" ? "badge badge-pronta" : "badge badge-info") : "badge";
-        perfil.textContent = u.ativo ? u.perfil : "inativo";
+        if (u.bloqueado) {
+            perfil.className = "badge badge-perigo";
+            perfil.textContent = "bloqueado";
+            perfil.title = "Muitas tentativas de senha erradas. Salve o usuário para liberar.";
+        } else {
+            perfil.className = u.ativo ? (u.perfil === "administrador" ? "badge badge-pronta" : "badge badge-info") : "badge";
+            perfil.textContent = u.ativo ? u.perfil : "inativo";
+        }
         nome.append(texto, perfil);
 
         const detalhe = document.createElement("div");

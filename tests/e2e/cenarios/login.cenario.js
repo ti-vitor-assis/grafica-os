@@ -43,7 +43,23 @@ module.exports = {
             await ctx.js(tela, "erroLogin.textContent = ''");
         }
 
-        await ctx.js(tela, `inputLogin.value=' ANA '; inputSenha.value='ana12345'; frmLogin.requestSubmit()`);
+        // Força bruta: 5 senhas erradas bloqueiam o login, mesmo com a senha certa depois
+        const bruno = new Usuario({ nome: "Bruno", login: "bruno", perfil: "atendente" });
+        await bruno.definirSenha("bruno123");
+        await bruno.save();
+        for (const login of ["bruno", "naoexiste"]) {
+            for (let i = 0; i < 5; i++) {
+                await ctx.js(tela, `erroLogin.textContent=''; inputLogin.value='${login}'; inputSenha.value='errada${i}'; frmLogin.requestSubmit()`);
+                await ctx.aguardar(() => ctx.js(tela, "erroLogin.textContent !== ''"));
+            }
+            await ctx.js(tela, `erroLogin.textContent=''; inputLogin.value='${login}'; inputSenha.value='bruno123'; frmLogin.requestSubmit()`);
+            await ctx.aguardar(() => ctx.js(tela, "erroLogin.textContent !== ''"));
+            ctx.ok((await ctx.js(tela, "erroLogin.textContent")).startsWith("Muitas tentativas erradas"), `login '${login}' bloqueado após 5 erros`);
+        }
+        ctx.ok((await Usuario.findOne({ login: "bruno" })).estaBloqueado(), "bloqueio gravado no banco (não some ao reabrir o app)");
+        ctx.ok(!ctx.janela("Bem vindo"), "senha certa não entra enquanto bloqueado");
+
+        await ctx.js(tela, `erroLogin.textContent=''; inputLogin.value=' ANA '; inputSenha.value='ana12345'; frmLogin.requestSubmit()`);
         await ctx.aguardar(() => ctx.janela("Bem vindo"));
         ctx.ok(true, "login aceita maiúsculas e espaços");
     },

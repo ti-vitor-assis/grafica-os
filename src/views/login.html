@@ -26,6 +26,12 @@
                     <p id="subtitulo" class="text-sm texto-mutado mt-1">Conectando ao banco de dados...</p>
                 </div>
 
+                <!-- Por que a sessão anterior terminou (inatividade ou bloqueio de tela) -->
+                <div id="avisoSessao" class="alerta alerta-info mb-4" hidden>
+                    <i data-icone="relogio"></i>
+                    <span id="textoAvisoSessao"></span>
+                </div>
+
                 <!-- Login -->
                 <form id="frmLogin" class="flex flex-col gap-4" hidden>
                     <div class="campo">
@@ -58,12 +64,12 @@
                     <div class="campo">
                         <label for="inputAdminSenha">Senha</label>
                         <input type="password" id="inputAdminSenha" class="input" autocomplete="new-password"
-                            minlength="6" placeholder="mínimo 6 caracteres" required />
+                            minlength="8" placeholder="mínimo 8, com letras e números" required />
                     </div>
                     <div class="campo">
                         <label for="inputAdminConfirma">Confirme a senha</label>
                         <input type="password" id="inputAdminConfirma" class="input" autocomplete="new-password"
-                            minlength="6" required />
+                            minlength="8" required />
                     </div>
                     <button type="submit" class="btn btn-primario w-full mt-1">Criar e entrar</button>
                 </form>

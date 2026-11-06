@@ -10,6 +10,16 @@ const erroLogin = document.getElementById("erroLogin");
 
 const valor = (id) => document.getElementById(id).value;
 
+// Sessão anterior encerrada automaticamente: explica o motivo
+const parametros = new URLSearchParams(location.search);
+const motivo = parametros.get("motivo");
+if (motivo) {
+    document.getElementById("textoAvisoSessao").textContent = motivo === "bloqueio"
+        ? "A sessão foi encerrada porque a tela do Windows foi bloqueada. Entre novamente."
+        : `A sessão foi encerrada após ${parametros.get("minutos")} minutos sem uso. Entre novamente.`;
+    document.getElementById("avisoSessao").hidden = false;
+}
+
 // Quando o banco conectar, pergunta ao main se é o primeiro acesso
 api.dbStatus((event, status) => {
     if (status === "conectado") {

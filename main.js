@@ -5,7 +5,7 @@
 
 console.log("Executando Processo Principal")
 
-const { app, BrowserWindow, nativeTheme, Menu, ipcMain, dialog, shell } = require("electron/main")
+const { app, BrowserWindow, nativeTheme, Menu, ipcMain, dialog, shell, powerMonitor } = require("electron/main")
 
 const path = require("node:path")
 
@@ -121,7 +121,8 @@ function preferenciasJanela() {
 }
 
 // Tela de login: é a primeira janela do app
-function loginWindow() {
+// motivo (opcional): por que a sessão anterior terminou ("inatividade", "bloqueio")
+function loginWindow(motivo) {
   nativeTheme.themeSource = temaAtual() === "escuro" ? "dark" : "light"
   Menu.setApplicationMenu(null)
   janelaLogin = new BrowserWindow({
@@ -133,7 +134,9 @@ function loginWindow() {
     title: "Gráfica OS · Login",
     webPreferences: preferenciasJanela(),
   })
-  janelaLogin.loadFile("./src/views/login.html")
+  janelaLogin.loadFile("./src/views/login.html", {
+    query: motivo ? { motivo, minutos: String(MINUTOS_INATIVIDADE) } : {},
+  })
   janelaLogin.on("closed", () => {
     janelaLogin = null
   })
@@ -355,6 +358,9 @@ app.whenReady().then(() => {
   // Antes do login não há menu (o padrão do Electron, em inglês, não serve)
   Menu.setApplicationMenu(null);
 
+  // Bloquear a tela do Windows (Win+L) encerra a sessão do app
+  powerMonitor.on("lock-screen", () => encerrarSessao("bloqueio"));
+
   // Sem banco configurado: começa pela configuração em vez do login
   if (temUrl()) {
     loginWindow();
@@ -405,17 +411,78 @@ ipcOn("login-info", async (event) => {
 // Login feito: guarda o usuário, abre a janela principal e fecha o login
 function entrar(usuario) {
   usuarioLogado = usuario.publico();
+  ultimaAtividade = Date.now();
   createWindow();
   if (janelaLogin) janelaLogin.close();
 }
 
+// ===== Fim da sessão por inatividade =====
+// Sem mexer no app por este tempo, volta para o login (protege o computador
+// deixado aberto no balcão). O bloqueio de tela do Windows também encerra.
+const MINUTOS_INATIVIDADE = 15;
+const LIMITE_INATIVIDADE_MS =
+  (Number(process.env.GRAFICA_INATIVIDADE_SEGUNDOS) || MINUTOS_INATIVIDADE * 60) * 1000;
+let ultimaAtividade = Date.now();
+
+// As telas avisam quando o usuário mexe no mouse ou no teclado (footer.js)
+ipcOn("user-activity", () => {
+  ultimaAtividade = Date.now();
+});
+
+function encerrarSessao(motivo) {
+  if (usuarioLogado) trocarUsuario(motivo);
+}
+
+setInterval(() => {
+  if (usuarioLogado && Date.now() - ultimaAtividade > LIMITE_INATIVIDADE_MS) encerrarSessao("inatividade");
+}, Math.min(30000, LIMITE_INATIVIDADE_MS / 2));
+
+// Tentativas erradas de logins que não existem (em memória). Assim o
+// comportamento é o mesmo para login existente e inexistente, e ninguém
+// descobre quais logins existem pelo bloqueio.
+const falhasSemUsuario = new Map();
+
+function mensagemBloqueio(ate) {
+  const minutos = Math.max(1, Math.ceil((ate - Date.now()) / 60000));
+  return `Muitas tentativas erradas. Tente de novo em ${minutos} minuto${minutos > 1 ? "s" : ""}.`;
+}
+
 ipcOn("login", async (event, dados) => {
   try {
-    const usuario = await usuarioModel.findOne({ login: String(dados.login || "").trim().toLowerCase() });
+    const login = String(dados.login || "").trim().toLowerCase();
+    const usuario = await usuarioModel.findOne({ login });
+
+    // Login bloqueado por tentativas erradas
+    const bloqueioMemoria = falhasSemUsuario.get(login);
+    const bloqueadoAte = usuario ? usuario.estaBloqueado() && usuario.bloqueadoAte : bloqueioMemoria && bloqueioMemoria.ate > Date.now() && bloqueioMemoria.ate;
+    if (bloqueadoAte) {
+      event.reply("login-error", mensagemBloqueio(bloqueadoAte));
+      return;
+    }
+
     // Mesma mensagem para login inexistente e senha errada (não revela quais logins existem)
     if (!usuario || !usuario.ativo || !(await usuario.conferirSenha(dados.senha))) {
+      if (usuario) {
+        usuario.registrarFalha();
+        await usuario.save();
+      } else {
+        // Bloqueio anterior já vencido: recomeça a contagem
+        const bloqueioVencido = bloqueioMemoria && bloqueioMemoria.ate && bloqueioMemoria.ate <= Date.now();
+        const registro = !bloqueioMemoria || bloqueioVencido ? { falhas: 0, ate: 0 } : bloqueioMemoria;
+        registro.falhas += 1;
+        if (registro.falhas >= usuarioModel.LIMITE_TENTATIVAS) {
+          registro.ate = Date.now() + usuarioModel.MINUTOS_BLOQUEIO * 60000;
+          registro.falhas = 0;
+        }
+        falhasSemUsuario.set(login, registro);
+      }
       event.reply("login-error", "Login ou senha incorretos.");
       return;
+    }
+
+    if (usuario.tentativasFalhas || usuario.bloqueadoAte) {
+      usuario.liberarAcesso();
+      await usuario.save();
     }
     entrar(usuario);
   } catch (error) {
@@ -451,9 +518,10 @@ ipcOn("get-session", (event) => {
 });
 
 // Volta para a tela de login, fechando as outras janelas
-function trocarUsuario() {
+// motivo (opcional): "inatividade" ou "bloqueio", mostrado na tela de login
+function trocarUsuario(motivo) {
   usuarioLogado = null;
-  loginWindow();
+  loginWindow(motivo);
   BrowserWindow.getAllWindows()
     .filter((janela) => janela !== janelaLogin)
     // (ao destruir a principal, as modais filhas também são destruídas)
@@ -1406,6 +1474,8 @@ ipcComPermissao("update-user", "usuarios", async (event, dados) => {
     usuario.set({ nome: dados.nome, login: dados.login, perfil: dados.perfil, ativo: dados.ativo !== false });
     // Senha em branco = mantém a atual
     if (dados.senha) await usuario.definirSenha(dados.senha);
+    // Salvar o usuário pelo administrador também libera um login bloqueado
+    usuario.liberarAcesso();
     await usuario.save();
     if (proprio) usuarioLogado = usuario.publico();
 
