@@ -89,7 +89,7 @@ function carregarOrcamento(q) {
     const s = situacao(q);
     etiquetaStatus.hidden = false;
     etiquetaStatus.textContent = s;
-    etiquetaStatus.className = `${corStatus[s]} text-white text-sm rounded-full px-3 py-1`;
+    etiquetaStatus.className = classeStatus(s);
 
     const textos = {
         pendente: `Aguardando resposta do cliente até ${formatarData(q.validade)}`,
@@ -162,3 +162,12 @@ function removeQuote() {
     aguardandoReset = true;
     api.deleteQuote(inputIdQuote.value);
 }
+
+// ============================
+// ===== EVENTOS DA TELA ======
+// (antes eram onclick no HTML)
+btnDelete.addEventListener("click", removeQuote);
+btnRefuse.addEventListener("click", refuseQuote);
+btnConvert.addEventListener("click", convertQuote);
+btnPrint.addEventListener("click", printQuote);
+btnReset.addEventListener("click", resetForm);
