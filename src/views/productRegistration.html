@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="../public/css/costumerRegistrationStyle.css" rel="stylesheet" />
+    <title>Produtos</title>
+</head>
+
+<body>
+
+    <div class="base">
+
+        <!-- SEARCH SECTION -->
+        <section class="searchSection flex items-center px-4">
+            <form id="frmSearchProduct" class="flex items-center gap-4 w-full">
+                <input type="text" class="inputStyle w-[500px] mt-[5px] ml-[10px]" id="searchProductsInput"
+                    placeholder="  Buscar por nome ou categoria...                                                     🔍︎" />
+                <button type="submit" id="searchBtn" class="btns">BUSCAR</button>
+            </form>
+        </section>
+
+        <hr class="blockDivision border-t-2 border-[var(--color-primary)] mx-auto mt-2 opacity-40 rounded" />
+
+        <!-- REGISTER SECTION -->
+        <section class="registerSection">
+
+            <!-- Formulário -->
+            <section class="w-[620px] p-4">
+                <form id="frmProduct" class="w-full space-y-3">
+
+                    <h1 class="text-[var(--color-text-primary)] text-xl font-semibold pt-1 mb-2">
+                        Cadastro de Produtos e Serviços
+                    </h1>
+
+                    <!-- ID oculto -->
+                    <input type="text" id="inputIdProduct" hidden />
+
+                    <!-- Nome -->
+                    <input type="text" class="inputStyle w-full" id="inputNome" placeholder="  Nome *" required />
+
+                    <!-- Categoria / Unidade -->
+                    <div class="flex gap-4">
+                        <input type="text" class="inputStyle flex-1" id="inputCategoria" list="listaCategorias"
+                            placeholder="  Categoria *" required />
+                        <datalist id="listaCategorias">
+                            <option value="Impressos"></option>
+                            <option value="Comunicação Visual"></option>
+                            <option value="Papelaria"></option>
+                            <option value="Brindes"></option>
+                            <option value="Criação de Arte"></option>
+                            <option value="Acabamento"></option>
+                        </datalist>
+                        <select class="inputStyle w-[180px]" id="inputUnidade" required>
+                            <option value="un">Unidade</option>
+                            <option value="cento">Cento</option>
+                            <option value="milheiro">Milheiro</option>
+                            <option value="m²">Metro quadrado (m²)</option>
+                            <option value="pacote">Pacote</option>
+                        </select>
+                    </div>
+
+                    <!-- Material / Tamanho -->
+                    <div class="flex gap-4">
+                        <input type="text" class="inputStyle flex-1" id="inputMaterial"
+                            placeholder="  Material (ex.: Couché 300g)" />
+                        <input type="text" class="inputStyle flex-1" id="inputTamanho"
+                            placeholder="  Tamanho (ex.: 9x5cm)" />
+                    </div>
+
+                    <!-- Cores / Acabamento -->
+                    <div class="flex gap-4">
+                        <input type="text" class="inputStyle w-[180px]" id="inputCores"
+                            placeholder="  Cores (ex.: 4x0)" />
+                        <input type="text" class="inputStyle flex-1" id="inputAcabamento"
+                            placeholder="  Acabamento (ex.: Laminação fosca)" />
+                    </div>
+
+                    <!-- Descrição -->
+                    <textarea class="inputStyle w-full h-[70px] pt-2 resize-none" id="inputDescricao"
+                        placeholder="Descrição"></textarea>
+
+                    <!-- Valor / Ativo -->
+                    <div class="flex gap-4 items-center">
+                        <input type="number" class="inputStyle w-[250px]" id="inputValor" min="0" step="0.01"
+                            placeholder="  Valor unitário (R$) *" required />
+                        <label class="text-[var(--color-text-primary)] flex items-center gap-2">
+                            <input type="checkbox" id="inputAtivo" class="w-4 h-4 accent-[var(--color-primary)]"
+                                checked />
+                            Ativo (disponível para novas OS)
+                        </label>
+                    </div>
+
+                    <!-- Botões -->
+                    <div class="flex flex-wrap gap-4 pt-2">
+                        <button type="submit" class="inputStyle px-4 py-1 rounded text-white hover:brightness-110"
+                            id="btnCreate">
+                            Cadastrar
+                        </button>
+                        <button type="submit" class="inputStyle px-4 py-1 rounded text-white hover:brightness-110"
+                            id="btnUpdate">
+                            Editar
+                        </button>
+                        <button type="button" class="inputStyle px-4 py-1 rounded text-white hover:brightness-110"
+                            id="btnDelete" onclick="removeProduct()">
+                            Excluir
+                        </button>
+                        <button type="button" class="inputStyle px-2 py-1 rounded text-white hover:brightness-110"
+                            id="btnReset" onclick="resetForm()">
+                            Limpar
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Resultados da busca -->
+            <section class="flex-1 p-4 pl-0">
+                <div class="h-full rounded-[5px] bg-[var(--color-background)] p-3 flex flex-col">
+                    <h2 class="text-[var(--color-text-primary)] font-semibold mb-2">Resultados da busca</h2>
+                    <p id="semResultados" class="text-[var(--color-text-secondary)] text-sm">
+                        Busque por nome ou categoria para listar os produtos.
+                    </p>
+                    <ul id="listaResultados" class="overflow-y-auto space-y-2"></ul>
+                </div>
+            </section>
+        </section>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+        <p id="footerRealTime"></p>
+        <img src="../public/img/dboffRed.png" alt="Icone banco de dados" id="iconeDB" />
+    </footer>
+
+    <!-- SCRIPTS -->
+    <script src="../public/js/productRegistrationRenderer.js"></script>
+    <script src="../public/js/footer.js"></script>
+</body>
+
+</html>

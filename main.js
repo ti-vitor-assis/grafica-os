@@ -64,6 +64,11 @@ function serviceOrderRegistrationWindow() {
   return modalWindow("./src/views/serviceOrderRegistration.html");
 }
 
+// Produtos e Serviços
+function productRegistrationWindow() {
+  return modalWindow("./src/views/productRegistration.html");
+}
+
 // Sobre
 function aboutWindow() {
   dialog.showMessageBox(BrowserWindow.getFocusedWindow() || win, {
