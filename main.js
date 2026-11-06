@@ -36,6 +36,7 @@ const configuracaoModel = require('./src/model/Configuracao.js')
 const servicoClientes = require('./src/servicos/clientes.js')
 const lgpd = require('./src/servicos/lgpd.js')
 const auditoria = require('./src/servicos/auditoria.js')
+const migracao = require('./src/servicos/migracao.js')
 
 let win
 
@@ -378,12 +379,31 @@ let preparoChaves = null
 
 function prepararChaves() {
   if (!preparoChaves) {
-    preparoChaves = verificarChaves().catch((erro) => {
-      console.log("Erro ao verificar as chaves:", erro.message)
-      preparoChaves = null
-    })
+    preparoChaves = verificarChaves()
+      .then(() => estadoChaves === "ok" && migrarBanco())
+      .catch((erro) => {
+        console.log("Erro ao verificar as chaves:", erro.message)
+        preparoChaves = null
+      })
   }
   return preparoChaves
+}
+
+// Atualiza bancos de versões anteriores (uma vez; ver src/servicos/migracao.js).
+// Se falhar, o app segue e tenta de novo na próxima abertura.
+async function migrarBanco() {
+  try {
+    const r = await migracao.migrar({ pastaBackup: path.join(app.getPath("userData"), "backups") })
+    if (r.ocupado) console.log("Migração do banco em andamento em outro computador")
+    for (const etapa of r.executadas) {
+      const resumo = Object.entries(etapa.resultado).map(([k, v]) => `${k}: ${v}`).join(", ")
+      console.log(`Migração "${etapa.nome}" concluída (${resumo})`)
+      auditoria.registrar("sistema", "migração do banco", etapa.nome, resumo)
+    }
+    if (r.backup) console.log("Backup (cifrado) antes da migração:", r.backup)
+  } catch (erro) {
+    console.log("Erro na migração do banco:", erro.message)
+  }
 }
 
 async function verificarChaves() {
