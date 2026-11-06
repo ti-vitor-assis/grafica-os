@@ -2169,6 +2169,10 @@ const template = [
     label: "Ajuda",
     submenu: [
       {
+        label: "Privacidade e LGPD",
+        click: () => modalWindow("./src/views/privacidade.html", { width: 900, height: 720, minWidth: 640 })
+      },
+      {
         label: "Repositório",
         click: () => shell.openExternal(packageInfo.homepage)
       },

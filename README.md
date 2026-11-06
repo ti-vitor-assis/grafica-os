@@ -36,8 +36,10 @@ Sistema para gestão de uma gráfica: orçamentos, ordens de serviço, pagamento
 
 - **Orçamentos** com validade e prazo de produção; ao ser aprovado, vira uma OS automaticamente
 - **Ordens de serviço** com número sequencial, itens, prazo, etapas da produção, aprovação da arte e pagamentos (sinal, parcelas e quitação)
-- **Impressão em PDF** da OS, do orçamento e de 9 relatórios (faturamento, contas a receber, produtos mais vendidos, estoque...)
-- **Clientes**, com validação de CPF e endereço preenchido pelo CEP
+- **Impressão em PDF** da OS, do orçamento e de 10 relatórios (faturamento, contas a receber, produtos mais vendidos, estoque, auditoria...)
+- **Clientes** pessoa física (CPF) ou jurídica (CNPJ), com o documento cifrado no banco, busca exata por CPF/CNPJ e endereço preenchido pelo CEP
+- **Histórico preservado**: busca de OS e orçamentos pelo CPF/CNPJ (mesmo de clientes removidos); cliente com histórico é desativado, não excluído
+- **LGPD**: PDF com os dados do cliente, anonimização a pedido, limpeza após 5 anos e registro de auditoria
 - **Produtos e serviços**, com unidade de venda (unidade, cento, milheiro, m²)
 - **Estoque de insumos** (papel, tinta, lona...) com entrada, saída, ajuste, histórico e alerta de estoque baixo; cadastro de fornecedores
 - **Usuários e perfis**: administrador, atendente e produção, cada um vendo só o que pode usar
@@ -70,6 +72,16 @@ Em [Releases](https://github.com/ti-vitor-assis/grafica-os/releases) faça o dow
 
 A configuração do banco fica salva neste computador (criptografada) e pode ser trocada depois pelo administrador em **Ferramentas › Configurar banco de dados**.
 
+### Mais de um computador na gráfica
+Os CPFs/CNPJs são cifrados com uma **chave de segurança** criada no primeiro computador. Para usar o mesmo banco em outro computador:
+1. No primeiro, entre como administrador e vá em **Ferramentas › Configurar banco de dados › Exportar chave**, definindo uma senha.
+2. No novo computador, configure o mesmo banco e use **Importar chave** com o arquivo e a senha.
+
+> Guarde o arquivo de chave e a senha em local seguro (por exemplo, um pen drive guardado). Sem eles, os CPFs/CNPJs não podem ser lidos.
+
+### Atualizando da versão 1.0
+Ao abrir a versão nova pela primeira vez, o sistema atualiza o banco sozinho: grava um backup cifrado em `%APPDATA%grafica-osackups`, cifra os CPFs já cadastrados, retira RG e sexo e liga cada OS e orçamento ao CPF/CNPJ do cliente.
+
 ## Perfis de acesso
 
 | Permissão | Administrador | Atendente | Produção |
@@ -80,9 +92,22 @@ A configuração do banco fica salva neste computador (criptografada) e pode ser
 | Relatórios | ✔ | ✔ (sem os financeiros) | |
 | Financeiro (faturamento, a receber, recebimentos) | ✔ | | |
 | Estoque e fornecedores | ✔ | | ✔ |
-| Excluir registros, usuários e configuração do banco | ✔ | | |
+| Excluir/desativar registros, anonimizar clientes (LGPD) | ✔ | | |
+| Usuários, auditoria, chave de segurança e configuração do banco | ✔ | | |
 
 As permissões são verificadas no processo principal, e não apenas escondidas na tela.
+
+## Privacidade e LGPD
+
+A gráfica é a controladora dos dados dos seus clientes; o sistema ajuda a cumprir a LGPD:
+
+- **Só o necessário:** nome/razão social, CPF/CNPJ e um contato. Endereço e nascimento são opcionais; RG e sexo não são pedidos.
+- **CPF/CNPJ cifrado** (AES-256-GCM) no banco, com busca exata por um índice que não revela o número. Listas, relatórios e telas de OS mostram o documento mascarado (`***.982.247-**`); o número inteiro só aparece na ficha do cliente e nos PDFs entregues a ele.
+- **Direitos do titular:** em Clientes, **Dados do cliente** gera um PDF com tudo o que está guardado, e **Anonimizar** apaga os dados pessoais a pedido.
+- **Histórico:** cada OS e orçamento guarda uma cópia (cifrada) do cliente da época. OS e orçamentos não são excluídos (são cancelados ou recusados) e ficam por 5 anos; depois, **Ferramentas › Limpeza LGPD** apaga os dados pessoais antigos.
+- **Auditoria:** quem entrou, cadastrou, consultou a ficha, exportou ou anonimizou, sem guardar os dados do cliente (**Relatórios › Registro de auditoria**).
+
+O texto completo, com um modelo de aviso para o balcão e os termos de uso, está no próprio sistema em **Ajuda › Privacidade e LGPD**.
 
 ## Para desenvolvedores
 
@@ -106,6 +131,8 @@ MONGO_URL=mongodb://127.0.0.1:27017/graficaos
 | `npm start` | Abre o sistema |
 | `npm run css` | Gera o `tailwind.css` (rode depois de usar classes novas do Tailwind) |
 | `npm run dist` | Gera o instalador do Windows em `dist/` |
+| `npm test` | Testes de unidade (modelos, relatórios, segurança, LGPD e migração) |
+| `npm run test:e2e` | Abre o app de verdade e testa as telas de ponta a ponta |
 
 **Tecnologias:** Electron, MongoDB com Mongoose, HTML/CSS/JavaScript, Tailwind CSS, bcryptjs e electron-builder.
 
@@ -120,6 +147,9 @@ src/views/         Telas (HTML)
 src/public/        CSS (app.css com os temas), ícones e scripts das telas
 src/print/         Modelos dos PDFs (OS, orçamento e relatórios)
 src/reports/       Consultas dos relatórios
+src/seguranca/     Criptografia do CPF/CNPJ, arquivo de chave e limpeza do IPC
+src/servicos/      Regras de clientes, LGPD, auditoria e migração do banco
+tests/             Testes de unidade e de ponta a ponta
 ```
 
 ## Licença

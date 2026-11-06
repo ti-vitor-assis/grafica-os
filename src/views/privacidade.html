@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:" />
+    <link href="../public/css/app.css" rel="stylesheet" />
+    <link href="../public/css/tailwind.css" rel="stylesheet" />
+    <title>Privacidade e LGPD</title>
+    <style>
+        .texto { max-width: 820px; line-height: 1.6; font-size: 14px; }
+        .texto h2 { font-size: 15px; font-weight: 700; margin: 0 0 8px; }
+        .texto p, .texto ul { margin: 0 0 10px; }
+        .texto ul { padding-left: 20px; list-style: disc; }
+        .texto li { margin-bottom: 4px; }
+        .aviso-balcao { border: 1px dashed var(--border-strong, var(--border)); border-radius: 10px; padding: 14px 16px; background: var(--surface-2); }
+    </style>
+</head>
+
+<body class="tela">
+    <header class="tela-cabecalho">
+        <div class="tela-titulo">
+            <span class="tela-icone"><i data-icone="cadeado" data-tamanho="20"></i></span>
+            <div>
+                <h1>Privacidade e LGPD</h1>
+                <p>Como o Gráfica OS trata os dados pessoais dos clientes da gráfica</p>
+            </div>
+        </div>
+    </header>
+
+    <main class="tela-conteudo">
+        <div class="flex flex-col gap-5 texto">
+
+            <section class="card">
+                <div class="card-corpo">
+                    <h2>Quem é responsável pelos dados</h2>
+                    <p>A <b>gráfica</b> que usa o sistema é a <b>controladora</b> dos dados dos seus clientes (Lei 13.709/2018, LGPD):
+                        é ela quem decide o que cadastrar e responde aos pedidos dos clientes. O Gráfica OS é a ferramenta;
+                        os dados ficam no banco de dados MongoDB escolhido pela própria gráfica.</p>
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-corpo">
+                    <h2>O que o sistema guarda e para quê</h2>
+                    <ul>
+                        <li><b>Nome ou razão social, CPF ou CNPJ</b>: identificar o cliente, emitir orçamentos, OS e nota fiscal.</li>
+                        <li><b>Celular, telefone e e-mail</b>: avisar sobre o pedido e a entrega.</li>
+                        <li><b>Endereço</b> (opcional): só quando há entrega ou nota que precise dele.</li>
+                        <li><b>Nascimento</b> (opcional): só se a gráfica usar.</li>
+                        <li><b>OS e orçamentos</b>: histórico comercial, guardado por obrigação legal.</li>
+                    </ul>
+                    <p>Não são pedidos RG, sexo nem outros dados que a gráfica não precisa.</p>
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-corpo">
+                    <h2>Como os dados são protegidos</h2>
+                    <ul>
+                        <li>CPF e CNPJ ficam <b>cifrados</b> no banco (AES-256). A busca é exata, por um código que não revela o número.</li>
+                        <li>A chave fica só nos computadores da gráfica; passa de um para outro por um arquivo protegido por senha.</li>
+                        <li>Listas, relatórios e telas de OS mostram o documento <b>mascarado</b> (ex.: ***.982.247-**). O número inteiro
+                            só aparece na ficha do cliente e nos PDFs entregues a ele.</li>
+                        <li>Cada pessoa entra com o próprio usuário e vê só o que o seu perfil permite. A sessão fecha sozinha depois
+                            de 15 minutos parado.</li>
+                        <li>O <b>registro de auditoria</b> guarda quem cadastrou, alterou, consultou a ficha, exportou ou anonimizou cada
+                            cliente (sem guardar os dados do cliente).</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-corpo">
+                    <h2>Pedidos do cliente (direitos do titular)</h2>
+                    <ul>
+                        <li><b>Ver os próprios dados</b>: Clientes &gt; buscar o cliente &gt; <b>Dados do cliente</b> gera um PDF com tudo o que está guardado.</li>
+                        <li><b>Corrigir</b>: Clientes &gt; editar e salvar.</li>
+                        <li><b>Apagar</b>: Clientes &gt; <b>Anonimizar</b> (administrador). Nome, documento, contatos e endereço são apagados;
+                            as OS e orçamentos continuam, sem poder ser ligados à pessoa depois do prazo de guarda.</li>
+                        <li>Cliente com OS ou orçamento não é excluído: é <b>desativado</b>, para manter o histórico.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-corpo">
+                    <h2>Por quanto tempo</h2>
+                    <p>OS, orçamentos e auditoria ficam por <b>5 anos</b> (prazo das obrigações fiscais e de defesa em processos).
+                        Depois disso, o administrador usa <b>Ferramentas &gt; Limpeza LGPD</b>, que mostra o que vai ser apagado antes de confirmar.</p>
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-corpo">
+                    <h2>Modelo de aviso para o balcão</h2>
+                    <p class="ajuda">A gráfica pode imprimir ou adaptar este texto e deixar à vista dos clientes:</p>
+                    <div class="aviso-balcao">
+                        <p><b>Seus dados na nossa gráfica</b></p>
+                        <p>Pedimos seu nome, CPF ou CNPJ e um contato para fazer o orçamento, a ordem de serviço e a nota fiscal, e para
+                            avisar quando o pedido estiver pronto. O endereço só é pedido quando há entrega. Seu CPF/CNPJ fica guardado de forma
+                            cifrada e só a equipe autorizada tem acesso. Guardamos o histórico dos pedidos por 5 anos, como manda a lei.
+                            Você pode pedir a qualquer momento uma cópia dos seus dados, a correção ou a exclusão deles: é só falar com a gente.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card">
+                <div class="card-corpo">
+                    <h2>Termos de uso do software</h2>
+                    <p>O Gráfica OS é distribuído sob a <b>licença MIT</b>: pode ser usado, copiado e modificado livremente, <b>sem garantia
+                        de qualquer tipo</b>. O autor não responde por perdas de dados, falhas ou pelo uso que a gráfica faz dos dados dos
+                        seus clientes.</p>
+                    <p>Cabe à gráfica: manter o banco de dados e os computadores protegidos, fazer cópias de segurança, guardar o arquivo
+                        de chave e a senha em local seguro (sem eles os CPFs/CNPJs não podem ser lidos), cadastrar só os usuários
+                        necessários e atender aos pedidos dos clientes.</p>
+                    <p class="ajuda">Este texto é uma orientação geral e não substitui a consulta a um profissional de direito.</p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- SCRIPTS -->
+    <script src="../public/js/icones.js"></script>
+</body>
+
+</html>
