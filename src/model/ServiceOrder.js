@@ -6,6 +6,7 @@
 const { model, Schema, Types } = require('mongoose');
 const { proximoNumero } = require('./Counter.js');
 const { campoItens, calcularTotais, centavos } = require('./itens.js');
+const clienteNoDocumento = require('./clienteNoDocumento.js');
 
 // Etapas de uma OS de gráfica, na ordem em que normalmente acontecem
 const STATUS = ['aberta', 'aguardando arte', 'em produção', 'pronta', 'entregue', 'cancelada'];
@@ -144,6 +145,8 @@ serviceOrderSchema.pre('save', async function () {
         this.numero = await proximoNumero('serviceOrder');
     }
 });
+
+serviceOrderSchema.plugin(clienteNoDocumento);
 
 module.exports = model('ServiceOrder', serviceOrderSchema);
 module.exports.STATUS = STATUS;

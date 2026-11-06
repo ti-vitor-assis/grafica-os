@@ -19,7 +19,7 @@ function htmlOrcamento(q, vencido) {
         <div class="campo"><span>Situação</span><b>${escapeHtml(situacao)}</b></div>
     </div>
 
-    ${blocoCliente(q.cliente)}
+    ${blocoCliente(q.cliente, q.clienteCopia)}
 
     ${blocoItens(q.produtos, [["Total", moeda(q.valorTotal), true]])}
 

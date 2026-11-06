@@ -78,3 +78,44 @@ describe("Cliente: o que vai para a tela", () => {
         assert.equal(servico.clienteParaTela(c).documentoMascarado, "");
     });
 });
+
+describe("Cópia do cliente na OS e no orçamento", () => {
+    const OS = require("../../src/model/ServiceOrder.js");
+    const Quote = require("../../src/model/Quote.js");
+    const amanha = () => new Date(Date.now() + 864e5);
+    const itens = () => [{ produto: new (require("mongoose").Types.ObjectId)(), quantidade: 1, valorUnitario: 10 }];
+
+    it("grava nome e documento cifrado do cliente na época, e não muda depois", async () => {
+        cripto.definirChaves(cripto.gerarChaves());
+        const c = await Cli.create({ nome: "Gráfica Cliente", ...servico.camposDocumento("PF", "39053344705") });
+        const os = await OS.create({ cliente: c._id, prazoFinal: amanha(), produtos: itens() });
+        const q = await Quote.create({ cliente: c._id, validade: amanha(), produtos: itens() });
+        for (const doc of [os, q]) {
+            assert.equal(doc.clienteCopia.nome, "Gráfica Cliente");
+            assert.equal(doc.clienteCopia.documentoBusca, cripto.indiceBusca("39053344705"));
+            assert.equal(servico.documentoDe(doc.clienteCopia), "39053344705");
+        }
+
+        c.nome = "Nome Novo";
+        await c.save();
+        os.observacoes = "editada";
+        await os.save();
+        assert.equal((await OS.findById(os._id)).clienteCopia.nome, "Gráfica Cliente", "edição da OS não troca a cópia");
+
+        // Cliente apagado: a OS continua achável pelo CPF
+        await Cli.deleteOne({ _id: c._id });
+        const achadas = await OS.find({ "clienteCopia.documentoBusca": cripto.indiceBusca("39053344705") });
+        assert.equal(achadas.length, 1);
+    });
+
+    it("trocar o cliente da OS atualiza a cópia", async () => {
+        const a = await Cli.create({ nome: "A", ...servico.camposDocumento("PJ", "11222333000181"), tipoPessoa: "PJ" });
+        const b = await Cli.create({ nome: "B" });
+        const os = await OS.create({ cliente: a._id, prazoFinal: amanha(), produtos: itens() });
+        assert.equal(os.clienteCopia.tipoPessoa, "PJ");
+        os.cliente = b._id;
+        await os.save();
+        assert.equal(os.clienteCopia.nome, "B");
+        assert.equal(os.clienteCopia.documentoBusca, undefined);
+    });
+});

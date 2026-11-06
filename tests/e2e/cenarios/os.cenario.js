@@ -57,6 +57,15 @@ module.exports = {
         await ctx.aguardar(() => ctx.pdfs.length === 1 && require("fs").existsSync(ctx.pdfs[0]));
         ctx.ok(true, "PDF da OS gerado");
 
+        // Cadastro do cliente removido: o histórico continua achável pelo CPF
+        await ctx.modelo("Clientes").deleteMany({});
+        await js(`listaResultados.innerHTML=''; inputIdOS.value=''; searchClientsInput.value='529.982.247-25'; frmSearchClient.requestSubmit()`);
+        await ctx.aguardar(() => js("listaResultados.children.length > 0"));
+        ctx.igual(await js("tituloLista.textContent"), "OS deste CPF/CNPJ", "busca por CPF acha as OS pela cópia do cliente");
+        await js("listaResultados.querySelector('.lista-item').click()");
+        await ctx.aguardar(() => js("inputIdOS.value !== ''"));
+        ctx.igual(await js("inputNome.value"), "Maria Souza — CPF ***.982.247-** (cadastro removido)", "OS mostra o cliente da época");
+
         ctx.respostas.push(1);
         await js("btnDelete.click()");
         await ctx.aguardar(async () => (await OS.countDocuments()) === 0);

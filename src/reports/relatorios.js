@@ -21,7 +21,8 @@ function saldo(os) {
     return Math.max(centavos(os.valorTotal - (os.valorPago || 0)), 0);
 }
 
-const nomeCliente = (os) => (os.cliente ? os.cliente.nome : "(cliente excluído)");
+// Cadastro atual; se foi removido, o nome gravado no documento
+const nomeCliente = (os) => (os.cliente ? os.cliente.nome : (os.clienteCopia && os.clienteCopia.nome) || "(cliente excluído)");
 
 function inicioDoDia(d = new Date()) {
     const x = new Date(d);

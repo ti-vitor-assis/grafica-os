@@ -29,7 +29,7 @@ function htmlOS(os) {
         <div class="campo"><span>Entregue em</span><b>${data(os.dataEntregaReal)}</b></div>
     </div>
 
-    ${blocoCliente(os.cliente)}
+    ${blocoCliente(os.cliente, os.clienteCopia)}
 
     ${blocoItens(os.produtos, [
         ["Pago", moeda(valorPago)],

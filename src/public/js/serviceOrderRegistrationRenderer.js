@@ -116,6 +116,8 @@ renderPagamentos();
 
 // Ao escolher o cliente, lista as OS dele
 aoSelecionarCliente = (c) => api.searchOrder({ clienteId: c._id });
+// CPF/CNPJ: OS do cliente atual e da cópia gravada em cada OS
+buscarPorDocumento = (termo) => api.searchOrder({ documento: termo });
 
 // ============================
 // ======= BUSCA DE OS ========
@@ -131,16 +133,21 @@ frmSearchOrder.addEventListener("submit", (event) => {
 });
 
 api.receiveOrder((event, dados) => {
-    const { modo, ordens } = JSON.parse(dados);
+    const { modo, ordens, cliente } = JSON.parse(dados);
     if (modo === "numero") {
         carregarOS(ordens[0]);
         searchOrder.value = "";
     } else {
+        // Busca por CPF/CNPJ: já deixa o cliente escolhido (se ainda existir)
+        if (modo === "documento") {
+            searchClient.value = "";
+            if (cliente) mostrarCliente(cliente);
+        }
         mostrarLista(
-            "OS do cliente",
+            modo === "documento" ? "OS deste CPF/CNPJ" : "OS do cliente",
             ordens.map((o) => ({
                 titulo: `OS nº ${o.numero}`,
-                detalhe: `Prazo ${formatarData(o.prazoFinal)} · ${moeda(o.valorTotal)}`,
+                detalhe: [`Prazo ${formatarData(o.prazoFinal)}`, moeda(o.valorTotal), nomeDaEpoca(o)].filter(Boolean).join(" · "),
                 etiqueta: o.status,
                 aoClicar: () => carregarOS(o),
             })),
@@ -153,7 +160,7 @@ api.receiveOrder((event, dados) => {
 function carregarOS(o) {
     inputIdOS.value = o._id;
     numeroOS.textContent = `nº ${o.numero}`;
-    mostrarCliente(o.cliente);
+    mostrarCliente(o.cliente, o.clienteHistorico);
 
     inputStatus.value = o.status;
     inputPrazo.value = dataParaInput(o.prazoFinal);

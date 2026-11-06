@@ -113,6 +113,16 @@ const rotuloCliente = (c) => (c.documentoMascarado ? `${c.nome} — ${c.rotuloDo
 
 // A tela informa o que fazer quando um cliente é escolhido
 let aoSelecionarCliente = () => {};
+// ...e como buscar o histórico por CPF/CNPJ (acha também OS/orçamentos de
+// clientes excluídos ou anonimizados, pela cópia gravada no documento)
+let buscarPorDocumento = null;
+
+// Nome do cliente gravado no documento, quando difere do cadastro atual
+function nomeDaEpoca(doc) {
+    const h = doc.clienteHistorico;
+    if (!h) return "";
+    return !doc.cliente || doc.cliente.nome !== h.nome ? h.nome : "";
+}
 
 function selecionarCliente(c) {
     inputIdClient.value = c._id;
@@ -121,10 +131,12 @@ function selecionarCliente(c) {
     aoSelecionarCliente(c);
 }
 
-// Mostra o cliente de um documento carregado (o cliente pode ter sido excluído)
-function mostrarCliente(c) {
+// Mostra o cliente de um documento carregado (o cliente pode ter sido
+// excluído: aí mostra a cópia gravada no documento)
+function mostrarCliente(c, historico) {
     inputIdClient.value = c ? c._id : "";
-    inputNome.value = c ? rotuloCliente(c) : "(cliente excluído)";
+    if (c) inputNome.value = rotuloCliente(c);
+    else inputNome.value = historico ? `${rotuloCliente(historico)} (cadastro removido)` : "(cliente excluído)";
 }
 
 frmSearchClient.addEventListener("submit", (event) => {
@@ -134,7 +146,8 @@ frmSearchClient.addEventListener("submit", (event) => {
     if (termo === "") {
         api.validateSearch();
     } else if (/^[\d.\-/\s]+$/.test(termo)) {
-        api.searchCpf(termo);
+        if (buscarPorDocumento) buscarPorDocumento(termo);
+        else api.searchCpf(termo);
     } else {
         api.searchName(termo);
     }

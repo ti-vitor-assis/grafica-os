@@ -1065,19 +1065,56 @@ ipcComPermissao("create-order", "os", async (event, order) => {
 function paraTelaComCliente(doc, extras = {}) {
   const obj = { ...doc.toObject(), ...extras };
   obj.cliente = doc.cliente && doc.cliente._id ? servicoClientes.clienteParaTela(doc.cliente) : null;
+  // Cópia do cliente na época (para quando o cadastro foi removido)
+  obj.clienteHistorico = doc.clienteCopia && doc.clienteCopia.nome ? servicoClientes.clienteParaTela({ _id: "", ...doc.clienteCopia.toObject() }) : null;
+  delete obj.clienteCopia;
   return obj;
 }
 
+// Filtro das buscas de OS e orçamentos:
+//  { numero }     -> um documento
+//  { clienteId }  -> os do cliente (pelo cadastro e pela cópia com o mesmo CPF/CNPJ)
+//  { documento }  -> por CPF/CNPJ exato, mesmo se o cliente foi excluído ou anonimizado
+async function consultaHistorico(filtro) {
+  if (filtro.numero != null) return { modo: "numero", consulta: { numero: Number(filtro.numero) } };
+  let cliente = null;
+  let indice = null;
+  if (filtro.documento != null) {
+    const digitos = cripto.soDigitos(filtro.documento);
+    if (![11, 14].includes(digitos.length)) return { modo: "documento", consulta: null };
+    indice = cripto.indiceBusca(digitos);
+    cliente = await clienteModel.findOne({ documentoBusca: indice });
+  } else {
+    cliente = await clienteModel.findById(filtro.clienteId);
+    indice = cliente && cliente.documentoBusca;
+    if (!cliente) return { modo: "cliente", consulta: { cliente: filtro.clienteId } };
+  }
+  const ou = [];
+  if (cliente) ou.push({ cliente: cliente._id });
+  if (indice) ou.push({ "clienteCopia.documentoBusca": indice });
+  return {
+    modo: filtro.documento != null ? "documento" : "cliente",
+    consulta: ou.length ? { $or: ou } : null,
+    cliente: cliente ? servicoClientes.clienteParaTela(cliente) : null,
+  };
+}
+
 // ======= READ =======
-// filtro: { numero } para abrir uma OS, ou { clienteId } para listar as OS do cliente
 ipcOn("search-order", async (event, filtro) => {
   try {
-    const porNumero = filtro.numero != null;
-    const ordens = await serviceOrderModel
-      .find(porNumero ? { numero: Number(filtro.numero) } : { cliente: filtro.clienteId })
-      .populate("cliente")
-      .sort({ numero: -1 });
+    const { modo, consulta, cliente } = await consultaHistorico(filtro);
+    const porNumero = modo === "numero";
+    const ordens = consulta ? await serviceOrderModel.find(consulta).populate("cliente").sort({ numero: -1 }) : [];
 
+    if (modo === "documento" && ordens.length === 0 && !cliente) {
+      await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
+        type: "info",
+        title: "Aviso",
+        message: "Nenhum cliente ou OS com este CPF/CNPJ.",
+        buttons: ["OK"],
+      });
+      return;
+    }
     if (porNumero && ordens.length === 0) {
       await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
         type: "info",
@@ -1087,7 +1124,7 @@ ipcOn("search-order", async (event, filtro) => {
       });
       return;
     }
-    event.reply("order-result", JSON.stringify({ modo: porNumero ? "numero" : "cliente", ordens: ordens.map((o) => paraTelaComCliente(o)) }));
+    event.reply("order-result", JSON.stringify({ modo, cliente, ordens: ordens.map((o) => paraTelaComCliente(o)) }));
   } catch (error) {
     console.error("Erro na busca da OS:", error);
   }
@@ -1135,6 +1172,7 @@ ipcOn("dashboard-data", async (event) => {
       serviceOrderModel.countDocuments({ status: "entregue" }),
       serviceOrderModel
         .find({ ...emAndamento, prazoFinal: { $lt: limiteProximas } })
+        .select("-clienteCopia.documentoCifrado -clienteCopia.documentoBusca")
         .populate("cliente", "nome")
         .sort({ prazoFinal: 1 })
         .limit(30),
@@ -1586,16 +1624,24 @@ ipcComPermissao("create-quote", "orcamentos", async (event, q) => {
 });
 
 // ======= READ =======
-// filtro: { numero } para abrir um orçamento, ou { clienteId } para listar os do cliente
+// filtro: ver consultaHistorico() (número, cliente ou CPF/CNPJ)
 ipcOn("search-quote", async (event, filtro) => {
   try {
-    const porNumero = filtro.numero != null;
-    const lista = await quoteModel
-      .find(porNumero ? { numero: Number(filtro.numero) } : { cliente: filtro.clienteId })
-      .populate("cliente")
-      .populate("osGerada", "numero")
-      .sort({ numero: -1 });
+    const { modo, consulta, cliente } = await consultaHistorico(filtro);
+    const porNumero = modo === "numero";
+    const lista = consulta
+      ? await quoteModel.find(consulta).populate("cliente").populate("osGerada", "numero").sort({ numero: -1 })
+      : [];
 
+    if (modo === "documento" && lista.length === 0 && !cliente) {
+      await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
+        type: "info",
+        title: "Aviso",
+        message: "Nenhum cliente ou orçamento com este CPF/CNPJ.",
+        buttons: ["OK"],
+      });
+      return;
+    }
     if (porNumero && lista.length === 0) {
       await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
         type: "info",
@@ -1607,7 +1653,7 @@ ipcOn("search-quote", async (event, filtro) => {
     }
     // "vencido" é calculado na hora
     const orcamentos = lista.map((q) => paraTelaComCliente(q, { vencido: quoteModel.estaVencido(q) }));
-    event.reply("quote-result", JSON.stringify({ modo: porNumero ? "numero" : "cliente", orcamentos }));
+    event.reply("quote-result", JSON.stringify({ modo, cliente, orcamentos }));
   } catch (error) {
     console.error("Erro na busca do orçamento:", error);
   }
@@ -1686,6 +1732,8 @@ ipcComPermissao("convert-quote", "orcamentos", async (event, id) => {
 
     const os = await serviceOrderModel.create({
       cliente: orcamento.cliente,
+      // Se o cadastro do cliente não existir mais, a OS herda a cópia do orçamento
+      clienteCopia: orcamento.clienteCopia ? orcamento.clienteCopia.toObject() : undefined,
       produtos: orcamento.produtos.map((i) => ({
         produto: i.produto,
         descricao: i.descricao,

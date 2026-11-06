@@ -118,7 +118,7 @@ api.receiveDashboard((event, dados) => {
     const { texto, classe } = situacao(os.prazoFinal)
     const colunas = [
       [String(os.numero), "numero"],
-      [os.cliente ? os.cliente.nome : "(cliente excluído)", "truncate max-w-[1px]"],
+      [os.cliente ? os.cliente.nome : (os.clienteCopia && os.clienteCopia.nome) || "(cliente excluído)", "truncate max-w-[1px]"],
       // Só dia/mês: os prazos desta lista são sempre próximos de hoje
       [new Date(os.prazoFinal).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }), "numero"],
     ]

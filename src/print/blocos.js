@@ -46,9 +46,11 @@ function cabecalho(titulo, numero) {
     </header>`;
 }
 
-// Dados do cliente (c = cliente populado; pode ser null se foi excluído)
-function blocoCliente(c) {
+// Dados do cliente (c = cliente populado; null se foi excluído: aí usa a
+// cópia gravada no documento, "copia")
+function blocoCliente(c, copia) {
     // O PDF é do próprio cliente: leva o CPF/CNPJ completo (decifrado aqui)
+    if (!(c && c._id) && copia && copia.nome) c = { _id: "copia", ...(copia.toObject ? copia.toObject() : copia) };
     c = c && c._id ? clienteParaTela(c, { completo: true }) : c || {};
     const endereco = [
         c.endereco && `${c.endereco}, ${c.numero || "s/n"}`,

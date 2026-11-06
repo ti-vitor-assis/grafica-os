@@ -6,6 +6,7 @@
 const { model, Schema, Types } = require('mongoose');
 const { proximoNumero } = require('./Counter.js');
 const { campoItens, calcularTotais } = require('./itens.js');
+const clienteNoDocumento = require('./clienteNoDocumento.js');
 
 // "vencido" não é gravado: é um orçamento pendente com a validade passada
 const STATUS = ['pendente', 'aprovado', 'recusado'];
@@ -74,6 +75,8 @@ function estaVencido(orcamento) {
     fimDoDia.setHours(23, 59, 59, 999);
     return fimDoDia < new Date();
 }
+
+quoteSchema.plugin(clienteNoDocumento);
 
 module.exports = model('Quote', quoteSchema);
 module.exports.STATUS = STATUS;

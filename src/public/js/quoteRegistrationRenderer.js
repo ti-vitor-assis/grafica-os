@@ -43,6 +43,8 @@ const situacao = (q) => (q.vencido ? "vencido" : q.status);
 
 // Ao escolher o cliente, lista os orçamentos dele
 aoSelecionarCliente = (c) => api.searchQuote({ clienteId: c._id });
+// CPF/CNPJ: orçamentos do cliente atual e da cópia gravada em cada orçamento
+buscarPorDocumento = (termo) => api.searchQuote({ documento: termo });
 
 // ============================
 // ==== BUSCA DE ORÇAMENTO ====
@@ -58,16 +60,21 @@ frmSearchQuote.addEventListener("submit", (event) => {
 });
 
 api.receiveQuote((event, dados) => {
-    const { modo, orcamentos } = JSON.parse(dados);
+    const { modo, orcamentos, cliente } = JSON.parse(dados);
     if (modo === "numero") {
         carregarOrcamento(orcamentos[0]);
         searchQuote.value = "";
     } else {
+        // Busca por CPF/CNPJ: já deixa o cliente escolhido (se ainda existir)
+        if (modo === "documento") {
+            searchClient.value = "";
+            if (cliente) mostrarCliente(cliente);
+        }
         mostrarLista(
-            "Orçamentos do cliente",
+            modo === "documento" ? "Orçamentos deste CPF/CNPJ" : "Orçamentos do cliente",
             orcamentos.map((q) => ({
                 titulo: `Orçamento nº ${q.numero}`,
-                detalhe: `Válido até ${formatarData(q.validade)} · ${moeda(q.valorTotal)}`,
+                detalhe: [`Válido até ${formatarData(q.validade)}`, moeda(q.valorTotal), nomeDaEpoca(q)].filter(Boolean).join(" · "),
                 etiqueta: situacao(q),
                 aoClicar: () => carregarOrcamento(q),
             })),
@@ -80,7 +87,7 @@ api.receiveQuote((event, dados) => {
 function carregarOrcamento(q) {
     inputIdQuote.value = q._id;
     numeroQuote.textContent = `nº ${q.numero}`;
-    mostrarCliente(q.cliente);
+    mostrarCliente(q.cliente, q.clienteHistorico);
     inputValidade.value = dataParaInput(q.validade);
     inputPrazoProducao.value = q.prazoProducaoDias;
     inputObs.value = q.observacoes || "";
