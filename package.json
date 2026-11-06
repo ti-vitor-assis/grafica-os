@@ -28,6 +28,7 @@
   },
   "homepage": "https://github.com/vitorapassos/grafica-os#readme",
   "dependencies": {
+    "bcryptjs": "^2.4.3",
     "chart.js": "^4.4.9",
     "dotenv": "^18.0.9",
     "electron": "^36.3.1",
