@@ -1,48 +1,60 @@
+/**
+ * Modelo de dados dos Produtos e Serviços da gráfica
+ * Criação da coleção (MongoDB)
+ */
+
 const { model, Schema } = require('mongoose');
+
+// Unidades de venda mais comuns em gráfica:
+// cartão de visita por milheiro, panfleto por cento, banner por m², etc.
+const UNIDADES = ['un', 'cento', 'milheiro', 'm²', 'pacote'];
 
 const productSchema = new Schema({
     nome: {
         type: String,
-        required: true
+        required: true,
+        trim: true,
+        index: true
     },
     categoria: {
         type: String,
-        required: true
+        required: true,
+        trim: true
     },
     descricao: {
-        type: String 
+        type: String
     },
     material: {
-        type: String 
+        type: String // ex.: Couché 300g, Lona 440g, Vinil adesivo
     },
     tamanho: {
-        type: String 
+        type: String // ex.: 9x5cm, A4, 1x1m
     },
     cores: {
-        type: String 
+        type: String // ex.: 4x0, 4x4, 1x0
     },
     acabamento: {
-        type: String 
+        type: String // ex.: Laminação fosca, Verniz localizado, Ilhós
+    },
+    unidade: {
+        type: String,
+        enum: UNIDADES,
+        default: 'un'
     },
     valorUnitario: {
         type: Number,
-        required: true
+        required: true,
+        min: 0
     },
-    estoque: {
-        type: Number,
-        default: 0
-    },
-    personalizavel: {
+    ativo: {
         type: Boolean,
-        default: false
+        default: true
     },
     dataCadastro: {
         type: Date,
         default: Date.now
-    },
-    imagens: [{
-        type: String // URLs das imagens do produto
-    }]
+    }
 }, { versionKey: false });
 
 module.exports = model('Product', productSchema);
+module.exports.UNIDADES = UNIDADES;
