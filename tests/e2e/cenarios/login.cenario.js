@@ -42,6 +42,8 @@ module.exports = {
             ctx.igual(await ctx.js(tela, "erroLogin.textContent"), "Login ou senha incorretos.", caso);
             await ctx.js(tela, "erroLogin.textContent = ''");
         }
+        const recusas = await ctx.modelo("Auditoria").find({ acao: "login recusado" }).lean();
+        ctx.igual(recusas.map((r) => r.usuario).sort(), ["(login inexistente)", "ana", "exfunc"], "auditoria registra logins recusados (sem gravar o texto de login inexistente)");
 
         // Força bruta: 5 senhas erradas bloqueiam o login, mesmo com a senha certa depois
         const bruno = new Usuario({ nome: "Bruno", login: "bruno", perfil: "atendente" });

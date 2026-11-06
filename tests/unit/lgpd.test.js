@@ -101,3 +101,27 @@ describe("Limpeza por prazo", () => {
         assert.deepEqual([denovo.clientes, denovo.ordens, denovo.orcamentos], [0, 0, 0], "segunda limpeza não tem o que fazer");
     });
 });
+
+describe("Auditoria", () => {
+    const Auditoria = require("../../src/model/Auditoria.js");
+    const auditoria = require("../../src/servicos/auditoria.js");
+
+    it("registra, monta o relatório do período e é apagada pela limpeza depois do prazo", async () => {
+        await auditoria.registrar("admin", "cliente cadastrado", "cliente 123");
+        await auditoria.registrar(null, "login recusado");
+        await Auditoria.create({ data: anosAtras(6), usuario: "admin", acao: "entrada" });
+
+        const ontem = new Date(Date.now() - 864e5);
+        const r = await auditoria.relatorio(ontem, new Date());
+        assert.equal(r.secoes[0].linhas.length, 2, "só o período pedido");
+        assert.ok(r.secoes[0].linhas.some((l) => l[1] === "—" && l[2] === "login recusado"), "sem usuário vira —");
+
+        assert.equal((await lgpd.previaLimpeza()).auditoria, 1);
+        assert.equal((await lgpd.executarLimpeza()).auditoria, 1);
+        assert.equal(await Auditoria.countDocuments(), 2);
+    });
+
+    it("falha ao gravar não derruba a ação", async () => {
+        await assert.doesNotReject(auditoria.registrar("x", ""));
+    });
+});

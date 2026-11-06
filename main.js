@@ -35,11 +35,17 @@ const arquivoChave = require('./src/seguranca/arquivoChave.js')
 const configuracaoModel = require('./src/model/Configuracao.js')
 const servicoClientes = require('./src/servicos/clientes.js')
 const lgpd = require('./src/servicos/lgpd.js')
+const auditoria = require('./src/servicos/auditoria.js')
 
 let win
 
 // Usuário que fez login ({ _id, nome, login, perfil, ativo }) ou null
 let usuarioLogado = null
+
+// Registro de auditoria em nome de quem está logado (não espera gravar)
+function auditar(acao, referencia, detalhe) {
+  auditoria.registrar(usuarioLogado && usuarioLogado.login, acao, referencia, detalhe)
+}
 let janelaLogin = null
 
 // O que cada perfil pode fazer
@@ -430,6 +436,7 @@ ipcComPermissao("export-key", "configuracao", async (event, senha) => {
     })
     if (canceled || !filePath) return event.reply("key-result", { ok: false, cancelado: true })
     require("node:fs").writeFileSync(filePath, conteudo)
+    auditar("chave de segurança exportada")
     event.reply("key-result", { ok: true, mensagem: "Arquivo de chave salvo. Guarde-o em local seguro, junto com a senha." })
   } catch (erro) {
     event.reply("key-result", { ok: false, mensagem: erro.message })
@@ -450,6 +457,7 @@ ipcOn("import-key", async (event, pedido) => {
     }
     configuracao.salvarChaves(chaves)
     preparoChaves = null
+    auditar("chave de segurança importada")
     await prepararChaves()
     event.reply("key-result", { ok: true, importada: true, mensagem: "Chave importada. Este computador já pode usar o sistema." })
     if (!usuarioLogado && janelaLogin) janelaLogin.reload()
@@ -609,6 +617,7 @@ ipcOn("login", async (event, dados) => {
     const bloqueioMemoria = falhasSemUsuario.get(login);
     const bloqueadoAte = usuario ? usuario.estaBloqueado() && usuario.bloqueadoAte : bloqueioMemoria && bloqueioMemoria.ate > Date.now() && bloqueioMemoria.ate;
     if (bloqueadoAte) {
+      auditoria.registrar(usuario ? usuario.login : "(login inexistente)", "login bloqueado");
       event.reply("login-error", mensagemBloqueio(bloqueadoAte));
       return;
     }
@@ -629,12 +638,15 @@ ipcOn("login", async (event, dados) => {
         }
         falhasSemUsuario.set(login, registro);
       }
+      // (o texto digitado não é gravado: pode ser uma senha no campo errado)
+      auditoria.registrar(usuario ? usuario.login : "(login inexistente)", "login recusado");
       event.reply("login-error", "Login ou senha incorretos.");
       return;
     }
 
     if (usuario.tentativasFalhas || usuario.bloqueadoAte) {
       usuario.liberarAcesso();
+    auditoria.registrar(usuario.login, "entrada");
       await usuario.save();
     }
     entrar(usuario);
@@ -657,6 +669,7 @@ ipcOn("create-first-admin", async (event, dados) => {
     }
     const usuario = new usuarioModel({ nome: dados.nome, login: dados.login, perfil: "administrador" });
     await usuario.definirSenha(dados.senha);
+    auditoria.registrar(usuario.login, "administrador inicial criado");
     await usuario.save();
     entrar(usuario);
   } catch (error) {
@@ -677,6 +690,7 @@ ipcOn("get-session", (event) => {
 // Volta para a tela de login, fechando as outras janelas
 // motivo (opcional): "inatividade" ou "bloqueio", mostrado na tela de login
 function trocarUsuario(motivo) {
+  auditar("saída", "", motivo || "");
   usuarioLogado = null;
   loginWindow(motivo);
   BrowserWindow.getAllWindows()
@@ -715,7 +729,8 @@ async function avisoErroCliente(event, error) {
 // ======== CREATE =========
 ipcComPermissao("create-cliente", "clientes", async (event, cliente) => {
   try {
-    await clienteModel.create(servicoClientes.dadosClienteDaTela(cliente));
+    const novo = await clienteModel.create(servicoClientes.dadosClienteDaTela(cliente));
+    auditar("cliente cadastrado", `cliente ${novo._id}`);
     const result = await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
       type: "info",
       title: "Aviso",
@@ -759,6 +774,8 @@ async function responderBuscaCliente(event, pedido, clientes, canalNaoEncontrado
   }
   const completo = !!(pedido && pedido.ficha) && pode("clientes");
   const lista = clientes.map((c) => servicoClientes.clienteParaTela(c, { completo }));
+  // Ficha completa (com o CPF/CNPJ inteiro) aberta: fica registrado quem viu
+  if (completo) auditar("ficha de cliente consultada", clientes.slice(0, 5).map((c) => `cliente ${c._id}`).join(", "));
   event.reply("render-client", JSON.stringify(lista));
 }
 
@@ -797,6 +814,7 @@ ipcComPermissao("update-client", "clientes", async (event, cliente) => {
     if (atual.anonimizado) throw new Error("Este cliente foi anonimizado (LGPD) e não pode mais ser alterado.");
     atual.set(servicoClientes.dadosClienteDaTela(cliente));
     await atual.save();
+    auditar("cliente alterado", `cliente ${atual._id}`);
     const result = await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
       type: "info",
       title: "Aviso",
@@ -818,7 +836,8 @@ ipcComPermissao("client-data-pdf", "clientes", async (event, id) => {
   try {
     const relatorio = await lgpd.relatorioTitular(id);
     if (!relatorio) return;
-    await gerarPDF(htmlRelatorio(relatorio), `Dados-do-cliente-${new Date().toISOString().slice(0, 10)}.pdf`, janela);
+    const salvo = await gerarPDF(htmlRelatorio(relatorio), `Dados-do-cliente-${new Date().toISOString().slice(0, 10)}.pdf`, janela);
+    if (salvo) auditar("dados do cliente exportados (LGPD)", `cliente ${id}`);
   } catch (error) {
     console.error("Erro ao gerar os dados do cliente:", error.message);
   }
@@ -844,6 +863,7 @@ ipcComPermissao("anonymize-client", "excluir", async (event, id) => {
     });
     if (result.response !== 1) return;
     await lgpd.anonimizar(id);
+    auditar("cliente anonimizado (LGPD)", `cliente ${id}`);
     await dialog.showMessageBox(janela, { type: "info", title: "Aviso", message: "Dados pessoais do cliente apagados.", buttons: ["OK"] });
     event.reply("reset-form");
   } catch (error) {
@@ -857,7 +877,7 @@ async function limpezaLgpd() {
   const janela = BrowserWindow.getFocusedWindow() || win;
   try {
     const previa = await lgpd.previaLimpeza();
-    const total = previa.clientes + previa.ordens + previa.orcamentos;
+    const total = previa.clientes + previa.ordens + previa.orcamentos + previa.auditoria;
     if (total === 0) {
       await dialog.showMessageBox(janela, {
         type: "info",
@@ -873,7 +893,8 @@ async function limpezaLgpd() {
       message: `Apagar dados pessoais anteriores a ${previa.limite.toLocaleDateString("pt-BR")}?`,
       detail:
         `• ${previa.clientes} cliente(s) sem OS nem orçamento há mais de ${lgpd.PRAZO_ANOS} anos serão anonimizados\n` +
-        `• ${previa.ordens} OS e ${previa.orcamentos} orçamento(s) antigos perdem o nome e o CPF/CNPJ do cliente\n\n` +
+        `• ${previa.ordens} OS e ${previa.orcamentos} orçamento(s) antigos perdem o nome e o CPF/CNPJ do cliente\n` +
+        `• ${previa.auditoria} registro(s) de auditoria antigos são apagados\n\n` +
         "Valores, itens e datas continuam para os relatórios. Não dá para desfazer.",
       buttons: ["Cancelar", "Limpar"],
       defaultId: 0,
@@ -881,6 +902,7 @@ async function limpezaLgpd() {
     });
     if (result.response !== 1) return;
     const feito = await lgpd.executarLimpeza();
+    auditar("limpeza LGPD", "", `${feito.clientes} cliente(s), ${feito.ordens} OS, ${feito.orcamentos} orçamento(s), ${feito.auditoria} registro(s) de auditoria`);
     await dialog.showMessageBox(janela, {
       type: "info",
       title: "Limpeza LGPD",
@@ -929,6 +951,7 @@ ipcComPermissao("delete-client", "excluir", async (event, id) => {
       if (result.response === 1) {
         cliente.ativo = false;
         await cliente.save();
+        auditar("cliente desativado", `cliente ${cliente._id}`);
         event.reply("reset-form");
       }
       return;
@@ -942,6 +965,7 @@ ipcComPermissao("delete-client", "excluir", async (event, id) => {
     });
     if (result.response === 1) {
       await clienteModel.findByIdAndDelete(id);
+      auditar("cliente excluído", `cliente ${id}`);
       event.reply("reset-form");
     }
   } catch (error) {
@@ -1164,6 +1188,7 @@ async function dadosOS(order) {
 ipcComPermissao("create-order", "os", async (event, order) => {
   try {
     const os = await serviceOrderModel.create(await dadosOS(order));
+    auditar("OS criada", `OS ${os.numero}`);
     avisarDashboard();
     const janela = BrowserWindow.fromWebContents(event.sender);
     const result = await dialog.showMessageBox(janela, {
@@ -1260,6 +1285,7 @@ ipcComPermissao("update-order", "os", async (event, order) => {
     os.set(await dadosOS(order));
     // save() (e não findByIdAndUpdate) para as regras do modelo rodarem
     await os.save();
+    auditar("OS alterada", `OS ${os.numero}`, `status: ${os.status}`);
     avisarDashboard();
     await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
       type: "info",
@@ -1627,6 +1653,7 @@ ipcComPermissao("create-user", "usuarios", async (event, dados) => {
     });
     await usuario.definirSenha(dados.senha);
     await usuario.save();
+    auditar("usuário criado", `usuário ${usuario.login}`, `perfil: ${usuario.perfil}`);
     await dialog.showMessageBox(janela, {
       type: "info",
       title: "Aviso",
@@ -1665,6 +1692,7 @@ ipcComPermissao("update-user", "usuarios", async (event, dados) => {
     usuario.liberarAcesso();
     await usuario.save();
     if (proprio) usuarioLogado = usuario.publico();
+    auditar("usuário alterado", `usuário ${usuario.login}`, [`perfil: ${usuario.perfil}`, usuario.ativo ? "" : "inativo", dados.senha ? "senha trocada" : ""].filter(Boolean).join(", "));
 
     await dialog.showMessageBox(janela, {
       type: "info",
@@ -1706,6 +1734,7 @@ async function avisoOrcamentoFechado(janela, q) {
 ipcComPermissao("create-quote", "orcamentos", async (event, q) => {
   try {
     const orcamento = await quoteModel.create(await dadosOrcamento(q));
+    auditar("orçamento criado", `orçamento ${orcamento.numero}`);
     avisarDashboard();
     const janela = BrowserWindow.fromWebContents(event.sender);
     const result = await dialog.showMessageBox(janela, {
@@ -1848,6 +1877,7 @@ ipcComPermissao("convert-quote", "orcamentos", async (event, id) => {
         .join("\n"),
     });
     orcamento.status = "aprovado";
+    auditar("orçamento convertido em OS", `orçamento ${orcamento.numero}`, `OS ${os.numero}`);
     orcamento.osGerada = os._id;
     await orcamento.save();
     avisarDashboard();
@@ -1884,6 +1914,7 @@ ipcComPermissao("refuse-quote", "orcamentos", async (event, id) => {
     if (result.response === 1) {
       orcamento.status = "recusado";
       await orcamento.save();
+      auditar("orçamento recusado", `orçamento ${orcamento.numero}`);
       avisarDashboard();
       event.reply("reset-form");
     }
@@ -1908,6 +1939,7 @@ const tiposRelatorio = {
   receber: { montar: () => relatorios.contasAReceber(), periodo: false, permissao: "financeiro" },
   recebimentos: { montar: (ini, fim) => relatorios.recebimentos(ini, fim), periodo: true, permissao: "financeiro" },
   estoque: { montar: () => relatorios.estoque(), periodo: false, permissao: "estoque" },
+  auditoria: { montar: (ini, fim) => auditoria.relatorio(ini, fim), periodo: true, permissao: "usuarios" },
 };
 
 // pedido = { tipo, inicio: "AAAA-MM-DD", fim: "AAAA-MM-DD" }

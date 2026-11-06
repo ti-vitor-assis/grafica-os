@@ -117,5 +117,16 @@ module.exports = {
         await js("btnDelete.click()");
         await ctx.aguardar(async () => (await Cli.countDocuments()) === 1);
         ctx.ok(true, "cliente sem histórico é excluído após confirmação");
+
+        // ---- Auditoria: as ações ficam registradas, sem dados pessoais
+        const registros = await ctx.modelo("Auditoria").find().lean();
+        const acoes = new Set(registros.map((r) => r.acao));
+        for (const acao of ["cliente cadastrado", "cliente alterado", "ficha de cliente consultada", "cliente desativado",
+            "dados do cliente exportados (LGPD)", "cliente anonimizado (LGPD)", "cliente excluído"]) {
+            ctx.ok(acoes.has(acao), `auditoria registra "${acao}"`);
+        }
+        const textoAuditoria = JSON.stringify(registros);
+        ctx.ok(!/52998224725|529\.982|11222333000181|Maria|Padaria/.test(textoAuditoria), "auditoria não guarda nome nem CPF/CNPJ");
+        ctx.ok(registros.every((r) => r.usuario && r.usuario !== "—"), "auditoria guarda quem fez");
     },
 };

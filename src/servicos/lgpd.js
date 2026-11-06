@@ -5,13 +5,14 @@
  * - anonimizar: apaga os dados pessoais do cadastro a pedido (art. 18, IV/VI).
  *   As OS e orçamentos continuam (são documentos comerciais que a gráfica
  *   precisa guardar: art. 16, I) com a cópia do cliente da época
- * - limpeza: depois do prazo de guarda (PRAZO_ANOS), apaga também essa cópia
- *   e anonimiza clientes sem movimento no período
+ * - limpeza: depois do prazo de guarda (PRAZO_ANOS), apaga também essa cópia,
+ *   anonimiza clientes sem movimento no período e apaga a auditoria antiga
  */
 
 const clienteModel = require("../model/Clientes.js");
 const serviceOrderModel = require("../model/ServiceOrder.js");
 const quoteModel = require("../model/Quote.js");
+const Auditoria = require("../model/Auditoria.js");
 const { documentoDe, rotuloDocumento } = require("./clientes.js");
 const { formatarDocumento } = require("../seguranca/cripto.js");
 const { moeda, data, capitalizar } = require("../print/formatar.js");
@@ -109,12 +110,13 @@ const copiaVencida = (limite) => ({ dataCriacao: { $lt: limite }, "clienteCopia.
 // O que a limpeza vai fazer (para mostrar antes de confirmar)
 async function previaLimpeza(agora = new Date()) {
     const limite = limiteGuarda(agora);
-    const [clientes, ordens, orcamentos] = await Promise.all([
+    const [clientes, ordens, orcamentos, auditoria] = await Promise.all([
         clientesVencidos(limite),
         serviceOrderModel.countDocuments(copiaVencida(limite)),
         quoteModel.countDocuments(copiaVencida(limite)),
+        Auditoria.countDocuments({ data: { $lt: limite } }),
     ]);
-    return { limite, clientes: clientes.length, ordens, orcamentos };
+    return { limite, clientes: clientes.length, ordens, orcamentos, auditoria };
 }
 
 async function executarLimpeza(agora = new Date()) {
@@ -127,11 +129,18 @@ async function executarLimpeza(agora = new Date()) {
         $set: { "clienteCopia.nome": NOME_ANONIMO },
         $unset: { "clienteCopia.documentoCifrado": "", "clienteCopia.documentoBusca": "" },
     };
-    const [ordens, orcamentos] = await Promise.all([
+    const [ordens, orcamentos, auditoria] = await Promise.all([
         serviceOrderModel.updateMany(copiaVencida(limite), apagarCopia),
         quoteModel.updateMany(copiaVencida(limite), apagarCopia),
+        Auditoria.deleteMany({ data: { $lt: limite } }),
     ]);
-    return { limite, clientes: anonimizados, ordens: ordens.modifiedCount, orcamentos: orcamentos.modifiedCount };
+    return {
+        limite,
+        clientes: anonimizados,
+        ordens: ordens.modifiedCount,
+        orcamentos: orcamentos.modifiedCount,
+        auditoria: auditoria.deletedCount,
+    };
 }
 
 module.exports = { PRAZO_ANOS, NOME_ANONIMO, relatorioTitular, anonimizar, previaLimpeza, executarLimpeza, limiteGuarda };
