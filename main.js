@@ -11,7 +11,10 @@ const path = require("node:path")
 
 const packageInfo = require("./package.json")
 
-const { conectar, desconectar, configurado, arquivoEnvUsuario } = require('./database.js')
+const {
+  conectar, desconectar, definirUrl, temUrl, estaConectado, testarConexao, urlDoAmbiente,
+} = require('./database.js')
+const configuracao = require('./src/configuracao.js')
 
 const clienteModel = require("./src/model/Clientes.js");
 const serviceOrderModel = require('./src/model/ServiceOrder.js')
@@ -35,7 +38,7 @@ let janelaLogin = null
 
 // O que cada perfil pode fazer
 const PERMISSOES = {
-  administrador: ["clientes", "orcamentos", "os", "produtos", "relatorios", "financeiro", "excluir", "usuarios", "estoque"],
+  administrador: ["clientes", "orcamentos", "os", "produtos", "relatorios", "financeiro", "excluir", "usuarios", "estoque", "configuracao"],
   atendente: ["clientes", "orcamentos", "os", "relatorios"],
   "produção": ["os", "estoque"],
 }
@@ -203,31 +206,107 @@ function aboutWindow() {
   });
 }
 
-// FIM - Janelas
-// Sem MONGO_URL (ex.: app recém-instalado), explica onde criar o .env
-async function avisoSemConfiguracao() {
-  const pasta = path.dirname(arquivoEnvUsuario);
-  const result = await dialog.showMessageBox(janelaLogin, {
-    type: "warning",
-    title: "Configuração do banco de dados",
-    message: "A conexão com o banco de dados não está configurada.",
-    detail:
-      `Crie o arquivo:\n${arquivoEnvUsuario}\n\n` +
-      "com a linha:\nMONGO_URL=mongodb+srv://USUARIO:SENHA@SEU-CLUSTER.mongodb.net/serviceOrderPrintingPress\n\n" +
-      "Depois, feche e abra o programa de novo.",
-    buttons: ["OK", "Abrir a pasta"],
-  });
-  if (result.response === 1) {
-    require("node:fs").mkdirSync(pasta, { recursive: true });
-    shell.openPath(pasta);
+// =============================
+// == CONFIGURAÇÃO DO BANCO ====
+
+// Tela "Configurar banco de dados". Abre sozinha na primeira vez (sem banco
+// configurado), pela tela de login quando a conexão falha, ou pelo menu
+// Ferramentas (só administrador).
+let janelaConfigBanco = null
+function dbConfigWindow() {
+  if (janelaConfigBanco && !janelaConfigBanco.isDestroyed()) {
+    janelaConfigBanco.focus()
+    return janelaConfigBanco
   }
+  const pai = (usuarioLogado && win) || janelaLogin || undefined
+  janelaConfigBanco = new BrowserWindow({
+    width: 640,
+    height: 600,
+    resizable: false,
+    maximizable: false,
+    autoHideMenuBar: true,
+    parent: pai,
+    modal: !!pai,
+    webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
+    },
+  })
+  janelaConfigBanco.loadFile("./src/views/dbConfig.html")
+  janelaConfigBanco.on("closed", () => {
+    janelaConfigBanco = null
+    // Primeira configuração cancelada: sem banco não há o que fazer
+    if (BrowserWindow.getAllWindows().length === 0) app.quit()
+  })
+  return janelaConfigBanco
 }
+
+// Quem pode mexer na configuração: o administrador logado, ou qualquer um
+// enquanto ninguém está logado E o banco não está funcionando (primeira
+// configuração ou banco fora do ar). Com o banco funcionando, só o admin.
+function podeConfigurarBanco() {
+  if (usuarioLogado) return pode("configuracao")
+  return !estaConectado()
+}
+
+ipcMain.on("open-db-config", (event) => {
+  if (!podeConfigurarBanco()) return avisoSemPermissao(event)
+  dbConfigWindow()
+})
+
+ipcMain.on("db-config-info", (event) => {
+  const salva = configuracao.lerUrlBanco()
+  event.reply("db-config-info", {
+    origemAmbiente: urlDoAmbiente,
+    urlAtual: urlDoAmbiente ? "" : configuracao.mascararUrl(salva),
+    conectado: estaConectado(),
+  })
+})
+
+ipcMain.on("db-config-test", async (event, url) => {
+  if (!podeConfigurarBanco()) return avisoSemPermissao(event)
+  event.reply("db-config-result", await testarConexao(String(url || "").trim()))
+})
+
+ipcMain.on("db-config-save", async (event, url) => {
+  if (!podeConfigurarBanco()) return avisoSemPermissao(event)
+  if (urlDoAmbiente) return
+  url = String(url || "").trim()
+
+  // Só salva uma conexão que funciona
+  const teste = await testarConexao(url)
+  if (!teste.ok) return event.reply("db-config-result", teste)
+
+  configuracao.salvarUrlBanco(url)
+  await desconectar()
+  definirUrl(url)
+  await conectar()
+
+  // Banco novo = usuários novos: volta para o login (ou abre o login)
+  if (usuarioLogado) {
+    trocarUsuario()
+  } else if (janelaLogin) {
+    janelaLogin.reload()
+  } else {
+    loginWindow()
+  }
+  if (janelaConfigBanco && !janelaConfigBanco.isDestroyed()) janelaConfigBanco.close()
+})
+
+// FIM - Janelas
 
 app.whenReady().then(() => {
 
-  loginWindow();
-  if (!configurado) {
-    janelaLogin.webContents.once("did-finish-load", avisoSemConfiguracao);
+  // URL salva pela tela de configuração (se não vier do .env/ambiente)
+  if (!urlDoAmbiente) definirUrl(configuracao.lerUrlBanco())
+
+  // Antes do login não há menu (o padrão do Electron, em inglês, não serve)
+  Menu.setApplicationMenu(null);
+
+  // Sem banco configurado: começa pela configuração em vez do login
+  if (temUrl()) {
+    loginWindow();
+  } else {
+    dbConfigWindow();
   }
 
   // Cada janela pede a conexão ao carregar (preload.js) e recebe o status
@@ -266,7 +345,7 @@ ipcMain.on("login-info", async (event) => {
     event.reply("login-info", { primeiroAcesso: total === 0 });
   } catch (error) {
     console.log(error);
-    event.reply("login-error", "Não foi possível acessar o banco de dados. Verifique a conexão e o arquivo .env.");
+    event.reply("login-error", "Não foi possível acessar o banco de dados.");
   }
 });
 
@@ -1683,6 +1762,14 @@ const template = [
   {
     label: "Ferramentas",
     submenu: [
+      {
+        label: "Configurar banco de dados",
+        permissao: "configuracao",
+        click: () => dbConfigWindow(),
+      },
+      {
+        type: "separator"
+      },
       {
         label: "Zoom+",
         role: "zoomIn",

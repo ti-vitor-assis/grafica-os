@@ -25,6 +25,14 @@ contextBridge.exposeInMainWorld("api", {
     if (dbStatusAtual !== null) callback(null, dbStatusAtual)
   },
 
+  // Configuração do banco de dados
+  openDbConfig: () => ipcRenderer.send("open-db-config"),
+  dbConfigInfo: () => ipcRenderer.send("db-config-info"),
+  receiveDbConfigInfo: (args) => ipcRenderer.on("db-config-info", args),
+  testDbConfig: (url) => ipcRenderer.send("db-config-test", url),
+  saveDbConfig: (url) => ipcRenderer.send("db-config-save", url),
+  dbConfigResult: (args) => ipcRenderer.on("db-config-result", args),
+
   // Login e sessão
   loginInfo: () => ipcRenderer.send("login-info"),
   receiveLoginInfo: (args) => ipcRenderer.on("login-info", args),

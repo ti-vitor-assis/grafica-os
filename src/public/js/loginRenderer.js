@@ -16,7 +16,8 @@ api.dbStatus((event, status) => {
         api.loginInfo();
     } else {
         subtitulo.textContent = "Sem conexão com o banco de dados.";
-        erroLogin.textContent = "Verifique a internet e o arquivo .env (MONGO_URL).";
+        erroLogin.textContent = "Verifique a internet ou a configuração do banco.";
+        document.getElementById("btnConfigBanco").style.display = "block";
     }
 });
 
@@ -60,3 +61,5 @@ frmPrimeiroAcesso.addEventListener("submit", (event) => {
         senha: valor("inputAdminSenha"),
     });
 });
+
+document.getElementById("btnConfigBanco").addEventListener("click", () => api.openDbConfig());
