@@ -4,162 +4,201 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- Só scripts/estilos do próprio app; conexão externa apenas com o ViaCEP (busca de CEP).
-         'unsafe-inline' em script-src é necessário por causa dos onclick="" nas telas -->
+    <!-- Só scripts/estilos do próprio app; conexão externa apenas com o ViaCEP (busca de CEP) -->
     <meta http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://viacep.com.br" />
-    <link href="../public/css/costumerRegistrationStyle.css" rel="stylesheet" />
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://viacep.com.br" />
+    <link href="../public/css/app.css" rel="stylesheet" />
     <link href="../public/css/tailwind.css" rel="stylesheet" />
     <title>Clientes</title>
 </head>
 
-<body>
+<body class="tela">
+    <header class="tela-cabecalho">
+        <div class="tela-titulo">
+            <span class="tela-icone"><i data-icone="clientes" data-tamanho="20"></i></span>
+            <div>
+                <h1>Clientes</h1>
+                <p>Cadastro de clientes da gráfica</p>
+            </div>
+        </div>
+        <form id="frmSearchClient" class="busca">
+            <div class="busca-campo">
+                <i data-icone="busca" data-tamanho="16"></i>
+                <input type="search" name="searchName" id="searchClientsInput" class="input"
+                    placeholder="Buscar por nome ou CPF" />
+            </div>
+            <button type="submit" id="searchBtn" class="btn btn-secundario">Buscar</button>
+        </form>
+    </header>
 
-    <div class="base">
+    <main class="tela-conteudo">
+        <div class="layout-form-lista">
 
-        <!-- SEARCH SECTION -->
-        <section class="searchSection flex items-center px-4">
-            <form id="frmSearchClient" class="flex items-center gap-4 w-full">
-                <input type="text" name="searchName" class="inputStyle" id="searchClientsInput"
-                    placeholder="  Buscar...                                                                                       🔍︎" />
-                <button type="submit" id="searchBtn" class="btns" onclick="searchClients()">BUSCAR</button>
-            </form>
-        </section>
+            <form id="frmCli" class="card">
+                <div class="card-cabecalho">
+                    <div>
+                        <h2 id="tituloForm">Novo cliente</h2>
+                        <p>Campos com <span class="obrigatorio">*</span> são obrigatórios</p>
+                    </div>
+                </div>
 
-        <hr class="blockDivision border-t-2 border-[var(--color-primary)] mx-auto mt-2 opacity-40 rounded" />
-
-        <!-- REGISTER SECTION -->
-        <section class="registerSection">
-            <section class="blocoCadastro w-full flex justify-center items-start p-4">
-                <form id="frmCli" class="w-full max-w-[950px] space-y-3">
-
-                    <h1 id="titulo" class="text-[var(--color-text-primary)] text-xl font-semibold pt-1 mb-2 ">
-                        Cadastro de Clientes
-                    </h1>
-
-                    <!-- ID oculto -->
+                <div class="card-corpo">
                     <input type="text" id="inputIdClient" hidden />
 
-                    <!-- Nome -->
-                    <input type="text" class="inputStyle w-full" id="inputNome" placeholder="  Nome *" required />
-
-                    <!-- RG / CPF / Botão buscar -->
-                    <div class="flex items-center gap-4">
-                        <input type="text" class="inputStyle w-[515px]" id="inputRG" placeholder="  RG" />
-                        <input type="text" class="inputStyle w-[455px]" id="inputCPF" onblur="checarCPF()" required
-                            placeholder="  CPF *" />
-                        <button type="button"
-                            class=" inputStyle btnStyle btnBuscar w-[40px] px-2 flex justify-center items-center">
-                            🔍︎
-                        </button>
+                    <!-- Dados pessoais -->
+                    <div class="secao">
+                        <p class="secao-titulo">Dados pessoais</p>
+                        <div class="grid grid-cols-12 gap-x-4 gap-y-3">
+                            <div class="campo col-span-12">
+                                <label for="inputNome">Nome completo <span class="obrigatorio">*</span></label>
+                                <input type="text" id="inputNome" class="input" required />
+                            </div>
+                            <div class="campo col-span-3">
+                                <label for="inputCPF">CPF <span class="obrigatorio">*</span></label>
+                                <input type="text" id="inputCPF" class="input" placeholder="000.000.000-00" required />
+                            </div>
+                            <div class="campo col-span-3">
+                                <label for="inputRG">RG</label>
+                                <input type="text" id="inputRG" class="input" />
+                            </div>
+                            <div class="campo col-span-3">
+                                <label for="inputSexo">Sexo <span class="obrigatorio">*</span></label>
+                                <select id="inputSexo" class="select" required>
+                                    <option value="">Selecione</option>
+                                    <option value="fem">Feminino</option>
+                                    <option value="mas">Masculino</option>
+                                    <option value="out">Outros</option>
+                                </select>
+                            </div>
+                            <div class="campo col-span-3">
+                                <label for="inputDataNasc">Nascimento <span class="obrigatorio">*</span></label>
+                                <input type="date" id="inputDataNasc" class="input" required />
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Sexo / Data de Nascimento -->
-                    <div class="flex flex-wrap gap-4">
-                        <select class="inputStyle flex-1 min-w-[150px] selectStyle" id="inputSexo" required>
-                            <option value="">Escolha o sexo</option>
-                            <option value="fem">Feminino</option>
-                            <option value="mas">Masculino</option>
-                            <option value="out">Outros</option>
-                        </select>
-                        <input type="date" class="inputStyle inputStyle flex-1 min-w-[150px] pr-5" id="inputDataNasc"
-                            required />
+                    <!-- Contato -->
+                    <div class="secao">
+                        <p class="secao-titulo">Contato</p>
+                        <div class="grid grid-cols-12 gap-x-4 gap-y-3">
+                            <div class="campo col-span-3">
+                                <label for="inputTelefone">Celular <span class="obrigatorio">*</span></label>
+                                <input type="tel" id="inputTelefone" class="input" placeholder="(11) 90000-0000" required />
+                            </div>
+                            <div class="campo col-span-3">
+                                <label for="inputTelefone2">Telefone</label>
+                                <input type="tel" id="inputTelefone2" class="input" />
+                            </div>
+                            <div class="campo col-span-6">
+                                <label for="inputEmail">E-mail <span class="obrigatorio">*</span></label>
+                                <input type="email" id="inputEmail" class="input" required />
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Telefones -->
-                    <div class="flex flex-wrap gap-4">
-                        <input type="tel" class="inputStyle flex-1 min-w-[140px]" id="inputTelefone2"
-                            placeholder="  Telefone" />
-                        <input type="tel" class="inputStyle flex-1 min-w-[140px]" id="inputTelefone" required
-                            placeholder="  Celular *" />
+                    <!-- Endereço -->
+                    <div class="secao">
+                        <p class="secao-titulo">Endereço</p>
+                        <div class="grid grid-cols-12 gap-x-4 gap-y-3">
+                            <div class="campo col-span-3">
+                                <label for="inputCep">CEP <span class="obrigatorio">*</span></label>
+                                <input type="text" id="inputCep" class="input" placeholder="00000-000" required />
+                                <span class="ajuda">Preenche o endereço sozinho</span>
+                            </div>
+                            <div class="campo col-span-7">
+                                <label for="inputEndereco">Endereço <span class="obrigatorio">*</span></label>
+                                <input type="text" id="inputEndereco" class="input" required />
+                            </div>
+                            <div class="campo col-span-2">
+                                <label for="inputNum">Número <span class="obrigatorio">*</span></label>
+                                <input type="text" id="inputNum" class="input" required />
+                            </div>
+                            <div class="campo col-span-5">
+                                <label for="inputComplemento">Complemento</label>
+                                <input type="text" id="inputComplemento" class="input" />
+                            </div>
+                            <div class="campo col-span-7">
+                                <label for="inputBairro">Bairro <span class="obrigatorio">*</span></label>
+                                <input type="text" id="inputBairro" class="input" required />
+                            </div>
+                            <div class="campo col-span-8">
+                                <label for="inputCidade">Cidade <span class="obrigatorio">*</span></label>
+                                <input type="text" id="inputCidade" class="input" required />
+                            </div>
+                            <div class="campo col-span-4">
+                                <label for="inputEstado">Estado <span class="obrigatorio">*</span></label>
+                                <select id="inputEstado" class="select" required>
+                                    <option value="">Selecione</option>
+                                    <option value="AC">Acre</option>
+                                    <option value="AL">Alagoas</option>
+                                    <option value="AP">Amapá</option>
+                                    <option value="AM">Amazonas</option>
+                                    <option value="BA">Bahia</option>
+                                    <option value="CE">Ceará</option>
+                                    <option value="DF">Distrito Federal</option>
+                                    <option value="ES">Espírito Santo</option>
+                                    <option value="GO">Goiás</option>
+                                    <option value="MA">Maranhão</option>
+                                    <option value="MT">Mato Grosso</option>
+                                    <option value="MS">Mato Grosso do Sul</option>
+                                    <option value="MG">Minas Gerais</option>
+                                    <option value="PA">Pará</option>
+                                    <option value="PB">Paraíba</option>
+                                    <option value="PR">Paraná</option>
+                                    <option value="PE">Pernambuco</option>
+                                    <option value="PI">Piauí</option>
+                                    <option value="RJ">Rio de Janeiro</option>
+                                    <option value="RN">Rio Grande do Norte</option>
+                                    <option value="RS">Rio Grande do Sul</option>
+                                    <option value="RO">Rondônia</option>
+                                    <option value="RR">Roraima</option>
+                                    <option value="SC">Santa Catarina</option>
+                                    <option value="SP">São Paulo</option>
+                                    <option value="SE">Sergipe</option>
+                                    <option value="TO">Tocantins</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
+                </div>
 
-                    <!-- Email -->
-                    <input type="email" class="inputStyle w-full" id="inputEmail" required
-                        placeholder="  Email *" />
+                <div class="card-acoes fixo">
+                    <button type="button" id="btnDelete" data-permissao="excluir" class="btn btn-perigo some-desabilitado">
+                        <i data-icone="lixeira" data-tamanho="16"></i> Excluir
+                    </button>
+                    <span class="espacador"></span>
+                    <button type="reset" id="btnReset" class="btn btn-secundario">
+                        <i data-icone="mais" data-tamanho="16"></i> Novo cliente
+                    </button>
+                    <button type="submit" id="btnCreate" class="btn btn-primario some-desabilitado">
+                        <i data-icone="salvar" data-tamanho="16"></i> Cadastrar cliente
+                    </button>
+                    <button type="submit" id="btnUpdate" class="btn btn-primario some-desabilitado">
+                        <i data-icone="salvar" data-tamanho="16"></i> Salvar alterações
+                    </button>
+                </div>
+            </form>
 
-                    <!-- Endereço 1 -->
-                    <div class="flex flex-wrap gap-4">
-                        <input type="text" class="inputStyle w-1/4 min-w-[120px]" id="inputCep" placeholder="  CEP *"
-                            onblur="buscarEndereco()" required />
-                        <input type="text" class="inputStyle flex-1" id="inputEndereco" placeholder="  Endereço"
-                            required />
-                        <input type="text" class="inputStyle w-1/4 min-w-[100px]" id="inputNum" required
-                            placeholder="  Número *" />
+            <aside class="card lista-lateral">
+                <div class="card-cabecalho">
+                    <div>
+                        <h2>Resultados</h2>
+                        <p id="contagemResultados">Busque por nome ou CPF</p>
                     </div>
+                </div>
+                <p id="semResultados" class="vazio">
+                    <i data-icone="busca" data-tamanho="22"></i>
+                    Os clientes encontrados aparecem aqui.
+                </p>
+                <ul id="listaResultados" class="lista"></ul>
+            </aside>
+        </div>
+    </main>
 
-                    <!-- Endereço 2 -->
-                    <input type="text" class="inputStyle w-full" id="inputComplemento" placeholder="  Complemento" />
-
-                    <!-- Bairro / Cidade -->
-                    <div class="flex flex-wrap gap-4">
-                        <input type="text" class="inputStyle flex-1" id="inputBairro" required placeholder="  Bairro" />
-                        <input type="text" class="inputStyle flex-1" id="inputCidade" required placeholder="  Cidade" />
-                    </div>
-
-                    <!-- Estado -->
-                    <select id="inputEstado" class="inputStyle w-full selectStyle pr-8" required>
-                        <option value="">Escolha um estado...</option>
-                        <option value="AC">Acre</option>
-                        <option value="AL">Alagoas</option>
-                        <option value="AP">Amapá</option>
-                        <option value="AM">Amazonas</option>
-                        <option value="BA">Bahia</option>
-                        <option value="CE">Ceará</option>
-                        <option value="DF">Distrito Federal</option>
-                        <option value="ES">Espírito Santo</option>
-                        <option value="GO">Goiás</option>
-                        <option value="MA">Maranhão</option>
-                        <option value="MT">Mato Grosso</option>
-                        <option value="MS">Mato Grosso do Sul</option>
-                        <option value="MG">Minas Gerais</option>
-                        <option value="PA">Pará</option>
-                        <option value="PB">Paraíba</option>
-                        <option value="PR">Paraná</option>
-                        <option value="PE">Pernambuco</option>
-                        <option value="PI">Piauí</option>
-                        <option value="RJ">Rio de Janeiro</option>
-                        <option value="RN">Rio Grande do Norte</option>
-                        <option value="RS">Rio Grande do Sul</option>
-                        <option value="RO">Rondônia</option>
-                        <option value="RR">Roraima</option>
-                        <option value="SC">Santa Catarina</option>
-                        <option value="SP">São Paulo</option>
-                        <option value="SE">Sergipe</option>
-                        <option value="TO">Tocantins</option>
-                    </select>
-
-                    <!-- Botões -->
-                    <div class="flex flex-wrap gap-4">
-                        <button type="submit" class="inputStyle px-4 py-1 rounded text-white  hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
-                            id="btnCreate">
-                            Cadastrar
-                        </button>
-                        <button type="submit" class="inputStyle px-4 py-1 rounded text-white hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
-                            id="btnUpdate">
-                            Editar
-                        </button>
-                        <button type="button" class=" inputStyle px-4 py-1 rounded text-white  hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
-                            id="btnDelete" data-permissao="excluir" onclick="removeClient()">
-                            Excluir
-                        </button>
-                        <button type="reset" class=" inputStyle px-2 py-1 rounded text-white hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
-                            id="btnReset" onclick="resetForm()">
-                            Limpar
-                        </button>
-                    </div>
-                </form>
-            </section>
-        </section>
-    </div>
-
-    <!-- FOOTER -->
-    <footer>
-        <p id="footerRealTime"></p>
-        <img src="../public/img/dboffRed.png" alt="Icone banco de dados" id="iconeDB" />
-    </footer>
+    <footer class="statusbar"></footer>
 
     <!-- SCRIPTS -->
+    <script src="../public/js/icones.js"></script>
     <script src="../public/js/costumerRegistrationRenderer.js"></script>
     <script src="../public/js/footer.js"></script>
 </body>

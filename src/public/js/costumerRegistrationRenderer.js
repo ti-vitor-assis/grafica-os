@@ -69,12 +69,12 @@ function checarCPF() {
     const inputCPF = document.getElementById("inputCPF");
 
     // Remove classes anteriores
-    inputCPF.classList.remove("border-green-500", "border-red-500", "ring-1", "ring-green-300", "ring-red-300");
+    inputCPF.classList.remove("valido", "invalido");
 
     if (!validaCPF(inputCPF.value)) {
-        inputCPF.classList.add("border-red-500", "ring-1", "ring-red-300");
+        inputCPF.classList.add("invalido");
     } else {
-        inputCPF.classList.add("border-green-500", "ring-1", "ring-green-300");
+        inputCPF.classList.add("valido");
     }
 }
 
@@ -84,8 +84,8 @@ function cpfDuplicate() {
     inputCPF.focus();
 
     // Indica visualmente erro
-    inputCPF.classList.remove("border-green-500", "ring-green-300");
-    inputCPF.classList.add("border-red-500", "ring-1", "ring-red-300");
+    inputCPF.classList.remove("valido");
+    inputCPF.classList.add("invalido");
 }
 
 // O main avisa quando o CPF já está cadastrado (erro 11000 do MongoDB)
@@ -197,9 +197,9 @@ function formatDate(date) {
   }
 
 // 
-frmSearchClient.addEventListener("submit", async (event) => {
+frmSearchClient.addEventListener("submit", (event) => {
     event.preventDefault();
-
+    searchClients();
 })
 
 // ============================
@@ -260,36 +260,67 @@ function searchName() {
 // da função de busca, cada nova busca acumularia mais um listener.
 api.renderClient((event, client) => {
     // Passo 6: Renderização dos dados do cliente - não esquecer de converter os dados de STRING para JSON
-    const clientData = JSON.parse(client);
-    arrayClient = clientData;
+    arrayClient = JSON.parse(client);
 
-    // Uso do ForEach para percorrer o vetor e extrair os dados
-    arrayClient.forEach((c) => {
-        inputIdClient.value = c._id;
-        inputNome.value = c.nome;
-        inputRG.value = c.rg;
-        inputCPF.value = c.cpf;
-        inputSexo.value = c.sexo;
-        inputDataNasc.value = formatDate(c.dataNascimento);
-        inputTelefone.value = c.telefone;
-        inputTelefone2.value = c.telefone2;
-        inputEmail.value = c.email;
-        inputCep.value = c.cep;
-        inputEndereco.value = c.endereco;
-        inputNum.value = c.numero;
-        inputComplemento.value = c.complemento;
-        inputBairro.value = c.bairro;
-        inputCidade.value = c.cidade;
-        inputEstado.value = c.estado;
-        // restaurar tecla Enter
-        restaurarEnter();
-        // Desativar o botão adicionar
-        btnCreate.disabled = true;
-        // Ativar os botões editar e excluir
-        btnUpdate.disabled = false;
-        btnDelete.disabled = false;
-    });
+    // Mostra todos os encontrados na lista ao lado; o primeiro já é carregado
+    mostrarResultados(arrayClient);
+    if (arrayClient.length > 0) preencherCliente(arrayClient[0]);
 });
+
+// Preenche o formulário com um cliente
+function preencherCliente(c) {
+    inputIdClient.value = c._id;
+    inputNome.value = c.nome;
+    inputRG.value = c.rg || "";
+    inputCPF.value = c.cpf;
+    inputSexo.value = c.sexo || "";
+    inputDataNasc.value = c.dataNascimento ? formatDate(c.dataNascimento) : "";
+    inputTelefone.value = c.telefone || "";
+    inputTelefone2.value = c.telefone2 || "";
+    inputEmail.value = c.email || "";
+    inputCep.value = c.cep || "";
+    inputEndereco.value = c.endereco || "";
+    inputNum.value = c.numero || "";
+    inputComplemento.value = c.complemento || "";
+    inputBairro.value = c.bairro || "";
+    inputCidade.value = c.cidade || "";
+    inputEstado.value = c.estado || "";
+    inputCPF.classList.remove("valido", "invalido");
+    // restaurar tecla Enter
+    restaurarEnter();
+    // Desativar o botão adicionar
+    btnCreate.disabled = true;
+    // Ativar os botões editar e excluir
+    btnUpdate.disabled = false;
+    btnDelete.disabled = false;
+    // Marca o cliente na lista
+    document.querySelectorAll("#listaResultados .lista-item").forEach((li) => {
+        li.classList.toggle("ativo", li.dataset.id === c._id);
+    });
+}
+
+// Lista de clientes encontrados na busca
+function mostrarResultados(clientes) {
+    const lista = document.getElementById("listaResultados");
+    lista.innerHTML = "";
+    document.getElementById("contagemResultados").textContent =
+        `${clientes.length} encontrado${clientes.length === 1 ? "" : "s"}`;
+    clientes.forEach((c) => {
+        const li = document.createElement("li");
+        li.className = "lista-item";
+        li.dataset.id = c._id;
+        const titulo = document.createElement("div");
+        titulo.className = "lista-item-titulo";
+        titulo.textContent = c.nome;
+        const detalhe = document.createElement("div");
+        detalhe.className = "lista-item-detalhe";
+        detalhe.textContent = [`CPF ${c.cpf}`, c.telefone, c.cidade].filter(Boolean).join(" · ");
+        li.append(titulo, detalhe);
+        li.addEventListener("click", () => preencherCliente(c));
+        lista.appendChild(li);
+    });
+    document.getElementById("semResultados").hidden = clientes.length > 0;
+}
 
 // setar o nome do cliente o nome do cliente para fazer um novo cadastro se a busca retornar que o cliente
 api.setName((args) => {
@@ -339,3 +370,15 @@ function teclaEnter(event) {
 function restaurarEnter() {
     frmSearchClient.removeEventListener("keydown", teclaEnter);
   }
+// ============================
+// ===== EVENTOS DA TELA ======
+// (antes eram onclick/onblur no HTML)
+inputCPF.addEventListener("blur", checarCPF);
+inputCep.addEventListener("blur", buscarEndereco);
+btnDelete.addEventListener("click", removeClient);
+btnReset.addEventListener("click", resetForm);
+
+// Título do formulário: "Novo cliente" ou o nome de quem está sendo editado
+api.renderClient(() => {
+    document.getElementById("tituloForm").textContent = "Editar cliente";
+});

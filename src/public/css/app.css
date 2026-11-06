@@ -249,6 +249,14 @@ h3 {
     border-radius: 0 0 12px 12px;
 }
 
+/* Em formulários longos, as ações ficam sempre visíveis no rodapé da tela */
+.card-acoes.fixo {
+    position: sticky;
+    bottom: -20px; /* compensa o padding da área de conteúdo */
+    z-index: 2;
+    box-shadow: 0 -8px 16px -10px rgba(0, 0, 0, 0.25);
+}
+
 .card-destaque {
     border-color: var(--primary);
     box-shadow: 0 0 0 3px var(--primary-soft), var(--shadow);
