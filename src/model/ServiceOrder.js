@@ -5,40 +5,12 @@
 
 const { model, Schema, Types } = require('mongoose');
 const { proximoNumero } = require('./Counter.js');
+const { campoItens, calcularTotais } = require('./itens.js');
 
 // Etapas de uma OS de gráfica, na ordem em que normalmente acontecem
 const STATUS = ['aberta', 'aguardando arte', 'em produção', 'pronta', 'entregue', 'cancelada'];
 const ORIGEM_ARTE = ['cliente', 'gráfica'];
 const FORMAS_PAGAMENTO = ['', 'dinheiro', 'pix', 'cartão de débito', 'cartão de crédito', 'boleto'];
-
-// Arredonda para centavos (evita 0.1 + 0.2 = 0.30000000000000004)
-const centavos = (valor) => Math.round(valor * 100) / 100;
-
-const itemSchema = new Schema({
-    produto: {
-        type: Types.ObjectId,
-        ref: 'Product',
-        required: true
-    },
-    // Cópia do nome do produto no momento da OS: se o produto for
-    // renomeado depois, a OS continua mostrando o que foi vendido
-    descricao: {
-        type: String
-    },
-    quantidade: {
-        type: Number,
-        required: true,
-        min: [1, 'A quantidade deve ser pelo menos 1']
-    },
-    valorUnitario: {
-        type: Number,
-        required: true,
-        min: [0, 'O valor unitário não pode ser negativo']
-    },
-    subtotal: {
-        type: Number
-    }
-}, { _id: false });
 
 const serviceOrderSchema = new Schema({
     // Número legível da OS (1, 2, 3...), mostrado ao cliente e usado na busca
@@ -52,13 +24,7 @@ const serviceOrderSchema = new Schema({
         ref: 'Clientes',
         required: [true, 'Selecione o cliente']
     },
-    produtos: {
-        type: [itemSchema],
-        validate: {
-            validator: (itens) => itens.length > 0,
-            message: 'A OS precisa ter pelo menos 1 item'
-        }
-    },
+    produtos: campoItens,
     // Calculado automaticamente a partir dos itens (ver pre('validate') abaixo)
     valorTotal: {
         type: Number
@@ -131,12 +97,7 @@ const serviceOrderSchema = new Schema({
 // o valor que chega da tela nunca é usado direto.
 serviceOrderSchema.pre('validate', function () {
     // Subtotais e total recalculados
-    let total = 0;
-    for (const item of this.produtos) {
-        item.subtotal = centavos(item.quantidade * item.valorUnitario);
-        total += item.subtotal;
-    }
-    this.valorTotal = centavos(total);
+    calcularTotais(this);
 
     if (this.pagamento && this.pagamento.sinal > this.valorTotal) {
         this.invalidate('pagamento.sinal', 'O sinal não pode ser maior que o valor total');
