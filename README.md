@@ -1,133 +1,126 @@
-# Gráfica OS
+![GitHub License](https://img.shields.io/github/license/ti-vitor-assis/grafica-os)
 
-Aplicativo desktop para gerenciar uma gráfica: clientes, orçamentos, ordens de serviço (OS), produtos, pagamentos, estoque de insumos e relatórios.
+# Gráfica OS 🖨️
 
-Projeto desenvolvido no curso do SENAC.
+Sistema para gestão de uma gráfica: orçamentos, ordens de serviço, pagamentos, estoque de insumos e relatórios. Desenvolvido com o framework Electron e o banco de dados MongoDB.
 
-![Tela inicial](docs/img/inicio.png)
+### Tela principal
+![Tela principal](docs/img/inicio.png)
+
+### Tema escuro
+![Tela principal no tema escuro](docs/img/inicio-escuro.png)
+
+### Orçamentos
+![Orçamento](docs/img/orcamento.png)
+
+### Ordem de serviço
+![Ordem de serviço](docs/img/os.png)
+
+### Ordem de serviço impressa
+![Ordem de serviço impressa](docs/img/os-impressa.png)
+
+### Cadastro de clientes
+![Cadastro de clientes](docs/img/clientes.png)
+
+### Estoque de insumos
+![Estoque de insumos](docs/img/estoque.png)
+
+### Relatórios
+![Relatórios](docs/img/relatorios.png)
+![Relatório de faturamento](docs/img/relatorio-faturamento.png)
+
+### Login
+![Login](docs/img/login.png)
 
 ## Funcionalidades
 
-| Módulo | O que faz |
-|---|---|
-| **Login e usuários** | Login com senha (hash bcrypt), perfis administrador / atendente / produção e cadastro de funcionários |
-| **Clientes** | Cadastro com validação de CPF e busca de endereço pelo CEP (ViaCEP) |
-| **Produtos e serviços** | Catálogo com categoria, material, tamanho, cores, acabamento, unidade de venda (un, cento, milheiro, m²…) e preço |
-| **Orçamentos** | Itens, validade e prazo de produção; impressão em PDF; ao ser aprovado, gera a OS automaticamente |
-| **Ordens de serviço** | Número sequencial, itens, prazo, status da produção, aprovação da arte, pagamentos (sinal, parcelas, quitação) e impressão em PDF |
-| **Estoque** | Insumos (papel, tinta, lona…) com entrada, saída e ajuste, histórico das movimentações e alerta de estoque baixo; cadastro de fornecedores |
-| **Dashboard** | Gráfico das OS, lista de OS atrasadas ou perto do prazo, recebido e faturado no mês, valor a receber e orçamentos pendentes |
-| **Relatórios (PDF)** | Clientes, OS em andamento, OS entregues, todas as OS, faturamento, produtos mais vendidos, contas a receber, recebimentos e estoque |
+- **Orçamentos** com validade e prazo de produção; ao ser aprovado, vira uma OS automaticamente
+- **Ordens de serviço** com número sequencial, itens, prazo, etapas da produção, aprovação da arte e pagamentos (sinal, parcelas e quitação)
+- **Impressão em PDF** da OS, do orçamento e de 9 relatórios (faturamento, contas a receber, produtos mais vendidos, estoque...)
+- **Clientes**, com validação de CPF e endereço preenchido pelo CEP
+- **Produtos e serviços**, com unidade de venda (unidade, cento, milheiro, m²)
+- **Estoque de insumos** (papel, tinta, lona...) com entrada, saída, ajuste, histórico e alerta de estoque baixo; cadastro de fornecedores
+- **Usuários e perfis**: administrador, atendente e produção, cada um vendo só o que pode usar
+- **Tema claro e escuro**
 
-<p>
-  <img src="docs/img/os.png" alt="Ordem de serviço" width="49%" />
-  <img src="docs/img/orcamento.png" alt="Orçamento" width="49%" />
-</p>
+## Autor
+Vitor de Assis Passos
 
-## Tecnologias
+## Pré-requisitos de instalação:
+- Windows 10 ou superior
+- Banco de dados MongoDB: instalado no computador (gratuito) **ou** na nuvem, pelo MongoDB Atlas
 
-- [Electron](https://www.electronjs.org/) (aplicativo desktop com Node.js)
-- [MongoDB](https://www.mongodb.com/) com [Mongoose](https://mongoosejs.com/)
-- HTML, CSS e JavaScript, com [Tailwind CSS](https://tailwindcss.com/)
-- [Chart.js](https://www.chartjs.org/) (gráfico do dashboard)
-- [bcryptjs](https://www.npmjs.com/package/bcryptjs) (senhas) e [dotenv](https://www.npmjs.com/package/dotenv) (configuração)
-- [electron-builder](https://www.electron.build/) (instalador para Windows)
+### Instalação do MongoDB:
+Acesse o site oficial:
+[MongoDB](https://www.mongodb.com/try/download/community)
 
-## Como rodar
+Baixe o MongoDB Community Server e instale com a opção de "Install MongoDB as a Service" ativada (instalação padrão).
 
-### Pré-requisitos
+Após instalar, ele inicia automaticamente.
 
-- [Node.js](https://nodejs.org/) 20 ou mais recente
-- Um banco MongoDB: uma conta gratuita no [MongoDB Atlas](https://www.mongodb.com/atlas) ou um MongoDB instalado no computador
+> Prefere o banco na nuvem? Crie uma conta gratuita no [MongoDB Atlas](https://www.mongodb.com/atlas) e copie a string de conexão em *Connect › Drivers*.
 
-### Passo a passo
+### Instalação do sistema Gráfica OS
+Em [Releases](https://github.com/ti-vitor-assis/grafica-os/releases) faça o download da última versão (.exe) disponibilizada e execute no computador.
 
-```bash
-git clone https://github.com/ti-vitor-assis/grafica-os.git
-cd grafica-os
-npm install
-```
+### Primeira execução
+1. **Configurar o banco de dados:** na primeira vez, o sistema abre a tela de configuração. Clique em **Usar MongoDB local** (ou cole a string do Atlas), depois em **Testar conexão** e em **Salvar e conectar**.
+2. **Criar o administrador:** informe seu nome, login e senha.
+3. **Cadastrar a equipe:** em **Usuários**, crie o acesso de cada funcionário com o perfil adequado.
 
-Crie o arquivo `.env` na pasta do projeto, copiando o modelo `.env.example`, e coloque a string de conexão do seu banco:
+A configuração do banco fica salva neste computador (criptografada) e pode ser trocada depois pelo administrador em **Ferramentas › Configurar banco de dados**.
 
-```env
-MONGO_URL=mongodb+srv://USUARIO:SENHA@SEU-CLUSTER.mongodb.net/serviceOrderPrintingPress
-```
-
-> O `.env` está no `.gitignore`: **nunca** envie a senha do banco para o GitHub.
-> Com um MongoDB local, use `MONGO_URL=mongodb://127.0.0.1:27017/graficaos`.
-
-Depois, é só iniciar:
-
-```bash
-npm start
-```
-
-### Primeiro acesso
-
-Na primeira vez (banco sem nenhum usuário), a tela de login pede para criar o **administrador**. Depois disso, ele cadastra os outros funcionários em **Cadastro > Usuários**.
-
-## Perfis de usuário
+## Perfis de acesso
 
 | Permissão | Administrador | Atendente | Produção |
 |---|:---:|:---:|:---:|
-| Clientes, orçamentos | ✔ | ✔ | |
+| Clientes e orçamentos | ✔ | ✔ | |
 | Ordens de serviço | ✔ | ✔ | ✔ |
 | Produtos e preços | ✔ | | |
 | Relatórios | ✔ | ✔ (sem os financeiros) | |
 | Financeiro (faturamento, a receber, recebimentos) | ✔ | | |
 | Estoque e fornecedores | ✔ | | ✔ |
-| Excluir registros | ✔ | | |
-| Usuários | ✔ | | |
+| Excluir registros, usuários e configuração do banco | ✔ | | |
 
-As permissões são verificadas no processo principal (`main.js`), e não só escondidas na tela.
+As permissões são verificadas no processo principal, e não apenas escondidas na tela.
 
-## Gerar o instalador (Windows)
+## Para desenvolvedores
+
+Requisitos: [Node.js](https://nodejs.org/) 20 ou mais recente.
 
 ```bash
-npm run dist
+git clone https://github.com/ti-vitor-assis/grafica-os.git
+cd grafica-os
+npm install
+npm start
 ```
 
-O instalador é criado na pasta `dist/`. Por segurança, **o `.env` não vai dentro do instalador**. No computador onde o programa for instalado, crie o arquivo:
+Na primeira execução, configure o banco pela própria tela do sistema. Se preferir, crie um arquivo `.env` na pasta do projeto (veja o `.env.example`), que tem prioridade sobre a tela:
 
+```env
+MONGO_URL=mongodb://127.0.0.1:27017/graficaos
 ```
-%APPDATA%\grafica-os\.env
-```
-
-com a mesma linha `MONGO_URL=...`. Se o arquivo não existir, o programa avisa ao abrir e oferece abrir essa pasta.
-
-## Scripts
 
 | Comando | O que faz |
 |---|---|
-| `npm start` | Abre o aplicativo |
-| `npm run css` | Gera `src/public/css/tailwind.css` (rode depois de usar classes novas do Tailwind nas telas) |
-| `npm run dist` | Gera o CSS e o instalador do Windows em `dist/` |
+| `npm start` | Abre o sistema |
+| `npm run css` | Gera o `tailwind.css` (rode depois de usar classes novas do Tailwind) |
+| `npm run dist` | Gera o instalador do Windows em `dist/` |
 
-## Estrutura
+**Tecnologias:** Electron, MongoDB com Mongoose, HTML/CSS/JavaScript, Tailwind CSS, bcryptjs e electron-builder.
 
-```
-main.js                 Processo principal: janelas, menu, login, permissões e handlers IPC
-preload.js              Ponte segura entre as telas e o main (window.api)
-database.js             Conexão com o MongoDB (lê MONGO_URL do .env)
-src/
-  model/                Modelos do Mongoose (Clientes, Products, ServiceOrder, Quote,
-                        Usuario, Insumo, Fornecedor, Counter) e itens.js (itens e totais)
-  views/                Telas (HTML)
-  public/js/            Scripts das telas (renderers)
-  public/css/           Estilos (CSS próprio + tailwind.css gerado)
-  print/                Modelos dos PDFs (OS, orçamento e relatórios)
-  reports/              Consultas dos relatórios
-```
-
-### Como as telas falam com o banco
-
-As telas não acessam o banco diretamente. Elas chamam funções de `window.api` (definidas no `preload.js`), que enviam mensagens IPC para o `main.js`. O `main.js` confere a permissão do usuário, usa os modelos do Mongoose e devolve a resposta para a tela.
+**Estrutura:**
 
 ```
-tela (renderer)  →  window.api (preload.js)  →  ipcMain (main.js)  →  Mongoose  →  MongoDB
+main.js            Processo principal: janelas, menu, login, permissões e IPC
+preload.js         Ponte segura entre as telas e o main (window.api)
+database.js        Conexão com o MongoDB
+src/model/         Modelos do Mongoose
+src/views/         Telas (HTML)
+src/public/        CSS (app.css com os temas), ícones e scripts das telas
+src/print/         Modelos dos PDFs (OS, orçamento e relatórios)
+src/reports/       Consultas dos relatórios
 ```
 
 ## Licença
-
 [MIT](LICENSE)
