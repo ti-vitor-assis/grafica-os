@@ -10,6 +10,9 @@ const { app, BrowserWindow, nativeTheme, Menu, ipcMain, dialog, shell, powerMoni
 const path = require("node:path")
 
 const packageInfo = require("./package.json")
+// Mesmo valor de "build.appId" do package.json. Fica fixo aqui porque o
+// electron-builder tira a seção "build" do package.json do app instalado.
+const APP_ID = "br.senac.graficaos"
 
 const {
   conectar, desconectar, definirUrl, temUrl, estaConectado, testarConexao, urlDoAmbiente,
@@ -542,7 +545,7 @@ ipcOn("db-config-save", async (event, url) => {
 
 app.whenReady().then(() => {
   // Agrupa as janelas na barra de tarefas do Windows com o ícone do app
-  if (process.platform === "win32") app.setAppUserModelId(packageInfo.build.appId)
+  if (process.platform === "win32") app.setAppUserModelId(APP_ID)
 
   // URL salva pela tela de configuração (se não vier do .env/ambiente)
   if (!urlDoAmbiente) definirUrl(configuracao.lerUrlBanco())
