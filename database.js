@@ -13,22 +13,30 @@ const mongoose = require('mongoose')
 const url = process.env.MONGO_URL
 
 let conectado = false
+// Se várias janelas pedirem a conexão ao mesmo tempo, todas aguardam a
+// mesma tentativa (em vez de chamar mongoose.connect() várias vezes)
+let conexaoEmAndamento = null
 
 // Retorna true se a conexão estiver ativa e false se falhar
 const conectar = async () => {
-    if (!conectado) {
-        if (!url) {
-            console.log("MONGO_URL não definida. Crie o arquivo .env (veja .env.example)")
-            return false
-        }
-        try {
-            await mongoose.connect(url, { serverSelectionTimeoutMS: 10000 })
-            conectado = true
-            console.log("MongoDB Conectado!")
-        } catch (error) {
-            console.log(error)
-        }
+    if (conectado) return true
+    if (!url) {
+        console.log("MONGO_URL não definida. Crie o arquivo .env (veja .env.example)")
+        return false
     }
+    if (!conexaoEmAndamento) {
+        conexaoEmAndamento = mongoose
+            .connect(url, { serverSelectionTimeoutMS: 10000 })
+            .then(() => {
+                conectado = true
+                console.log("MongoDB Conectado!")
+            })
+            .catch((error) => console.log(error))
+            .finally(() => {
+                conexaoEmAndamento = null
+            })
+    }
+    await conexaoEmAndamento
     return conectado
 }
 

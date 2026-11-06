@@ -5,12 +5,25 @@
 
 const { ipcRenderer, contextBridge } = require('electron')
 
+// Status do banco: o preload escuta desde o início e guarda o último valor.
+// Assim, se a resposta chegar antes de a página registrar o callback
+// (os scripts do CDN podem demorar a carregar), o status não se perde.
+let dbStatusAtual = null
+const dbStatusCallbacks = []
+ipcRenderer.on('db-status', (event, status) => {
+  dbStatusAtual = status
+  dbStatusCallbacks.forEach((cb) => cb(event, status))
+})
+
 ipcRenderer.send('db-connect')
 
 // permissões para estabelecer a comunicação entre processos
 // Os nomes dos canais aqui precisam ser exatamente os mesmos usados no main.js
 contextBridge.exposeInMainWorld("api", {
-  dbStatus: (message) => ipcRenderer.on("db-status", message),
+  dbStatus: (callback) => {
+    dbStatusCallbacks.push(callback)
+    if (dbStatusAtual !== null) callback(null, dbStatusAtual)
+  },
 
   // Clientes
   createCliente: (cliente) => ipcRenderer.send("create-cliente", cliente),
