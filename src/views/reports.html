@@ -4,6 +4,10 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Só scripts/estilos do próprio app; conexão externa apenas com o ViaCEP (busca de CEP).
+         'unsafe-inline' em script-src é necessário por causa dos onclick="" nas telas -->
+    <meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://viacep.com.br" />
     <link href="../public/css/costumerRegistrationStyle.css" rel="stylesheet" />
     <link href="../public/css/tailwind.css" rel="stylesheet" />
     <title>Relatórios</title>

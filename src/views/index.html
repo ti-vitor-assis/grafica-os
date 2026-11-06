@@ -4,9 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- VERIFICAR COM PROFESSOR
-    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' ">
-    -->
+    <!-- Só scripts/estilos do próprio app; conexão externa apenas com o ViaCEP (busca de CEP).
+         'unsafe-inline' em script-src é necessário por causa dos onclick="" nas telas -->
+    <meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://viacep.com.br" />
     <link href="../public/css/style.css" rel="stylesheet">
     <link href="../public/css/tailwind.css" rel="stylesheet" />
     <title>Bem vindo</title>
@@ -151,7 +152,7 @@
     </div>
 
     <!-- SCRIPTS -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="../../node_modules/chart.js/dist/chart.umd.js"></script>
     <script src="../public/js/renderer.js"></script>
     <script src="../public/js/footer.js"></script>
 
