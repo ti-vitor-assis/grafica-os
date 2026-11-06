@@ -20,7 +20,9 @@ const TEMPO_LIMITE = 180000;
 
 function rodarCenario(arquivo, uriBanco) {
     return new Promise((resolve) => {
-        const env = { ...process.env, APP_DIR: RAIZ, MONGO_URL: uriBanco, E2E_CENARIO: arquivo };
+        // Um cenário pode pedir variáveis de ambiente próprias (module.exports.env)
+        const extra = require(arquivo).env || {};
+        const env = { ...process.env, ...extra, APP_DIR: RAIZ, MONGO_URL: uriBanco, E2E_CENARIO: arquivo };
         // O VS Code e alguns terminais definem esta variável, que faria o
         // Electron rodar como Node puro
         delete env.ELECTRON_RUN_AS_NODE;

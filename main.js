@@ -107,6 +107,19 @@ ipcOn("toggle-theme", () => {
 
 // INICIO - Janelas
 
+// No app instalado não há DevTools nem "Recarregar". Rodando pelo código
+// (npm start) eles continuam disponíveis. GRAFICA_SIMULAR_INSTALADO=1 faz o
+// modo de desenvolvimento se comportar como o instalado (usado nos testes).
+const modoDesenvolvimento = !app.isPackaged && process.env.GRAFICA_SIMULAR_INSTALADO !== "1"
+
+// Opções das telas do app (todas usam o mesmo preload)
+function preferenciasJanela() {
+  return {
+    preload: path.join(__dirname, "preload.js"),
+    devTools: modoDesenvolvimento,
+  }
+}
+
 // Tela de login: é a primeira janela do app
 function loginWindow() {
   nativeTheme.themeSource = temaAtual() === "escuro" ? "dark" : "light"
@@ -118,9 +131,7 @@ function loginWindow() {
     maximizable: false,
     backgroundColor: corDeFundo(),
     title: "Gráfica OS · Login",
-    webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
-    },
+    webPreferences: preferenciasJanela(),
   })
   janelaLogin.loadFile("./src/views/login.html")
   janelaLogin.on("closed", () => {
@@ -138,9 +149,7 @@ const createWindow = () => {
     minHeight: 640,
     backgroundColor: corDeFundo(),
     // Preload
-    webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
-    },
+    webPreferences: preferenciasJanela(),
   })
   Menu.setApplicationMenu(Menu.buildFromTemplate(montarMenu()))
   win.loadFile("./src/views/index.html")
@@ -162,9 +171,7 @@ function modalWindow(arquivoHtml, opcoes = {}) {
     backgroundColor: corDeFundo(),
     parent: win,
     modal: true,
-    webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
-    },
+    webPreferences: preferenciasJanela(),
   });
   janela.loadFile(arquivoHtml, { query: opcoes.query || {} });
   return janela;
@@ -275,9 +282,7 @@ function dbConfigWindow() {
     autoHideMenuBar: true,
     parent: pai,
     modal: !!pai,
-    webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
-    },
+    webPreferences: preferenciasJanela(),
   })
   janelaConfigBanco.loadFile("./src/views/dbConfig.html")
   janelaConfigBanco.on("closed", () => {
@@ -1858,10 +1863,12 @@ const template = [
         label: "Recarregar",
         role: "reload",
         accelerator: "CTRL+R",
+        somenteDesenvolvimento: true,
       },
       {
         label: "DevTools",
         role: "ToggleDevTools",
+        somenteDesenvolvimento: true,
       }
     ],
   },
@@ -1885,7 +1892,8 @@ const template = [
 function montarMenu(itens = template) {
   const visiveis = itens
     .filter((item) => !item.permissao || pode(item.permissao))
-    .map(({ permissao, ...item }) => (item.submenu ? { ...item, submenu: montarMenu(item.submenu) } : item))
+    .filter((item) => !item.somenteDesenvolvimento || modoDesenvolvimento)
+    .map(({ permissao, somenteDesenvolvimento, ...item }) => (item.submenu ? { ...item, submenu: montarMenu(item.submenu) } : item))
     .map((item) => (item.id === "tema" ? { ...item, checked: temaAtual() === "escuro" } : item))
     .filter((item) => !item.submenu || item.submenu.length > 0);
   return visiveis.filter((item, i) =>
