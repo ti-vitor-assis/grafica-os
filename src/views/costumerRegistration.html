@@ -25,7 +25,7 @@
             <div class="busca-campo">
                 <i data-icone="busca" data-tamanho="16"></i>
                 <input type="search" name="searchName" id="searchClientsInput" class="input"
-                    placeholder="Buscar por nome ou CPF" />
+                    placeholder="Buscar por nome, CPF ou CNPJ" />
             </div>
             <button type="submit" id="searchBtn" class="btn btn-secundario">Buscar</button>
         </form>
@@ -45,36 +45,42 @@
                 <div class="card-corpo">
                     <input type="text" id="inputIdClient" hidden />
 
-                    <!-- Dados pessoais -->
+                    <!-- Identificação -->
                     <div class="secao">
-                        <p class="secao-titulo">Dados pessoais</p>
-                        <div class="grid grid-cols-12 gap-x-4 gap-y-3">
-                            <div class="campo col-span-12">
-                                <label for="inputNome">Nome completo <span class="obrigatorio">*</span></label>
-                                <input type="text" id="inputNome" class="input" required />
-                            </div>
-                            <div class="campo col-span-3">
-                                <label for="inputCPF">CPF <span class="obrigatorio">*</span></label>
-                                <input type="text" id="inputCPF" class="input" placeholder="000.000.000-00" required />
-                            </div>
-                            <div class="campo col-span-3">
-                                <label for="inputRG">RG</label>
-                                <input type="text" id="inputRG" class="input" />
-                            </div>
-                            <div class="campo col-span-3">
-                                <label for="inputSexo">Sexo <span class="obrigatorio">*</span></label>
-                                <select id="inputSexo" class="select" required>
-                                    <option value="">Selecione</option>
-                                    <option value="fem">Feminino</option>
-                                    <option value="mas">Masculino</option>
-                                    <option value="out">Outros</option>
-                                </select>
-                            </div>
-                            <div class="campo col-span-3">
-                                <label for="inputDataNasc">Nascimento <span class="obrigatorio">*</span></label>
-                                <input type="date" id="inputDataNasc" class="input" required />
+                        <div class="flex items-center justify-between gap-3 flex-wrap">
+                            <p class="secao-titulo m-0">Identificação</p>
+                            <div class="segmentado" role="radiogroup" aria-label="Tipo de cliente">
+                                <label><input type="radio" name="tipoPessoa" value="PF" checked /><span>Pessoa física</span></label>
+                                <label><input type="radio" name="tipoPessoa" value="PJ" /><span>Pessoa jurídica</span></label>
                             </div>
                         </div>
+                        <div class="grid grid-cols-12 gap-x-4 gap-y-3 mt-3">
+                            <div class="campo col-span-8">
+                                <label for="inputNome"><span id="rotuloNome">Nome completo</span> <span class="obrigatorio">*</span></label>
+                                <input type="text" id="inputNome" class="input" required />
+                            </div>
+                            <div class="campo col-span-4">
+                                <label for="inputDocumento"><span id="rotuloDocumento">CPF</span> <span class="obrigatorio">*</span></label>
+                                <input type="text" id="inputDocumento" class="input" placeholder="000.000.000-00" inputmode="numeric" required />
+                            </div>
+                            <div class="campo col-span-8 so-pj" hidden>
+                                <label for="inputNomeFantasia">Nome fantasia</label>
+                                <input type="text" id="inputNomeFantasia" class="input" />
+                            </div>
+                            <div class="campo col-span-4 so-pj" hidden>
+                                <label for="inputIE">Inscrição estadual</label>
+                                <input type="text" id="inputIE" class="input" placeholder="Opcional" />
+                            </div>
+                            <div class="campo col-span-4 so-pf">
+                                <label for="inputDataNasc">Nascimento</label>
+                                <input type="date" id="inputDataNasc" class="input" />
+                                <span class="ajuda">Opcional</span>
+                            </div>
+                            <div class="campo col-span-8 flex items-end pb-2">
+                                <label class="checkbox"><input type="checkbox" id="inputAtivo" checked /> Cliente ativo (aparece em novas OS e orçamentos)</label>
+                            </div>
+                        </div>
+                        <p id="avisoAnonimizado" class="ajuda" hidden>Cliente anonimizado (LGPD): os dados pessoais foram apagados e não podem ser alterados.</p>
                     </div>
 
                     <!-- Contato -->
@@ -90,8 +96,8 @@
                                 <input type="tel" id="inputTelefone2" class="input" />
                             </div>
                             <div class="campo col-span-6">
-                                <label for="inputEmail">E-mail <span class="obrigatorio">*</span></label>
-                                <input type="email" id="inputEmail" class="input" required />
+                                <label for="inputEmail">E-mail</label>
+                                <input type="email" id="inputEmail" class="input" />
                             </div>
                         </div>
                     </div>
@@ -101,33 +107,33 @@
                         <p class="secao-titulo">Endereço</p>
                         <div class="grid grid-cols-12 gap-x-4 gap-y-3">
                             <div class="campo col-span-3">
-                                <label for="inputCep">CEP <span class="obrigatorio">*</span></label>
-                                <input type="text" id="inputCep" class="input" placeholder="00000-000" required />
-                                <span class="ajuda">Preenche o endereço sozinho</span>
+                                <label for="inputCep">CEP</label>
+                                <input type="text" id="inputCep" class="input" placeholder="00000-000" />
+                                <span class="ajuda">Preenche o endereço sozinho. Endereço só é preciso para entrega ou nota.</span>
                             </div>
                             <div class="campo col-span-7">
-                                <label for="inputEndereco">Endereço <span class="obrigatorio">*</span></label>
-                                <input type="text" id="inputEndereco" class="input" required />
+                                <label for="inputEndereco">Endereço</label>
+                                <input type="text" id="inputEndereco" class="input" />
                             </div>
                             <div class="campo col-span-2">
-                                <label for="inputNum">Número <span class="obrigatorio">*</span></label>
-                                <input type="text" id="inputNum" class="input" required />
+                                <label for="inputNum">Número</label>
+                                <input type="text" id="inputNum" class="input" />
                             </div>
                             <div class="campo col-span-5">
                                 <label for="inputComplemento">Complemento</label>
                                 <input type="text" id="inputComplemento" class="input" />
                             </div>
                             <div class="campo col-span-7">
-                                <label for="inputBairro">Bairro <span class="obrigatorio">*</span></label>
-                                <input type="text" id="inputBairro" class="input" required />
+                                <label for="inputBairro">Bairro</label>
+                                <input type="text" id="inputBairro" class="input" />
                             </div>
                             <div class="campo col-span-8">
-                                <label for="inputCidade">Cidade <span class="obrigatorio">*</span></label>
-                                <input type="text" id="inputCidade" class="input" required />
+                                <label for="inputCidade">Cidade</label>
+                                <input type="text" id="inputCidade" class="input" />
                             </div>
                             <div class="campo col-span-4">
-                                <label for="inputEstado">Estado <span class="obrigatorio">*</span></label>
-                                <select id="inputEstado" class="select" required>
+                                <label for="inputEstado">Estado</label>
+                                <select id="inputEstado" class="select">
                                     <option value="">Selecione</option>
                                     <option value="AC">Acre</option>
                                     <option value="AL">Alagoas</option>
@@ -183,7 +189,7 @@
                 <div class="card-cabecalho">
                     <div>
                         <h2>Resultados</h2>
-                        <p id="contagemResultados">Busque por nome ou CPF</p>
+                        <p id="contagemResultados">Busque por nome, CPF ou CNPJ</p>
                     </div>
                 </div>
                 <p id="semResultados" class="vazio">

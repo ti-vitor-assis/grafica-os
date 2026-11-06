@@ -11,10 +11,14 @@ async function popular() {
     const OS = require("../../src/model/ServiceOrder.js");
     const Counter = require("../../src/model/Counter.js");
 
+    // CPF/CNPJ cifrado: precisa de uma chave (nos testes, gerada na hora)
+    const cripto = require("../../src/seguranca/cripto.js");
+    if (!cripto.temChaves()) cripto.definirChaves(cripto.gerarChaves());
+    const { camposDocumento } = require("../../src/servicos/clientes.js");
     const clientes = await Cli.insertMany([
-        { nome: "Maria Souza", cpf: "52998224725", telefone: "(11) 98888-7777", cidade: "São Paulo", estado: "SP" },
-        { nome: "Padaria Pão Quente", cpf: "11144477735", cidade: "Osasco", estado: "SP" },
-        { nome: "Escola Futuro", cpf: "39053344705", cidade: "Barueri", estado: "SP" },
+        { nome: "Maria Souza", ...camposDocumento("PF", "52998224725"), telefone: "(11) 98888-7777", cidade: "São Paulo", estado: "SP" },
+        { nome: "Padaria Pão Quente", tipoPessoa: "PJ", ...camposDocumento("PJ", "11222333000181"), cidade: "Osasco", estado: "SP" },
+        { nome: "Escola Futuro", ...camposDocumento("PF", "39053344705"), cidade: "Barueri", estado: "SP" },
     ]);
     const produtos = await Prod.insertMany([
         { nome: "Cartão de visita", categoria: "Impressos", unidade: "milheiro", valorUnitario: 90 },

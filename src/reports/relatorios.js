@@ -4,6 +4,8 @@
  */
 
 const clienteModel = require("../model/Clientes.js");
+const { documentoDe, rotuloDocumento } = require("../servicos/clientes.js");
+const { mascararDocumento } = require("../seguranca/cripto.js");
 const serviceOrderModel = require("../model/ServiceOrder.js");
 const insumoModel = require("../model/Insumo.js");
 const { moeda, data, capitalizar } = require("../print/formatar.js");
@@ -40,12 +42,12 @@ async function clientes() {
         resumo: [["Clientes", String(lista.length)]],
         secoes: [{
             colunas: [
-                { titulo: "Nome" }, { titulo: "CPF" }, { titulo: "Celular" },
+                { titulo: "Nome" }, { titulo: "CPF/CNPJ" }, { titulo: "Celular" },
                 { titulo: "E-mail" }, { titulo: "Cidade/UF" }, { titulo: "OS", num: true },
             ],
             linhas: lista.map((c) => [
                 c.nome,
-                c.cpf || "",
+                documentoDe(c) ? `${rotuloDocumento(c)} ${mascararDocumento(documentoDe(c))}` : "",
                 c.telefone || "",
                 c.email || "",
                 [c.cidade, c.estado].filter(Boolean).join("/"),

@@ -1,384 +1,287 @@
 /**
- * 
+ * Tela de Clientes: cadastro de pessoa física (CPF) ou jurídica (CNPJ)
  * @Author Vitor de Assis
+ *
+ * O CPF/CNPJ vai para o main, que valida de novo, cifra e grava
+ * (ver src/servicos/clientes.js). Esta tela só recebe o documento completo
+ * na ficha do cliente; nas listas ele aparece mascarado.
  */
 
-let frmSearchClient = document.getElementById("frmSearchClient");
-let frmCli = document.getElementById("frmCli");
-let inputIdClient = document.getElementById("inputIdClient");
-let inputNome = document.getElementById("inputNome");
-let inputRG = document.getElementById("inputRG");
-let inputCPF = document.getElementById("inputCPF");
-let inputSexo = document.getElementById("inputSexo");
-let inputDataNasc = document.getElementById("inputDataNasc");
-let inputTelefone = document.getElementById("inputTelefone");
-let inputTelefone2 = document.getElementById("inputTelefone2");
-let inputEmail = document.getElementById("inputEmail");
-let inputCep = document.getElementById("inputCep");
-let inputEndereco = document.getElementById("inputEndereco");
-let inputNum = document.getElementById("inputNum");
-let inputComplemento = document.getElementById("inputComplemento");
-let inputBairro = document.getElementById("inputBairro");
-let inputCidade = document.getElementById("inputCidade");
-let inputEstado = document.getElementById("inputEstado");
-let searchClient = document.getElementById("searchClientsInput");
+const frmSearchClient = document.getElementById("frmSearchClient");
+const frmCli = document.getElementById("frmCli");
+const searchClient = document.getElementById("searchClientsInput");
+const campo = (id) => document.getElementById(id);
 
-// Criar um vetor global para manipular os dados do cliente
 let arrayClient = [];
 
-document.addEventListener("DOMContentLoaded", () => {
-    // Desativar botões editar e excluir
-    btnUpdate.disabled = true;
-    btnDelete.disabled = true;
-    // Ativar botão adicionar
-    btnCreate.disabled = false;
-  
-    searchClient.focus();
-  });
+// ============================
+// ===== PESSOA FÍSICA/JURÍDICA
 
-// Validar CPF
-function validaCPF(cpf) {
-    cpf = cpf.replace(/\D/g, ""); // Remove caracteres não numéricos
+const tipoPessoa = () => document.querySelector('input[name="tipoPessoa"]:checked').value;
 
-    if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) {
-        return false; // Verifica se tem 11 dígitos e se não é uma sequência repetida (ex: 111.111.111-11)
-    }
-
-    // Validação do primeiro dígito verificador
-    let soma = 0;
-    for (let i = 0; i < 9; i++) {
-        soma += parseInt(cpf[i]) * (10 - i);
-    }
-    let resto = (soma * 10) % 11;
-    if (resto === 10 || resto === 11) resto = 0;
-    if (resto !== parseInt(cpf[9])) return false;
-
-    // Validação do segundo dígito verificador
-    soma = 0;
-    for (let i = 0; i < 10; i++) {
-        soma += parseInt(cpf[i]) * (11 - i);
-    }
-    resto = (soma * 10) % 11;
-    if (resto === 10 || resto === 11) resto = 0;
-    if (resto !== parseInt(cpf[10])) return false;
-
-    return true;
+function aplicarTipoPessoa() {
+    const pj = tipoPessoa() === "PJ";
+    campo("rotuloNome").textContent = pj ? "Razão social" : "Nome completo";
+    campo("rotuloDocumento").textContent = pj ? "CNPJ" : "CPF";
+    campo("inputDocumento").placeholder = pj ? "00.000.000/0000-00" : "000.000.000-00";
+    document.querySelectorAll(".so-pj").forEach((el) => (el.hidden = !pj));
+    document.querySelectorAll(".so-pf").forEach((el) => (el.hidden = pj));
+    if (campo("inputDocumento").value) checarDocumento();
 }
 
-function checarCPF() {
-    const inputCPF = document.getElementById("inputCPF");
-
-    // Remove classes anteriores
-    inputCPF.classList.remove("valido", "invalido");
-
-    if (!validaCPF(inputCPF.value)) {
-        inputCPF.classList.add("invalido");
-    } else {
-        inputCPF.classList.add("valido");
-    }
+function marcarTipoPessoa(tipo) {
+    document.querySelector(`input[name="tipoPessoa"][value="${tipo === "PJ" ? "PJ" : "PF"}"]`).checked = true;
+    aplicarTipoPessoa();
 }
 
-function cpfDuplicate() {
-    const inputCPF = document.getElementById("inputCPF");
-    inputCPF.value = "";
-    inputCPF.focus();
+// ============================
+// ===== VALIDAÇÃO DO DOCUMENTO
+// (o main valida de novo; aqui é só para avisar na hora)
 
-    // Indica visualmente erro
-    inputCPF.classList.remove("valido");
-    inputCPF.classList.add("invalido");
+const soDigitos = (texto) => String(texto || "").replace(/\D/g, "");
+
+function digitoVerificador(numeros, pesos) {
+    const soma = pesos.reduce((total, peso, i) => total + Number(numeros[i]) * peso, 0);
+    const resto = soma % 11;
+    return resto < 2 ? 0 : 11 - resto;
 }
 
-// O main avisa quando o CPF já está cadastrado (erro 11000 do MongoDB)
+function cpfValido(cpf) {
+    if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) return false;
+    const d1 = digitoVerificador(cpf, [10, 9, 8, 7, 6, 5, 4, 3, 2]);
+    const d2 = digitoVerificador(cpf, [11, 10, 9, 8, 7, 6, 5, 4, 3, 2]);
+    return d1 === Number(cpf[9]) && d2 === Number(cpf[10]);
+}
+
+function cnpjValido(cnpj) {
+    if (cnpj.length !== 14 || /^(\d)\1{13}$/.test(cnpj)) return false;
+    const d1 = digitoVerificador(cnpj, [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
+    const d2 = digitoVerificador(cnpj, [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]);
+    return d1 === Number(cnpj[12]) && d2 === Number(cnpj[13]);
+}
+
+function formatarDocumento(digitos) {
+    if (digitos.length === 11) return digitos.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+    if (digitos.length === 14) return digitos.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+    return digitos;
+}
+
+function checarDocumento() {
+    const input = campo("inputDocumento");
+    const digitos = soDigitos(input.value);
+    const valido = tipoPessoa() === "PJ" ? cnpjValido(digitos) : cpfValido(digitos);
+    input.classList.remove("valido", "invalido");
+    input.classList.add(valido ? "valido" : "invalido");
+    if (valido) input.value = formatarDocumento(digitos);
+    return valido;
+}
+
+// O main avisa quando o documento já está cadastrado ou é inválido
 api.cpfDuplicate(() => {
-    cpfDuplicate();
+    const input = campo("inputDocumento");
+    input.focus();
+    input.select();
+    input.classList.remove("valido");
+    input.classList.add("invalido");
 });
 
-// Buscas CEP
-function buscarEndereco() {
-    let cep = document.getElementById("inputCep").value;
-    let urlAPI = `https://viacep.com.br/ws/${cep}/json/`;
+// ============================
+// ======== CEP (ViaCEP) ======
 
-    fetch(urlAPI)
+function buscarEndereco() {
+    const cep = soDigitos(campo("inputCep").value);
+    if (cep.length !== 8) return;
+    fetch(`https://viacep.com.br/ws/${cep}/json/`)
         .then((response) => response.json())
         .then((dados) => {
-            document.getElementById("inputEndereco").value = dados.logradouro;
-            document.getElementById("inputBairro").value = dados.bairro;
-            document.getElementById("inputCidade").value = dados.localidade;
-            document.getElementById("inputEstado").value = dados.uf;
-
+            if (dados.erro) return;
+            campo("inputEndereco").value = dados.logradouro || "";
+            campo("inputBairro").value = dados.bairro || "";
+            campo("inputCidade").value = dados.localidade || "";
+            campo("inputEstado").value = dados.uf || "";
+            campo("inputNum").focus();
         })
-        .catch((error) => console.error("Erro ao buscar o endereço:", error));
-        inputNum.focus();
+        .catch(() => console.error("Não foi possível buscar o CEP"));
 }
 
-// ======================
-// == Cadastro Cliente ==
+// ============================
+// ======== SALVAR ============
 
-frmCli.addEventListener("submit", async (event) => {
+function dadosDoFormulario() {
+    return {
+        tipoPessoa: tipoPessoa(),
+        nome: campo("inputNome").value,
+        documento: campo("inputDocumento").value,
+        nomeFantasia: campo("inputNomeFantasia").value,
+        inscricaoEstadual: campo("inputIE").value,
+        dataNascimento: campo("inputDataNasc").value,
+        ativo: campo("inputAtivo").checked,
+        telefone: campo("inputTelefone").value,
+        telefone2: campo("inputTelefone2").value,
+        email: campo("inputEmail").value,
+        cep: campo("inputCep").value,
+        endereco: campo("inputEndereco").value,
+        numero: campo("inputNum").value,
+        complemento: campo("inputComplemento").value,
+        bairro: campo("inputBairro").value,
+        cidade: campo("inputCidade").value,
+        estado: campo("inputEstado").value,
+    };
+}
+
+frmCli.addEventListener("submit", (event) => {
     event.preventDefault();
-
-    // Estratégia para usar o submit para cadastrar um novo cliente ou editar os dados de um cliente já existente
-    // verificar se existe o id do cliente
-
-    if (inputIdClient.value === "") {
-        // Cadastrar um novo cliente
-        const cliente = {
-            nomeCli: inputNome.value,
-            rgCli: inputRG.value,
-            cpfCli: inputCPF.value,
-            sexoCli: inputSexo.value,
-            dataNascCli: inputDataNasc.value,
-            telefoneCli: inputTelefone.value,
-            telefone2Cli: inputTelefone2.value,
-            emailCli: inputEmail.value,
-            cepCli: inputCep.value,
-            enderecoCli: inputEndereco.value,
-            numCli: inputNum.value,
-            complementoCli: inputComplemento.value,
-            bairroCli: inputBairro.value,
-            cidadeCli: inputCidade.value,
-            estadoCli: inputEstado.value,
-        };
-        api.createCliente(cliente);
+    const id = campo("inputIdClient").value;
+    if (id === "") {
+        api.createCliente(dadosDoFormulario());
     } else {
-        // Alterar os dados de um cliente existente
-        // Teste de validação do ID
-        //console.log(inputIdClient.value);
-        // Cadastrar um novo cliente
-        const cliente = {
-            idCli: inputIdClient.value,
-            nomeCli: inputNome.value,
-            rgCli: inputRG.value,
-            cpfCli: inputCPF.value,
-            sexoCli: inputSexo.value,
-            dataNascCli: inputDataNasc.value,
-            telefoneCli: inputTelefone.value,
-            telefone2Cli: inputTelefone2.value,
-            emailCli: inputEmail.value,
-            cepCli: inputCep.value,
-            enderecoCli: inputEndereco.value,
-            numCli: inputNum.value,
-            complementoCli: inputComplemento.value,
-            bairroCli: inputBairro.value,
-            cidadeCli: inputCidade.value,
-            estadoCli: inputEstado.value,
-        };
-        api.updateClient(cliente);
-
+        api.updateClient({ _id: id, ...dadosDoFormulario() });
     }
 });
 
-// ======== CRUD DELETE =========
+// ======== EXCLUIR =========
 function removeClient() {
-    //console.log(inputIdClient.value) // teste do passo 1
-    // Passo 2: Envio do id para o main
-    api.deleteClient(inputIdClient.value);
-    
-  }
+    api.deleteClient(campo("inputIdClient").value);
+}
 
-//
+// A data de nascimento é gravada como meia-noite UTC ("2000-05-10" vira
+// 2000-05-10T00:00Z). Lendo no horário local (UTC-3) ela voltava para o
+// dia 9; por isso usamos os getters UTC.
 function formatDate(date) {
-    if (!(date instanceof Date)) {
-      date = new Date(date); // Tenta converter
-    }
-  
-    if (isNaN(date)) {
-      console.error("Data inválida:", date);
-      return "";
-    }
-  
-    // A data de nascimento é gravada como meia-noite UTC ("2000-05-10" vira
-    // 2000-05-10T00:00Z). Lendo no horário local (UTC-3) ela voltava para o
-    // dia 9; por isso usamos os getters UTC.
+    date = new Date(date);
+    if (isNaN(date)) return "";
     const year = date.getUTCFullYear();
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(date.getUTCDate()).padStart(2, '0');
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
-  }
-
-// 
-frmSearchClient.addEventListener("submit", (event) => {
-    event.preventDefault();
-    searchClients();
-})
+}
 
 // ============================
 // ==== RESETAR FORMULÁRIO ====
 
 function resetForm() {
-    // recarregar a pagina
     location.reload();
-  }
-  
-  // Uso da api resetForm quando salvar, editar ou excluir um cliente
-  api.resetForm((args) => {
-    resetForm();
-  });
+}
 
+api.resetForm(() => resetForm());
 
 // ============================
-// ======== CRUD READ =========
+// ======== BUSCA =============
 
-// Se o texto buscado só tiver números (com ou sem pontuação de CPF), busca por CPF
+// Só números (com ou sem pontuação) = busca por CPF/CNPJ; senão, por nome
 function searchClients() {
     const termo = searchClient.value.trim();
-    if (/^[\d.\-\s]+$/.test(termo)) {
-        searchCpf();
-    } else {
-        searchName();
-    }
-}
-
-function searchCpf() {
-    // Passo 1: Capturar o CPF a ser pesquisado
-    let cpfCli = searchClient.value.trim();
-    // Validação de campo obrigatório
-    if (cpfCli === "") {
-        // Enviar ao main um pedido para alertar o usuário
+    if (termo === "") {
         api.validateSearch();
+    } else if (/^[\d.\-/\s]+$/.test(termo)) {
+        api.searchCpf({ termo, ficha: true });
     } else {
-        // Passo 2: Enviar o CPF ao main (a resposta chega em api.renderClient, abaixo)
-        api.searchCpf(cpfCli);
+        api.searchName({ termo, ficha: true });
     }
 }
 
-function searchName() {
-    // Passo 1: Capturar o nome a ser pesquisado
-    let cliName = searchClient.value.trim();
-    // Validação de campo obrigatório
-    if (cliName === "") {
-        // Enviar ao main um pedido para alertar o usuário
-        api.validateSearch();
-    } else {
-        // Passo 2: Enviar o nome do cliente ao main (a resposta chega em api.renderClient, abaixo)
-        api.searchName(cliName);
-    }
-}
+frmSearchClient.addEventListener("submit", (event) => {
+    event.preventDefault();
+    searchClients();
+});
 
-// Passo 5: Receber os dados do cliente
-// IMPORTANTE: o listener é registrado UMA vez só. Se fosse registrado dentro
-// da função de busca, cada nova busca acumularia mais um listener.
+// O listener é registrado UMA vez só (senão cada busca acumularia mais um)
 api.renderClient((event, client) => {
-    // Passo 6: Renderização dos dados do cliente - não esquecer de converter os dados de STRING para JSON
     arrayClient = JSON.parse(client);
-
-    // Mostra todos os encontrados na lista ao lado; o primeiro já é carregado
     mostrarResultados(arrayClient);
     if (arrayClient.length > 0) preencherCliente(arrayClient[0]);
 });
 
 // Preenche o formulário com um cliente
 function preencherCliente(c) {
-    inputIdClient.value = c._id;
-    inputNome.value = c.nome;
-    inputRG.value = c.rg || "";
-    inputCPF.value = c.cpf;
-    inputSexo.value = c.sexo || "";
-    inputDataNasc.value = c.dataNascimento ? formatDate(c.dataNascimento) : "";
-    inputTelefone.value = c.telefone || "";
-    inputTelefone2.value = c.telefone2 || "";
-    inputEmail.value = c.email || "";
-    inputCep.value = c.cep || "";
-    inputEndereco.value = c.endereco || "";
-    inputNum.value = c.numero || "";
-    inputComplemento.value = c.complemento || "";
-    inputBairro.value = c.bairro || "";
-    inputCidade.value = c.cidade || "";
-    inputEstado.value = c.estado || "";
-    inputCPF.classList.remove("valido", "invalido");
-    // restaurar tecla Enter
-    restaurarEnter();
-    // Desativar o botão adicionar
+    campo("tituloForm").textContent = "Editar cliente";
+    campo("inputIdClient").value = c._id;
+    marcarTipoPessoa(c.tipoPessoa);
+    campo("inputNome").value = c.nome || "";
+    campo("inputDocumento").value = c.documento || "";
+    campo("inputDocumento").classList.remove("valido", "invalido");
+    campo("inputNomeFantasia").value = c.nomeFantasia || "";
+    campo("inputIE").value = c.inscricaoEstadual || "";
+    campo("inputDataNasc").value = c.dataNascimento ? formatDate(c.dataNascimento) : "";
+    campo("inputAtivo").checked = c.ativo !== false;
+    campo("inputTelefone").value = c.telefone || "";
+    campo("inputTelefone2").value = c.telefone2 || "";
+    campo("inputEmail").value = c.email || "";
+    campo("inputCep").value = c.cep || "";
+    campo("inputEndereco").value = c.endereco || "";
+    campo("inputNum").value = c.numero || "";
+    campo("inputComplemento").value = c.complemento || "";
+    campo("inputBairro").value = c.bairro || "";
+    campo("inputCidade").value = c.cidade || "";
+    campo("inputEstado").value = c.estado || "";
+
+    // Anonimizado (LGPD): só leitura
+    campo("avisoAnonimizado").hidden = !c.anonimizado;
     btnCreate.disabled = true;
-    // Ativar os botões editar e excluir
-    btnUpdate.disabled = false;
+    btnUpdate.disabled = !!c.anonimizado;
     btnDelete.disabled = false;
-    // Marca o cliente na lista
+
     document.querySelectorAll("#listaResultados .lista-item").forEach((li) => {
         li.classList.toggle("ativo", li.dataset.id === c._id);
     });
 }
 
-// Lista de clientes encontrados na busca
+// Lista de clientes encontrados (documento mascarado)
 function mostrarResultados(clientes) {
-    const lista = document.getElementById("listaResultados");
+    const lista = campo("listaResultados");
     lista.innerHTML = "";
-    document.getElementById("contagemResultados").textContent =
-        `${clientes.length} encontrado${clientes.length === 1 ? "" : "s"}`;
+    campo("contagemResultados").textContent = `${clientes.length} encontrado${clientes.length === 1 ? "" : "s"}`;
     clientes.forEach((c) => {
         const li = document.createElement("li");
         li.className = "lista-item";
         li.dataset.id = c._id;
         const titulo = document.createElement("div");
         titulo.className = "lista-item-titulo";
-        titulo.textContent = c.nome;
+        titulo.textContent = c.nomeFantasia ? `${c.nome} (${c.nomeFantasia})` : c.nome;
         const detalhe = document.createElement("div");
         detalhe.className = "lista-item-detalhe";
-        detalhe.textContent = [`CPF ${c.cpf}`, c.telefone, c.cidade].filter(Boolean).join(" · ");
+        detalhe.textContent = [
+            `${c.rotuloDocumento} ${c.documentoMascarado}`,
+            c.cidade,
+            c.ativo === false ? "Inativo" : "",
+        ].filter(Boolean).join(" · ");
         li.append(titulo, detalhe);
         li.addEventListener("click", () => preencherCliente(c));
         lista.appendChild(li);
     });
-    document.getElementById("semResultados").hidden = clientes.length > 0;
+    campo("semResultados").hidden = clientes.length > 0;
 }
 
-// setar o nome do cliente o nome do cliente para fazer um novo cadastro se a busca retornar que o cliente
-api.setName((args) => {
-    //console.log("teste do IPC 'set-name'");
-    let busca = document.getElementById("searchClientsInput").value;
-
-    // foco no campo nome
-    inputNome.focus();
-    // Limpar o campo de busca
+// Busca sem resultado + "cadastrar este cliente?": leva o texto para o formulário
+api.setName(() => {
+    campo("inputNome").value = searchClient.value.trim();
     searchClient.value = "";
-    // Copiar o nome do cliente para o campo nome
-    inputNome.value = busca;
-    //limpa o ampo de busca (foco foi capturado de forma global)
-    //busca.value = "";
-
-    // Restaurar tecla Enter
-    restaurarEnter();
+    campo("inputDocumento").focus();
 });
 
-// setar o cpf do cliente o nome do cliente para fazer um novo cadastro se a busca retornar que o cliente
-api.setCpf((args) => {
-    //console.log("teste do IPC 'set-name'");
-    let busca = document.getElementById("searchClientsInput").value;
-
-    // foco no campo nome
-    inputNome.focus();
-    // Limpar o campo de busca
+api.setCpf(() => {
+    const digitos = soDigitos(searchClient.value);
+    marcarTipoPessoa(digitos.length === 14 ? "PJ" : "PF");
+    campo("inputDocumento").value = formatarDocumento(digitos);
     searchClient.value = "";
-    // Copiar o nome do cliente para o campo nome
-    inputCPF.value = busca;
-    //limpa o ampo de busca (foco foi capturado de forma global)
-    //busca.value = "";
-
-    // Restaurar tecla Enter
-    restaurarEnter();
+    campo("inputNome").focus();
 });
 
-
-function teclaEnter(event) {
-    if (event.key === "Enter") {
-        event.preventDefault(); // ignorar o comportamento padrão
-        // executar o método de busca do cliente
-        searchName();
-    }
-}
-// função para restaurar o padrão (tecla Enter)
-function restaurarEnter() {
-    frmSearchClient.removeEventListener("keydown", teclaEnter);
-  }
 // ============================
 // ===== EVENTOS DA TELA ======
-// (antes eram onclick/onblur no HTML)
-inputCPF.addEventListener("blur", checarCPF);
-inputCep.addEventListener("blur", buscarEndereco);
+
+document.addEventListener("DOMContentLoaded", () => {
+    btnUpdate.disabled = true;
+    btnDelete.disabled = true;
+    btnCreate.disabled = false;
+    aplicarTipoPessoa();
+    searchClient.focus();
+});
+
+document.querySelectorAll('input[name="tipoPessoa"]').forEach((r) => r.addEventListener("change", aplicarTipoPessoa));
+campo("inputDocumento").addEventListener("blur", () => {
+    if (campo("inputDocumento").value.trim()) checarDocumento();
+});
+campo("inputCep").addEventListener("blur", buscarEndereco);
 btnDelete.addEventListener("click", removeClient);
 btnReset.addEventListener("click", resetForm);
-
-// Título do formulário: "Novo cliente" ou o nome de quem está sendo editado
-api.renderClient(() => {
-    document.getElementById("tituloForm").textContent = "Editar cliente";
-});

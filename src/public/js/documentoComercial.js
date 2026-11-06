@@ -108,12 +108,15 @@ const searchClient = document.getElementById("searchClientsInput");
 const inputIdClient = document.getElementById("inputIdClient");
 const inputNome = document.getElementById("inputNome");
 
+// "Nome — CPF ***.982.247-**" (OS e orçamentos só recebem o documento mascarado)
+const rotuloCliente = (c) => (c.documentoMascarado ? `${c.nome} — ${c.rotuloDocumento} ${c.documentoMascarado}` : c.nome);
+
 // A tela informa o que fazer quando um cliente é escolhido
 let aoSelecionarCliente = () => {};
 
 function selecionarCliente(c) {
     inputIdClient.value = c._id;
-    inputNome.value = `${c.nome} — CPF ${c.cpf}`;
+    inputNome.value = rotuloCliente(c);
     searchClient.value = "";
     aoSelecionarCliente(c);
 }
@@ -121,7 +124,7 @@ function selecionarCliente(c) {
 // Mostra o cliente de um documento carregado (o cliente pode ter sido excluído)
 function mostrarCliente(c) {
     inputIdClient.value = c ? c._id : "";
-    inputNome.value = c ? `${c.nome} — CPF ${c.cpf}` : "(cliente excluído)";
+    inputNome.value = c ? rotuloCliente(c) : "(cliente excluído)";
 }
 
 frmSearchClient.addEventListener("submit", (event) => {
@@ -130,7 +133,7 @@ frmSearchClient.addEventListener("submit", (event) => {
     const termo = searchClient.value.trim();
     if (termo === "") {
         api.validateSearch();
-    } else if (/^[\d.\-\s]+$/.test(termo)) {
+    } else if (/^[\d.\-/\s]+$/.test(termo)) {
         api.searchCpf(termo);
     } else {
         api.searchName(termo);
@@ -145,7 +148,7 @@ api.renderClient((event, dados) => {
     } else {
         mostrarLista(
             "Clientes encontrados",
-            clientes.map((c) => ({ titulo: c.nome, detalhe: `CPF ${c.cpf}`, aoClicar: () => selecionarCliente(c) }))
+            clientes.map((c) => ({ titulo: c.nome, detalhe: [`${c.rotuloDocumento} ${c.documentoMascarado}`, c.cidade, c.ativo === false ? "Inativo" : ""].filter(Boolean).join(" · "), aoClicar: () => selecionarCliente(c) }))
         );
     }
 });

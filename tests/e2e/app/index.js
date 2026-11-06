@@ -53,6 +53,12 @@ const ctx = {
     janela: (titulo) => BrowserWindow.getAllWindows().find((w) => !w.isDestroyed() && w.getTitle() === titulo),
     js: (janela, codigo) => janela.webContents.executeJavaScript(codigo),
     modelo: (nome) => require(path.join(RAIZ, "src", "model", nome + ".js")),
+    // Cria um cliente já com o CPF/CNPJ cifrado (chave do próprio app)
+    async criarCliente(nome, documento, extras = {}) {
+        const { camposDocumento } = require(path.join(RAIZ, "src", "servicos", "clientes.js"));
+        const tipoPessoa = documento.replace(/\D/g, "").length === 14 ? "PJ" : "PF";
+        return ctx.modelo("Clientes").create({ nome, tipoPessoa, ...camposDocumento(tipoPessoa, documento), ...extras });
+    },
     ultimoDialogo: () => ctx.dialogos[ctx.dialogos.length - 1],
 
     // Abre uma tela pela tela inicial e espera ela carregar

@@ -3,7 +3,7 @@ module.exports = {
     async executar(ctx) {
         const Usuario = ctx.modelo("Usuario");
         const Cli = ctx.modelo("Clientes");
-        const cliente = await Cli.create({ nome: "Maria", cpf: "52998224725" });
+        const cliente = await ctx.criarCliente("Maria", "52998224725");
         for (const [nome, login, perfil] of [["Ana", "ana", "atendente"], ["Pedro", "pedro", "produção"]]) {
             const u = new Usuario({ nome, login, perfil });
             await u.definirSenha("senha123");

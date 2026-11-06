@@ -27,7 +27,7 @@ module.exports = {
         await intrusa.loadURL("data:text/html,<p>intrusa</p>");
         await ctx.espera(500);
         const Cli = ctx.modelo("Clientes");
-        await ctx.js(intrusa, "api.openWindow('clientes'); api.createCliente({ nomeCli: 'Invasor', cpfCli: '11144477735' })");
+        await ctx.js(intrusa, "api.openWindow('clientes'); api.createCliente({ nome: 'Invasor', documento: '11144477735' })");
         await ctx.espera(2000);
         ctx.ok(!ctx.janela("Clientes"), "IPC de origem desconhecida é recusado (não abre janela)");
         ctx.igual(await Cli.countDocuments(), 0, "IPC de origem desconhecida é recusado (não grava)");

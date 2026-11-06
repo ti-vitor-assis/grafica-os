@@ -3,6 +3,7 @@
  */
 
 const { escapeHtml, moeda, dataHora } = require("./formatar.js");
+const { clienteParaTela } = require("../servicos/clientes.js");
 
 const estiloDocumento = `
     * { box-sizing: border-box; }
@@ -47,7 +48,8 @@ function cabecalho(titulo, numero) {
 
 // Dados do cliente (c = cliente populado; pode ser null se foi excluído)
 function blocoCliente(c) {
-    c = c || {};
+    // O PDF é do próprio cliente: leva o CPF/CNPJ completo (decifrado aqui)
+    c = c && c._id ? clienteParaTela(c, { completo: true }) : c || {};
     const endereco = [
         c.endereco && `${c.endereco}, ${c.numero || "s/n"}`,
         c.complemento,
@@ -59,8 +61,10 @@ function blocoCliente(c) {
     return `
     <h2>Cliente</h2>
     <div class="grade">
-        <div class="campo largo"><span>Nome</span><b>${escapeHtml(c.nome || "(cliente excluído)")}</b></div>
-        <div class="campo"><span>CPF</span><b>${escapeHtml(c.cpf || "—")}</b></div>
+        <div class="campo largo"><span>${c.tipoPessoa === "PJ" ? "Razão social" : "Nome"}</span><b>${escapeHtml(c.nome || "(cliente excluído)")}</b></div>
+        <div class="campo"><span>${c.rotuloDocumento || "CPF/CNPJ"}</span><b>${escapeHtml(c.documento || "—")}</b></div>
+        ${c.nomeFantasia ? `<div class="campo largo"><span>Nome fantasia</span><b>${escapeHtml(c.nomeFantasia)}</b></div>` : ""}
+        ${c.inscricaoEstadual ? `<div class="campo largo"><span>Inscrição estadual</span><b>${escapeHtml(c.inscricaoEstadual)}</b></div>` : ""}
         <div class="campo"><span>Celular</span><b>${escapeHtml(c.telefone || "—")}</b></div>
         <div class="campo largo"><span>E-mail</span><b>${escapeHtml(c.email || "—")}</b></div>
         <div class="campo largo"><span>Telefone</span><b>${escapeHtml(c.telefone2 || "—")}</b></div>

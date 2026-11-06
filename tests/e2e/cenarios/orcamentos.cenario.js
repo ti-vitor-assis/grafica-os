@@ -1,11 +1,10 @@
 // Orçamentos: criar, abrir, aprovar gerando OS e regras de orçamento vencido
 module.exports = {
     async executar(ctx) {
-        const Cli = ctx.modelo("Clientes");
         const Prod = ctx.modelo("Products");
         const Q = ctx.modelo("Quote");
         const OS = ctx.modelo("ServiceOrder");
-        const cliente = await Cli.create({ nome: "Escola Futuro", cpf: "39053344705" });
+        const cliente = await ctx.criarCliente("Escola Futuro", "39053344705");
         const produto = await Prod.create({ nome: "Panfleto A5", categoria: "Impressos", unidade: "milheiro", valorUnitario: 180 });
 
         const w = await ctx.abrir("orcamentos", "Orçamentos");

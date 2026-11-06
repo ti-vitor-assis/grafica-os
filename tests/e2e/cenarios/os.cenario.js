@@ -1,10 +1,9 @@
 // Ordem de serviço: itens, pagamentos, prazo, abrir pelo número, entregar, imprimir e excluir
 module.exports = {
     async executar(ctx) {
-        const Cli = ctx.modelo("Clientes");
         const Prod = ctx.modelo("Products");
         const OS = ctx.modelo("ServiceOrder");
-        await Cli.create({ nome: "Maria Souza", cpf: "52998224725" });
+        await ctx.criarCliente("Maria Souza", "52998224725");
         await Prod.create({ nome: "Banner lona", categoria: "CV", unidade: "m²", valorUnitario: 45 });
         await Prod.create({ nome: "Cartão de visita", categoria: "Impressos", unidade: "milheiro", valorUnitario: 89.9 });
 
@@ -13,8 +12,10 @@ module.exports = {
         const amanha = new Date(Date.now() + 864e5);
         const ymd = `${amanha.getFullYear()}-${String(amanha.getMonth() + 1).padStart(2, "0")}-${String(amanha.getDate()).padStart(2, "0")}`;
 
-        await js(`searchClientsInput.value='maria'; frmSearchClient.requestSubmit()`);
+        // Busca exata pelo CPF (com pontuação) também na OS; a tela só vê o CPF mascarado
+        await js(`searchClientsInput.value='529.982.247-25'; frmSearchClient.requestSubmit()`);
         await ctx.aguardar(() => js("inputIdClient.value !== ''"));
+        ctx.igual(await js("inputNome.value"), "Maria Souza — CPF ***.982.247-**", "OS acha o cliente pelo CPF e mostra mascarado");
 
         await js(`inputPrazo.value='${ymd}'; frmOS.requestSubmit()`);
         await ctx.aguardar(() => ctx.dialogos.some((d) => d.includes("pelo menos 1 item")));

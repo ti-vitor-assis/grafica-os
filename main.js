@@ -33,6 +33,7 @@ const { limparEntrada } = require('./src/seguranca/entrada.js')
 const cripto = require('./src/seguranca/cripto.js')
 const arquivoChave = require('./src/seguranca/arquivoChave.js')
 const configuracaoModel = require('./src/model/Configuracao.js')
+const servicoClientes = require('./src/servicos/clientes.js')
 
 let win
 
@@ -689,71 +690,45 @@ function trocarUsuario(motivo) {
 
 
 // ===============================================
-// ================ CRUD CREATE ==================
+// ================== CLIENTES ===================
+// Validação, cifragem do CPF/CNPJ e o que vai para as telas: src/servicos/clientes.js
 
-ipcComPermissao("create-cliente", "clientes", async (event, cliente) => {
-
-  try {
-    const novoCliente = clienteModel({
-      nome: cliente.nomeCli,
-      rg: cliente.rgCli,
-      cpf: cliente.cpfCli,
-      sexo: cliente.sexoCli,
-      dataNascimento: cliente.dataNascCli,
-      telefone: cliente.telefoneCli,
-      telefone2: cliente.telefone2Cli,
-      email: cliente.emailCli,
-      cep: cliente.cepCli,
-      endereco: cliente.enderecoCli,
-      numero: cliente.numCli,
-      complemento: cliente.complementoCli,
-      bairro: cliente.bairroCli,
-      cidade: cliente.cidadeCli,
-      estado: cliente.estadoCli,
+// Erro ao salvar cliente: CPF/CNPJ repetido, documento inválido ou campo obrigatório
+async function avisoErroCliente(event, error) {
+  const janela = BrowserWindow.fromWebContents(event.sender);
+  if (error.code === 11000) {
+    await dialog.showMessageBox(janela, {
+      type: "error",
+      title: "Atenção!",
+      message: "CPF/CNPJ já cadastrado.\nVerifique o número digitado.",
+      buttons: ["OK"],
     });
-    await novoCliente.save();
+    event.reply("cpf-duplicate");
+    return;
+  }
+  if (error.errors) return avisoErroValidacao(error);
+  await dialog.showMessageBox(janela, { type: "error", title: "Atenção!", message: error.message, buttons: ["OK"] });
+  if (/CPF|CNPJ/.test(error.message)) event.reply("cpf-duplicate");
+}
 
-    // Confirmação de cliente adicionado ao banco (dialog)
-    dialog
-      .showMessageBox({
-        type: "info",
-        title: "Aviso",
-        message: "Cliente adicionado com sucesso",
-        buttons: ["OK"],
-      })
-      .then((result) => {
-        // se o botão OK for pressionado
-        if (result.response === 0) {
-          // enviar para o renderizador limpar os campos (preload.js)
-          event.reply("reset-form");
-        }
-      });
+// ======== CREATE =========
+ipcComPermissao("create-cliente", "clientes", async (event, cliente) => {
+  try {
+    await clienteModel.create(servicoClientes.dadosClienteDaTela(cliente));
+    const result = await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
+      type: "info",
+      title: "Aviso",
+      message: "Cliente adicionado com sucesso",
+      buttons: ["OK"],
+    });
+    if (result.response === 0) event.reply("reset-form");
   } catch (error) {
-    if (error.code === 11000) {
-      dialog
-        .showMessageBox({
-          type: "error",
-          title: "Atenção!",
-          message: "CPF já cadastrado.\nVerifique o número digitado.",
-          buttons: ["OK"],
-        })
-        .then((result) => {
-          // Se o botão OK for pressionado
-          if (result.response === 0) {
-            // Limpar campo CPF, foco e borda em vermelho
-            event.reply("cpf-duplicate");
-          }
-        });
-    } else {
-      console.log(error);
-    }
+    if (!error.errors && error.code !== 11000 && !/CPF|CNPJ/.test(error.message)) console.log(error.message);
+    avisoErroCliente(event, error);
   }
 });
 
-
-
-// ===============================================
-// ================= CRUD READ ===================
+// ======== READ =========
 
 // validação da busca
 ipcOn("validate-search", () => {
@@ -765,172 +740,89 @@ ipcOn("validate-search", () => {
   });
 });
 
-ipcOn("search-name", async (event, cliName) => {
-  try {
-    // Passos 3 e 4 (Busca dos dados do cliente pelo nome)
-    const client = await clienteModel.find({
-      // RegExp (Expressão Regular 'i' -> insensitive(ignorar letras maiúsculas e minúsculas)).
-      // O texto é escapado: sem isso, buscar por "(" ou "+" gerava erro
-      nome: new RegExp(escapeRegex(cliName), "i"),
+// Resposta comum das buscas de cliente.
+// pedido: { termo, ficha } — ficha = tela de Clientes, que recebe os dados
+// completos (só para quem pode cadastrar clientes); as outras telas recebem
+// o documento mascarado.
+async function responderBuscaCliente(event, pedido, clientes, canalNaoEncontrado) {
+  if (clientes.length === 0) {
+    const result = await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
+      type: "warning",
+      title: "Aviso",
+      message: "Cliente não cadastrado.\nDeseja cadastrar este cliente?",
+      defaultId: 0,
+      buttons: ["SIM", "NÃO"],
     });
+    event.reply(result.response === 0 ? canalNaoEncontrado : "reset-form");
+    return;
+  }
+  const completo = !!(pedido && pedido.ficha) && pode("clientes");
+  const lista = clientes.map((c) => servicoClientes.clienteParaTela(c, { completo }));
+  event.reply("render-client", JSON.stringify(lista));
+}
 
-    // Melhoria da experiencia do usuário (se não existir um cliente cadastrado enviar uma mensagem ao usuário questionando se ele deseja cadastrar este novo cliente)
-    // Se o vetor estiver vazio
-    if (client.length === 0) {
-      // Questionar o usuário
-      dialog
-        .showMessageBox({
-          type: "warning",
-          title: "Aviso",
-          message: "Cliente não cadastrado.\nDeseja cadastrar este cliente?",
-          defaultId: 0,
-          buttons: ["SIM", "NÃO"], // [0, 1] defaultId: 0 = Sim
-        })
-        .then((result) => {
-          if (result.response === 0) {
-            // Enviar ao rendererCadCli um pedido para copiar o nome do cliente do campo de busca para o campo nome (evitar que o usuário digite o nome novamente)
-            event.reply("set-name");
-          } else {
-            // enviar ao rendererCliente um pedido para limpar os campos (reutilizar a api do preload 'reset-form')
-            event.reply("reset-form");
-          }
-        });
-    } else {
-      // Passo 5: Enviar ao renderizador (rendererCadCli) os dados do cliente
-      // Não esquecer de converter para string
-      event.reply("render-client", JSON.stringify(client));
-    }
+// Aceita o pedido novo ({ termo, ficha }) ou só o texto
+const termoDaBusca = (pedido) => String(pedido && typeof pedido === "object" ? pedido.termo : pedido || "").trim();
+
+// Por nome (ou nome fantasia), em parte do texto
+ipcOn("search-name", async (event, pedido) => {
+  try {
+    const regex = new RegExp(escapeRegex(termoDaBusca(pedido)), "i");
+    const clientes = await clienteModel.find({ $or: [{ nome: regex }, { nomeFantasia: regex }] }).sort({ nome: 1 });
+    await responderBuscaCliente(event, pedido, clientes, "set-name");
   } catch (error) {
-    console.log(error);
+    console.log(error.message);
   }
 });
 
-ipcOn("search-cpf", async (event, cpfCli) => {
+// Por CPF/CNPJ exato (com ou sem pontuação), pelo índice cifrado
+ipcOn("search-cpf", async (event, pedido) => {
   try {
-    // Passos 3 e 4 (Busca dos dados do cliente pelo CPF)
-    const client = await clienteModel.find({
-      // Compara só os dígitos: "529.982.247-25" encontra "52998224725" e vice-versa
-      cpf: regexDigitos(cpfCli),
+    const digitos = cripto.soDigitos(termoDaBusca(pedido));
+    const clientes = [11, 14].includes(digitos.length)
+      ? await clienteModel.find({ documentoBusca: cripto.indiceBusca(digitos) })
+      : [];
+    await responderBuscaCliente(event, pedido, clientes, "set-cpf");
+  } catch (error) {
+    console.log(error.message);
+  }
+});
+
+// ======== UPDATE =========
+ipcComPermissao("update-client", "clientes", async (event, cliente) => {
+  try {
+    const atual = await clienteModel.findById(cliente._id);
+    if (!atual) return;
+    if (atual.anonimizado) throw new Error("Este cliente foi anonimizado (LGPD) e não pode mais ser alterado.");
+    atual.set(servicoClientes.dadosClienteDaTela(cliente));
+    await atual.save();
+    const result = await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
+      type: "info",
+      title: "Aviso",
+      message: "Dados do cliente alterados com sucesso",
+      buttons: ["OK"],
     });
-
-    // Melhoria da experiencia do usuário (se não existir um cliente cadastrado enviar uma mensagem ao usuário questionando se ele deseja cadastrar este novo cliente)
-    // Se o vetor estiver vazio
-    if (client.length === 0) {
-      // Questionar o usuário
-      dialog
-        .showMessageBox({
-          type: "warning",
-          title: "Aviso",
-          message: "Cliente não cadastrado.\nDeseja cadastrar este cliente?",
-          defaultId: 0,
-          buttons: ["SIM", "NÃO"], // [0, 1] defaultId: 0 = Sim
-        })
-        .then((result) => {
-          if (result.response === 0) {
-            // Enviar ao rendererCadCli um pedido para copiar o nome do cliente do campo de busca para o campo nome (evitar que o usuário digite o nome novamente)
-            event.reply("set-cpf");
-          } else {
-            // enviar ao rendererCliente um pedido para limpar os campos (reutilizar a api do preload 'reset-form')
-            event.reply("reset-form");
-          }
-        });
-    } else {
-      // Passo 5: Enviar ao renderizador (rendererCadCli) os dados do cliente
-      // Não esquecer de converter para string
-      event.reply("render-client", JSON.stringify(client));
-    }
+    if (result.response === 0) event.reply("reset-form");
   } catch (error) {
-    console.log(error);
+    avisoErroCliente(event, error);
   }
 });
 
-// ======== CRUD UPDATE =========
-
-ipcComPermissao("update-client", "clientes", async (event, client) => {
-  try {
-    const updateCliente = await clienteModel.findByIdAndUpdate(
-      client.idCli,
-      {
-        nome: client.nomeCli,
-        rg: client.rgCli,
-        cpf: client.cpfCli,
-        sexo: client.sexoCli,
-        dataNascimento: client.dataNascCli,
-        telefone: client.telefoneCli,
-        telefone2: client.telefone2Cli,
-        email: client.emailCli,
-        cep: client.cepCli,
-        endereco: client.enderecoCli,
-        numero: client.numCli,
-        complemento: client.complementoCli,
-        bairro: client.bairroCli,
-        cidade: client.cidadeCli,
-        estado: client.estadoCli,
-      },
-      {
-        new: true,
-      }
-    );
-    // Confirmação de cliente adicionado ao banco (dialog)
-    dialog
-      .showMessageBox({
-        type: "info",
-        title: "Aviso",
-        message: "Dados do cliente alterados com sucesso",
-        buttons: ["OK"],
-      })
-      .then((result) => {
-        // se o botão OK for pressionado
-        if (result.response === 0) {
-          // enviar para o renderizador limpar os campos (preload.js)
-          event.reply("reset-form");
-        }
-      });
-  } catch (error) {
-    if (error.code === 11000) {
-      dialog
-        .showMessageBox({
-          type: "error",
-          title: "Atenção!",
-          message: "CPF já cadastrado.\nVerifique o número digitado.",
-          buttons: ["OK"],
-        })
-        .then((result) => {
-          // Se o botão OK for pressionado
-          if (result.response === 0) {
-            // Limpar campo CPF, foco e borda em vermelho
-            event.reply("cpf-duplicate");
-          }
-        });
-    } else {
-      console.log(error);
-    }
-  }
-});
-
-
-// ==============================
-// ======== CRUD DELETE =========
-
+// ======== DELETE =========
 ipcComPermissao("delete-client", "excluir", async (event, id) => {
-  //console.log(id);
-  // Excuir o registro do banco (passo 3) IMPORTANTE! (confirmar antes da exclusão)
-  // win = Janela Principal
-  const result = await dialog.showMessageBox(win, {
+  // Excluir o registro do banco IMPORTANTE! (confirmar antes da exclusão)
+  const result = await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
     type: "warning",
     title: "Atenção!",
-    message:
-      "Tem certeza que deseja excluir este Cliente?\nEsta ação não podera ser desfeita.",
-    buttons: ["Cancelar", "Excluir"], // É um Vetor indices: [0, 1]
+    message: "Tem certeza que deseja excluir este Cliente?\nEsta ação não poderá ser desfeita.",
+    buttons: ["Cancelar", "Excluir"],
   });
-  console.log(result);
   if (result.response === 1) {
     try {
-      const delClient = await clienteModel.findByIdAndDelete(id);
-      console.log(`deletado ${id}`);
+      await clienteModel.findByIdAndDelete(id);
       event.reply("reset-form");
     } catch (error) {
-      console.log(error);
+      console.log(error.message);
     }
   }
 });
@@ -945,13 +837,6 @@ function escapeRegex(texto) {
   return String(texto).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-// Busca por documento (CPF/CNPJ) comparando só os dígitos, com ou sem
-// pontuação dos dois lados: "529.982.247-25" -> /5\D*2\D*9.../
-function regexDigitos(texto) {
-  const digitos = String(texto || "").replace(/\D/g, "");
-  if (!digitos) return /^$/; // nada digitado: não encontra ninguém
-  return new RegExp(digitos.split("").join("\\D*"));
-}
 
 // Converte os dados vindos da tela para o formato do schema
 function dadosProduto(produto) {
@@ -1175,6 +1060,14 @@ ipcComPermissao("create-order", "os", async (event, order) => {
   }
 });
 
+// Documento (OS/orçamento) com o cliente populado -> objeto para a tela,
+// com o cliente resumido (documento mascarado, sem os campos cifrados)
+function paraTelaComCliente(doc, extras = {}) {
+  const obj = { ...doc.toObject(), ...extras };
+  obj.cliente = doc.cliente && doc.cliente._id ? servicoClientes.clienteParaTela(doc.cliente) : null;
+  return obj;
+}
+
 // ======= READ =======
 // filtro: { numero } para abrir uma OS, ou { clienteId } para listar as OS do cliente
 ipcOn("search-order", async (event, filtro) => {
@@ -1194,7 +1087,7 @@ ipcOn("search-order", async (event, filtro) => {
       });
       return;
     }
-    event.reply("order-result", JSON.stringify({ modo: porNumero ? "numero" : "cliente", ordens }));
+    event.reply("order-result", JSON.stringify({ modo: porNumero ? "numero" : "cliente", ordens: ordens.map((o) => paraTelaComCliente(o)) }));
   } catch (error) {
     console.error("Erro na busca da OS:", error);
   }
@@ -1713,7 +1606,7 @@ ipcOn("search-quote", async (event, filtro) => {
       return;
     }
     // "vencido" é calculado na hora
-    const orcamentos = lista.map((q) => ({ ...q.toObject(), vencido: quoteModel.estaVencido(q) }));
+    const orcamentos = lista.map((q) => paraTelaComCliente(q, { vencido: quoteModel.estaVencido(q) }));
     event.reply("quote-result", JSON.stringify({ modo: porNumero ? "numero" : "cliente", orcamentos }));
   } catch (error) {
     console.error("Erro na busca do orçamento:", error);
