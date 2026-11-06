@@ -4,141 +4,158 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- Só scripts/estilos do próprio app; conexão externa apenas com o ViaCEP (busca de CEP).
-         'unsafe-inline' em script-src é necessário por causa dos onclick="" nas telas -->
+    <!-- Só scripts/estilos do próprio app (esta tela não tem onclick) -->
     <meta http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://viacep.com.br" />
-    <link href="../public/css/costumerRegistrationStyle.css" rel="stylesheet" />
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:" />
+    <link href="../public/css/app.css" rel="stylesheet" />
     <link href="../public/css/tailwind.css" rel="stylesheet" />
     <title>Produtos</title>
 </head>
 
-<body>
+<body class="tela">
+    <header class="tela-cabecalho">
+        <div class="tela-titulo">
+            <span class="tela-icone"><i data-icone="produto" data-tamanho="20"></i></span>
+            <div>
+                <h1>Produtos e serviços</h1>
+                <p>Catálogo com preços usados nos orçamentos e nas OS</p>
+            </div>
+        </div>
+        <form id="frmSearchProduct" class="busca">
+            <div class="busca-campo">
+                <i data-icone="busca" data-tamanho="16"></i>
+                <input type="search" id="searchProductsInput" class="input" placeholder="Buscar por nome ou categoria" />
+            </div>
+            <button type="submit" id="searchBtn" class="btn btn-secundario">Buscar</button>
+        </form>
+    </header>
 
-    <div class="base">
+    <main class="tela-conteudo">
+        <div class="layout-form-lista">
 
-        <!-- SEARCH SECTION -->
-        <section class="searchSection flex items-center px-4">
-            <form id="frmSearchProduct" class="flex items-center gap-4 w-full">
-                <input type="text" class="inputStyle w-[500px] mt-[5px] ml-[10px]" id="searchProductsInput"
-                    placeholder="  Buscar por nome ou categoria...                                                     🔍︎" />
-                <button type="submit" id="searchBtn" class="btns">BUSCAR</button>
-            </form>
-        </section>
+            <form id="frmProduct" class="card">
+                <div class="card-cabecalho">
+                    <div>
+                        <h2 id="tituloForm">Novo produto</h2>
+                        <p>Campos com <span class="obrigatorio">*</span> são obrigatórios</p>
+                    </div>
+                </div>
 
-        <hr class="blockDivision border-t-2 border-[var(--color-primary)] mx-auto mt-2 opacity-40 rounded" />
-
-        <!-- REGISTER SECTION -->
-        <section class="registerSection">
-
-            <!-- Formulário -->
-            <section class="w-[620px] p-4">
-                <form id="frmProduct" class="w-full space-y-3">
-
-                    <h1 class="text-[var(--color-text-primary)] text-xl font-semibold pt-1 mb-2">
-                        Cadastro de Produtos e Serviços
-                    </h1>
-
-                    <!-- ID oculto -->
+                <div class="card-corpo">
                     <input type="text" id="inputIdProduct" hidden />
 
-                    <!-- Nome -->
-                    <input type="text" class="inputStyle w-full" id="inputNome" placeholder="  Nome *" required />
-
-                    <!-- Categoria / Unidade -->
-                    <div class="flex gap-4">
-                        <input type="text" class="inputStyle flex-1" id="inputCategoria" list="listaCategorias"
-                            placeholder="  Categoria *" required />
-                        <datalist id="listaCategorias">
-                            <option value="Impressos"></option>
-                            <option value="Comunicação Visual"></option>
-                            <option value="Papelaria"></option>
-                            <option value="Brindes"></option>
-                            <option value="Criação de Arte"></option>
-                            <option value="Acabamento"></option>
-                        </datalist>
-                        <select class="inputStyle w-[180px]" id="inputUnidade" required>
-                            <option value="un">Unidade</option>
-                            <option value="cento">Cento</option>
-                            <option value="milheiro">Milheiro</option>
-                            <option value="m²">Metro quadrado (m²)</option>
-                            <option value="pacote">Pacote</option>
-                        </select>
+                    <div class="secao">
+                        <p class="secao-titulo">Identificação</p>
+                        <div class="grid grid-cols-12 gap-x-4 gap-y-3">
+                            <div class="campo col-span-12">
+                                <label for="inputNome">Nome <span class="obrigatorio">*</span></label>
+                                <input type="text" id="inputNome" class="input" placeholder="ex.: Cartão de visita 4x4 couché 300g" required />
+                            </div>
+                            <div class="campo col-span-7">
+                                <label for="inputCategoria">Categoria <span class="obrigatorio">*</span></label>
+                                <input type="text" id="inputCategoria" class="input" list="listaCategorias" required />
+                                <datalist id="listaCategorias">
+                                    <option value="Impressos"></option>
+                                    <option value="Comunicação Visual"></option>
+                                    <option value="Papelaria"></option>
+                                    <option value="Brindes"></option>
+                                    <option value="Criação de Arte"></option>
+                                    <option value="Acabamento"></option>
+                                </datalist>
+                            </div>
+                            <div class="campo col-span-5">
+                                <label for="inputUnidade">Unidade de venda <span class="obrigatorio">*</span></label>
+                                <select id="inputUnidade" class="select" required>
+                                    <option value="un">Unidade</option>
+                                    <option value="cento">Cento</option>
+                                    <option value="milheiro">Milheiro</option>
+                                    <option value="m²">Metro quadrado (m²)</option>
+                                    <option value="pacote">Pacote</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Material / Tamanho -->
-                    <div class="flex gap-4">
-                        <input type="text" class="inputStyle flex-1" id="inputMaterial"
-                            placeholder="  Material (ex.: Couché 300g)" />
-                        <input type="text" class="inputStyle flex-1" id="inputTamanho"
-                            placeholder="  Tamanho (ex.: 9x5cm)" />
+                    <div class="secao">
+                        <p class="secao-titulo">Especificação</p>
+                        <div class="grid grid-cols-12 gap-x-4 gap-y-3">
+                            <div class="campo col-span-6">
+                                <label for="inputMaterial">Material</label>
+                                <input type="text" id="inputMaterial" class="input" placeholder="ex.: Couché 300g" />
+                            </div>
+                            <div class="campo col-span-3">
+                                <label for="inputTamanho">Tamanho</label>
+                                <input type="text" id="inputTamanho" class="input" placeholder="ex.: 9x5cm" />
+                            </div>
+                            <div class="campo col-span-3">
+                                <label for="inputCores">Cores</label>
+                                <input type="text" id="inputCores" class="input" placeholder="ex.: 4x0" />
+                            </div>
+                            <div class="campo col-span-12">
+                                <label for="inputAcabamento">Acabamento</label>
+                                <input type="text" id="inputAcabamento" class="input" placeholder="ex.: Laminação fosca" />
+                            </div>
+                            <div class="campo col-span-12">
+                                <label for="inputDescricao">Descrição</label>
+                                <textarea id="inputDescricao" class="textarea" rows="2"></textarea>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Cores / Acabamento -->
-                    <div class="flex gap-4">
-                        <input type="text" class="inputStyle w-[180px]" id="inputCores"
-                            placeholder="  Cores (ex.: 4x0)" />
-                        <input type="text" class="inputStyle flex-1" id="inputAcabamento"
-                            placeholder="  Acabamento (ex.: Laminação fosca)" />
+                    <div class="secao">
+                        <p class="secao-titulo">Preço</p>
+                        <div class="grid grid-cols-12 gap-x-4 gap-y-3 items-end">
+                            <div class="campo col-span-4">
+                                <label for="inputValor">Valor unitário <span class="obrigatorio">*</span></label>
+                                <div class="input-grupo">
+                                    <span class="prefixo">R$</span>
+                                    <input type="number" id="inputValor" class="input" min="0" step="0.01" placeholder="0,00" required />
+                                </div>
+                            </div>
+                            <div class="col-span-8 pb-2">
+                                <label class="checkbox"><input type="checkbox" id="inputAtivo" checked /> Ativo (aparece para novas OS e orçamentos)</label>
+                            </div>
+                        </div>
                     </div>
-
-                    <!-- Descrição -->
-                    <textarea class="inputStyle w-full h-[70px] pt-2 resize-none" id="inputDescricao"
-                        placeholder="Descrição"></textarea>
-
-                    <!-- Valor / Ativo -->
-                    <div class="flex gap-4 items-center">
-                        <input type="number" class="inputStyle w-[250px]" id="inputValor" min="0" step="0.01"
-                            placeholder="  Valor unitário (R$) *" required />
-                        <label class="text-[var(--color-text-primary)] flex items-center gap-2">
-                            <input type="checkbox" id="inputAtivo" class="w-4 h-4 accent-[var(--color-primary)]"
-                                checked />
-                            Ativo (disponível para novas OS)
-                        </label>
-                    </div>
-
-                    <!-- Botões -->
-                    <div class="flex flex-wrap gap-4 pt-2">
-                        <button type="submit" class="inputStyle px-4 py-1 rounded text-white hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
-                            id="btnCreate">
-                            Cadastrar
-                        </button>
-                        <button type="submit" class="inputStyle px-4 py-1 rounded text-white hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
-                            id="btnUpdate">
-                            Editar
-                        </button>
-                        <button type="button" class="inputStyle px-4 py-1 rounded text-white hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
-                            id="btnDelete" data-permissao="excluir" onclick="removeProduct()">
-                            Excluir
-                        </button>
-                        <button type="button" class="inputStyle px-2 py-1 rounded text-white hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
-                            id="btnReset" onclick="resetForm()">
-                            Limpar
-                        </button>
-                    </div>
-                </form>
-            </section>
-
-            <!-- Resultados da busca -->
-            <section class="flex-1 p-4 pl-0">
-                <div class="h-full rounded-[5px] bg-[var(--color-background)] p-3 flex flex-col">
-                    <h2 class="text-[var(--color-text-primary)] font-semibold mb-2">Resultados da busca</h2>
-                    <p id="semResultados" class="text-[var(--color-text-secondary)] text-sm">
-                        Busque por nome ou categoria para listar os produtos.
-                    </p>
-                    <ul id="listaResultados" class="overflow-y-auto space-y-2"></ul>
                 </div>
-            </section>
-        </section>
-    </div>
 
-    <!-- FOOTER -->
-    <footer>
-        <p id="footerRealTime"></p>
-        <img src="../public/img/dboffRed.png" alt="Icone banco de dados" id="iconeDB" />
-    </footer>
+                <div class="card-acoes fixo">
+                    <button type="button" id="btnDelete" data-permissao="excluir" class="btn btn-perigo some-desabilitado">
+                        <i data-icone="lixeira" data-tamanho="16"></i> Excluir
+                    </button>
+                    <span class="espacador"></span>
+                    <button type="button" id="btnReset" class="btn btn-secundario">
+                        <i data-icone="mais" data-tamanho="16"></i> Novo produto
+                    </button>
+                    <button type="submit" id="btnCreate" class="btn btn-primario some-desabilitado">
+                        <i data-icone="salvar" data-tamanho="16"></i> Cadastrar produto
+                    </button>
+                    <button type="submit" id="btnUpdate" class="btn btn-primario some-desabilitado">
+                        <i data-icone="salvar" data-tamanho="16"></i> Salvar alterações
+                    </button>
+                </div>
+            </form>
+
+            <aside class="card lista-lateral">
+                <div class="card-cabecalho">
+                    <div>
+                        <h2>Resultados</h2>
+                        <p id="contagemResultados">Busque por nome ou categoria</p>
+                    </div>
+                </div>
+                <p id="semResultados" class="vazio">
+                    <i data-icone="busca" data-tamanho="22"></i>
+                    Os produtos encontrados aparecem aqui.
+                </p>
+                <ul id="listaResultados" class="lista"></ul>
+            </aside>
+        </div>
+    </main>
+
+    <footer class="statusbar"></footer>
 
     <!-- SCRIPTS -->
+    <script src="../public/js/icones.js"></script>
     <script src="../public/js/productRegistrationRenderer.js"></script>
     <script src="../public/js/footer.js"></script>
 </body>

@@ -88,6 +88,8 @@ function preencherFormulario(p) {
     btnCreate.disabled = true;
     btnUpdate.disabled = false;
     btnDelete.disabled = false;
+    document.getElementById("tituloForm").textContent = "Editar produto";
+    listaResultados.querySelectorAll(".lista-item").forEach((li) => li.classList.toggle("ativo", li.dataset.id === p._id));
 }
 
 // Mostra os resultados na lista da direita (clicar em um item carrega no formulário)
@@ -95,18 +97,28 @@ function renderizarLista(produtos) {
     listaResultados.innerHTML = "";
     semResultados.hidden = true;
 
+    document.getElementById("contagemResultados").textContent =
+        `${produtos.length} encontrado${produtos.length === 1 ? "" : "s"}`;
+
     produtos.forEach((p) => {
         const item = document.createElement("li");
-        item.className =
-            "cursor-pointer rounded-[10px] border-b border-[var(--color-primary)] px-3 py-2 " +
-            "text-[var(--color-text-primary)] hover:bg-[var(--color-panel)]";
+        item.className = "lista-item";
+        item.dataset.id = p._id;
 
-        const nome = document.createElement("p");
-        nome.className = "font-semibold";
-        nome.textContent = p.nome + (p.ativo === false ? " (inativo)" : "");
+        const nome = document.createElement("div");
+        nome.className = "lista-item-titulo";
+        const texto = document.createElement("span");
+        texto.textContent = p.nome;
+        nome.appendChild(texto);
+        if (p.ativo === false) {
+            const badge = document.createElement("span");
+            badge.className = "badge";
+            badge.textContent = "Inativo";
+            nome.appendChild(badge);
+        }
 
-        const detalhe = document.createElement("p");
-        detalhe.className = "text-sm text-[var(--color-text-secondary)]";
+        const detalhe = document.createElement("div");
+        detalhe.className = "lista-item-detalhe";
         detalhe.textContent = `${p.categoria} · ${formatoMoeda.format(p.valorUnitario)} / ${p.unidade || "un"}`;
 
         item.append(nome, detalhe);
@@ -145,3 +157,7 @@ function resetForm() {
 api.resetForm(() => {
     resetForm();
 });
+
+// Eventos dos botões (antes eram onclick no HTML)
+btnDelete.addEventListener("click", removeProduct);
+btnReset.addEventListener("click", resetForm);
