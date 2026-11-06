@@ -58,6 +58,7 @@ let aguardandoReset = false;
 document.addEventListener("DOMContentLoaded", () => {
     btnUpdate.disabled = true;
     btnDelete.disabled = true;
+    btnPrint.disabled = true;
     btnCreate.disabled = false;
     api.listProducts();
     searchClient.focus();
@@ -302,6 +303,7 @@ function carregarOS(o) {
     btnCreate.disabled = true;
     btnUpdate.disabled = false;
     btnDelete.disabled = false;
+    btnPrint.disabled = false;
 }
 
 // ============================
@@ -354,6 +356,14 @@ frmOS.addEventListener("submit", (event) => {
 function removeOrder() {
     aguardandoReset = true;
     api.deleteOrder(inputIdOS.value);
+}
+
+// ============================
+// ======== IMPRESSÃO =========
+
+// Gera o PDF da OS como está salva no banco (alterações não salvas não entram)
+function printOrder() {
+    api.printOrder(inputIdOS.value);
 }
 
 // ============================

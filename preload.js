@@ -53,6 +53,7 @@ contextBridge.exposeInMainWorld("api", {
   createOrder: (order) => ipcRenderer.send("create-order", order),
   updateOrder: (order) => ipcRenderer.send("update-order", order),
   deleteOrder: (id) => ipcRenderer.send("delete-order", id),
+  printOrder: (id) => ipcRenderer.send("print-order", id),
   // filtro: { numero } ou { clienteId }
   searchOrder: (filtro) => ipcRenderer.send("search-order", filtro),
   receiveOrder: (args) => ipcRenderer.on("order-result", args),

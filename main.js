@@ -17,6 +17,9 @@ const clienteModel = require("./src/model/Clientes.js");
 const serviceOrderModel = require('./src/model/ServiceOrder.js')
 const productModel = require('./src/model/Products.js')
 
+const { gerarPDF } = require('./src/print/pdf.js')
+const { htmlOS } = require('./src/print/osTemplate.js')
+
 let win
 
 // INICIO - Janelas
@@ -590,12 +593,16 @@ async function dadosOS(order) {
 ipcMain.on("create-order", async (event, order) => {
   try {
     const os = await serviceOrderModel.create(await dadosOS(order));
-    await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
+    const janela = BrowserWindow.fromWebContents(event.sender);
+    const result = await dialog.showMessageBox(janela, {
       type: "info",
       title: "Aviso",
       message: `Ordem de Serviço nº ${os.numero} criada com sucesso.`,
-      buttons: ["OK"],
+      buttons: ["OK", "Imprimir OS"],
     });
+    if (result.response === 1) {
+      await imprimirOS(os._id, janela);
+    }
     event.reply("reset-form");
   } catch (error) {
     console.log(error);
@@ -647,6 +654,29 @@ ipcMain.on("update-order", async (event, order) => {
     console.log(error);
     avisoErroValidacao(error);
   }
+});
+
+// ======= IMPRESSÃO (PDF) =======
+async function imprimirOS(id, janela) {
+  try {
+    const os = await serviceOrderModel.findById(id).populate("cliente");
+    if (!os) return;
+    const nome = `OS-${String(os.numero).padStart(4, "0")}.pdf`;
+    await gerarPDF(htmlOS(os), nome, janela);
+  } catch (error) {
+    console.error("Erro ao gerar PDF da OS:", error);
+    dialog.showMessageBox(janela, {
+      type: "error",
+      title: "Erro",
+      message: "Não foi possível gerar o PDF da OS.",
+      detail: error.message,
+      buttons: ["OK"],
+    });
+  }
+}
+
+ipcMain.on("print-order", (event, id) => {
+  imprimirOS(id, BrowserWindow.fromWebContents(event.sender));
 });
 
 // ======= DELETE =======
