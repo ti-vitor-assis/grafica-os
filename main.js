@@ -387,11 +387,14 @@ ipcMain.on("delete-client", async (event, id) => {
 // =============================
 // ====== SERVICE ORDER ========
 
-ipcMain.on("buscar-ordem", async (event, clienteOuCPF) => {
+// Busca as OS de um cliente (pelo _id do cliente)
+ipcMain.on("search-order", async (event, clienteId) => {
   try {
-    const resultado = await serviceOrderModel.find({
-      clientName: new RegExp(clienteOuCPF, "i")
-    });
+    const resultado = await serviceOrderModel
+      .find({ cliente: clienteId })
+      .populate("cliente")
+      .populate("produtos.produto")
+      .sort({ dataCriacao: -1 });
     if (resultado.length === 0) {
       await dialog.showMessageBox({
         type: "info",
@@ -400,7 +403,7 @@ ipcMain.on("buscar-ordem", async (event, clienteOuCPF) => {
         buttons: ["OK"]
       });
     } else {
-      event.reply("resultado-ordem", JSON.stringify(resultado));
+      event.reply("order-result", JSON.stringify(resultado));
     }
   } catch (error) {
     console.error("Erro na busca da OS:", error);
@@ -412,12 +415,14 @@ ipcMain.on("create-order", async (event, order) => {
   console.log("Received new order:", order);
 
   try {
+    // Os nomes dos campos precisam ser os mesmos do schema (src/model/ServiceOrder.js)
     const newOrder = new serviceOrderModel({
-      clientName: order.clientName,
-      products: order.products,
-      deliveryDate: order.deliveryDate,
-      totalValue: order.totalValue,
-      createdAt: new Date()
+      cliente: order.cliente,
+      produtos: order.produtos,
+      valorTotal: order.valorTotal,
+      prazoFinal: order.prazoFinal,
+      status: order.status,
+      observacoes: order.observacoes,
     });
 
     await newOrder.save();

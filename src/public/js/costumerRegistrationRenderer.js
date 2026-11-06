@@ -89,6 +89,11 @@ function cpfDuplicate() {
     inputCPF.classList.add("border-red-500", "ring-1", "ring-red-300");
 }
 
+// O main avisa quando o CPF já está cadastrado (erro 11000 do MongoDB)
+api.cpfDuplicate(() => {
+    cpfDuplicate();
+});
+
 // Buscas CEP
 function buscarEndereco() {
     let cep = document.getElementById("inputCep").value;

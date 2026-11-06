@@ -1,5 +1,5 @@
 /**
- * 
+ *
  * @Author Vitor de Assis Passos
  */
 
@@ -8,11 +8,12 @@ const { ipcRenderer, contextBridge } = require('electron')
 ipcRenderer.send('db-connect')
 
 // permissões para estabelecer a comunicação entre processos
+// Os nomes dos canais aqui precisam ser exatamente os mesmos usados no main.js
 contextBridge.exposeInMainWorld("api", {
   dbStatus: (message) => ipcRenderer.on("db-status", message),
-  aboutExit: () => ipcRenderer.send("about-exit"),
+
+  // Clientes
   createCliente: (cliente) => ipcRenderer.send("create-cliente", cliente),
-  clientWindow: () => ipcRenderer.on("cliente-window"),
   resetForm: (args) => ipcRenderer.on("reset-form", args),
   cpfDuplicate: (args) => ipcRenderer.on("cpf-duplicate", args),
   searchName: (cliName) => ipcRenderer.send("search-name", cliName),
@@ -23,6 +24,11 @@ contextBridge.exposeInMainWorld("api", {
   setCpf: (args) => ipcRenderer.on("set-cpf", args),
   deleteClient: (id) => ipcRenderer.send("delete-client", id),
   updateClient: (client) => ipcRenderer.send("update-client", client),
-  searchOrder: (clientOrCpf) => ipcRenderer.send("search-order", clientOrCpf),
+
+  // Ordens de Serviço
+  createOrder: (order) => ipcRenderer.send("create-order", order),
+  updateOrder: (order) => ipcRenderer.send("update-order", order),
+  deleteOrder: (id) => ipcRenderer.send("delete-order", id),
+  searchOrder: (clienteId) => ipcRenderer.send("search-order", clienteId),
   receiveOrder: (args) => ipcRenderer.on("order-result", args),
 });
