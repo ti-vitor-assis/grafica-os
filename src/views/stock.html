@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Só scripts/estilos do próprio app (esta tela não tem onclick) -->
+    <meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:" />
+    <link href="../public/css/costumerRegistrationStyle.css" rel="stylesheet" />
+    <link href="../public/css/tailwind.css" rel="stylesheet" />
+    <title>Estoque de insumos</title>
+</head>
+
+<body class="text-[var(--color-text-primary)]">
+
+    <div class="base">
+
+        <!-- SEARCH SECTION -->
+        <section class="searchSection flex items-center px-4">
+            <form id="frmSearchSupply" class="flex items-center gap-4 w-full">
+                <input type="text" class="inputStyle w-[500px] mt-[5px] ml-[10px]" id="searchSupplyInput"
+                    placeholder="  Buscar insumo por nome ou categoria... (vazio lista todos)" />
+                <button type="submit" class="btns">BUSCAR</button>
+            </form>
+        </section>
+
+        <hr class="blockDivision border-t-2 border-[var(--color-primary)] mx-auto mt-2 opacity-40 rounded" />
+
+        <section class="registerSection">
+
+            <section class="w-[620px] p-4 space-y-3">
+
+                <!-- Cadastro do insumo -->
+                <form id="frmSupply" class="space-y-2">
+                    <h1 class="text-xl font-semibold">
+                        Insumo <span id="tituloModo" class="text-[var(--color-text-secondary)]">(novo)</span>
+                    </h1>
+                    <input type="text" id="inputIdSupply" hidden />
+
+                    <div class="flex gap-2">
+                        <input type="text" id="inputNome" class="inputStyle flex-1"
+                            placeholder="  Nome * (ex.: Papel couché 300g A3)" required />
+                        <input type="text" id="inputCategoria" list="listaCategorias" class="inputStyle w-[170px]"
+                            placeholder="  Categoria" />
+                        <datalist id="listaCategorias">
+                            <option value="Papel"></option>
+                            <option value="Tinta"></option>
+                            <option value="Lona"></option>
+                            <option value="Vinil"></option>
+                            <option value="Acabamento"></option>
+                            <option value="Embalagem"></option>
+                        </datalist>
+                    </div>
+
+                    <div class="flex gap-2 items-center">
+                        <select id="inputUnidade" class="inputStyle w-[130px]">
+                            <option value="folha">folha</option>
+                            <option value="resma">resma</option>
+                            <option value="m²">m²</option>
+                            <option value="metro">metro</option>
+                            <option value="rolo">rolo</option>
+                            <option value="litro">litro</option>
+                            <option value="kg">kg</option>
+                            <option value="unidade" selected>unidade</option>
+                            <option value="caixa">caixa</option>
+                        </select>
+                        <label for="inputMinimo" class="text-sm whitespace-nowrap">Mínimo</label>
+                        <input type="number" id="inputMinimo" min="0" step="any" class="inputStyle w-[100px]"
+                            placeholder="  0" />
+                        <label for="inputCusto" class="text-sm whitespace-nowrap">Custo un. R$</label>
+                        <input type="number" id="inputCusto" min="0" step="0.01" class="inputStyle flex-1 min-w-0"
+                            placeholder="  0,00" />
+                    </div>
+
+                    <div class="flex gap-2 items-center">
+                        <select id="inputFornecedor" class="inputStyle flex-1 min-w-0">
+                            <option value="">Fornecedor (opcional)</option>
+                        </select>
+                        <span id="campoInicial" class="flex items-center gap-2">
+                            <label for="inputInicial" class="text-sm whitespace-nowrap">Estoque inicial</label>
+                            <input type="number" id="inputInicial" min="0" step="any" class="inputStyle w-[100px]"
+                                placeholder="  0" />
+                        </span>
+                        <label class="flex items-center gap-2 text-sm">
+                            <input type="checkbox" id="inputAtivo" class="w-4 h-4 accent-[var(--color-primary)]"
+                                checked />
+                            Ativo
+                        </label>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button type="submit" id="btnSalvar"
+                            class="inputStyle px-4 py-1 rounded text-white hover:brightness-110">Cadastrar</button>
+                        <button type="button" id="btnDelete" data-permissao="excluir"
+                            class="inputStyle px-4 py-1 rounded text-white hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed">Excluir</button>
+                        <button type="button" id="btnLimpar"
+                            class="inputStyle px-2 py-1 rounded text-white hover:brightness-110">Limpar</button>
+                    </div>
+                </form>
+
+                <!-- Movimentação (aparece com um insumo selecionado) -->
+                <section id="painelMovimento" class="rounded-[10px] bg-[var(--color-background)] p-3 space-y-2" hidden>
+                    <div class="flex items-baseline justify-between">
+                        <p>Estoque atual: <b id="estoqueAtual" class="text-lg"></b></p>
+                        <span id="alertaMinimo" class="text-sm"></span>
+                    </div>
+                    <form id="frmMovimento" class="flex gap-2">
+                        <select id="inputTipo" class="inputStyle w-[150px]">
+                            <option value="entrada">Entrada</option>
+                            <option value="saída">Saída</option>
+                            <option value="ajuste" title="Informe a quantidade contada; ela vira o novo saldo">Ajuste</option>
+                        </select>
+                        <input type="number" id="inputQtdMov" min="0" step="any" class="inputStyle w-[100px]"
+                            placeholder="  Qtd" required />
+                        <input type="text" id="inputMotivo" class="inputStyle flex-1 min-w-0"
+                            placeholder="  Motivo (ex.: NF 123, OS 45)" />
+                        <button type="submit" class="btns !w-[100px]">Registrar</button>
+                    </form>
+                    <div class="h-[105px] overflow-y-auto">
+                        <table class="w-full text-sm">
+                            <tbody id="tabelaMovimentos"></tbody>
+                        </table>
+                    </div>
+                </section>
+            </section>
+
+            <!-- Lista de insumos -->
+            <section class="flex-1 p-4 pl-0">
+                <div class="h-full rounded-[5px] bg-[var(--color-background)] p-3 flex flex-col">
+                    <h2 class="font-semibold mb-2">Insumos</h2>
+                    <p id="semResultados" class="text-[var(--color-text-secondary)] text-sm" hidden>
+                        Nenhum insumo encontrado.
+                    </p>
+                    <ul id="listaResultados" class="overflow-y-auto space-y-2"></ul>
+                </div>
+            </section>
+        </section>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+        <p id="footerRealTime"></p>
+        <img src="../public/img/dboffRed.png" alt="Icone banco de dados" id="iconeDB" />
+    </footer>
+
+    <!-- SCRIPTS -->
+    <script src="../public/js/stockRenderer.js"></script>
+    <script src="../public/js/footer.js"></script>
+</body>
+
+</html>

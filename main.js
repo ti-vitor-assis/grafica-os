@@ -19,6 +19,7 @@ const productModel = require('./src/model/Products.js')
 const quoteModel = require('./src/model/Quote.js')
 const usuarioModel = require('./src/model/Usuario.js')
 const fornecedorModel = require('./src/model/Fornecedor.js')
+const insumoModel = require('./src/model/Insumo.js')
 
 const { gerarPDF } = require('./src/print/pdf.js')
 const { htmlOS } = require('./src/print/osTemplate.js')
@@ -146,6 +147,11 @@ function supplierRegistrationWindow() {
   return modalWindow("./src/views/supplierRegistration.html");
 }
 
+// Estoque de insumos
+function stockWindow() {
+  return modalWindow("./src/views/stock.html");
+}
+
 // Usuários (só administrador)
 function userRegistrationWindow() {
   return modalWindow("./src/views/userRegistration.html", { width: 900, height: 600 });
@@ -171,6 +177,7 @@ const janelasPorNome = {
   relatorios: () => reportsWindow(),
   usuarios: userRegistrationWindow,
   fornecedores: supplierRegistrationWindow,
+  estoque: stockWindow,
 };
 // Janelas cujo nome não é igual à permissão
 const permissaoDaJanela = { fornecedores: "estoque" };
@@ -1032,6 +1039,121 @@ ipcComPermissao("delete-supplier", "excluir", async (event, id) => {
 });
 
 // =============================
+// ========= INSUMOS ===========
+
+// Campos editáveis pela tela (a quantidade só muda por movimentação)
+function dadosInsumo(i) {
+  return {
+    nome: i.nome,
+    categoria: i.categoria,
+    unidade: i.unidade,
+    estoqueMinimo: Number(i.estoqueMinimo || 0),
+    custoUnitario: Number(i.custoUnitario || 0),
+    fornecedor: i.fornecedor || undefined,
+    ativo: i.ativo !== false,
+  };
+}
+
+// Busca por nome ou categoria (termo vazio lista todos), com o nome do fornecedor
+ipcComPermissao("search-supply", "estoque", async (event, termo) => {
+  try {
+    const regex = new RegExp(escapeRegex(termo || ""), "i");
+    const lista = await insumoModel
+      .find({ $or: [{ nome: regex }, { categoria: regex }] })
+      .populate("fornecedor", "nome")
+      .sort({ nome: 1 });
+    event.reply("supply-result", JSON.stringify(lista));
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+ipcComPermissao("create-supply", "estoque", async (event, i) => {
+  try {
+    const insumo = new insumoModel(dadosInsumo(i));
+    // O estoque inicial entra como a primeira movimentação (fica no histórico)
+    if (Number(i.estoqueInicial) > 0) {
+      insumo.movimentar("entrada", i.estoqueInicial, "Estoque inicial", usuarioLogado.nome);
+    }
+    await insumo.save();
+    avisarDashboard();
+    await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
+      type: "info",
+      title: "Aviso",
+      message: "Insumo adicionado com sucesso",
+      buttons: ["OK"],
+    });
+    event.reply("reset-form");
+  } catch (error) {
+    console.log(error);
+    avisoErroValidacao(error);
+  }
+});
+
+ipcComPermissao("update-supply", "estoque", async (event, i) => {
+  try {
+    const insumo = await insumoModel.findById(i._id);
+    if (!insumo) return;
+    insumo.set(dadosInsumo(i));
+    await insumo.save();
+    avisarDashboard();
+    await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
+      type: "info",
+      title: "Aviso",
+      message: "Dados do insumo alterados com sucesso",
+      buttons: ["OK"],
+    });
+    event.reply("reset-form");
+  } catch (error) {
+    console.log(error);
+    avisoErroValidacao(error);
+  }
+});
+
+// Entrada, saída ou ajuste de estoque.
+// Responde com o insumo atualizado, sem recarregar a tela.
+ipcComPermissao("move-supply", "estoque", async (event, mov) => {
+  const janela = BrowserWindow.fromWebContents(event.sender);
+  try {
+    const insumo = await insumoModel.findById(mov._id);
+    if (!insumo) return;
+    insumo.movimentar(mov.tipo, mov.quantidade, mov.motivo, usuarioLogado.nome);
+    await insumo.save();
+    avisarDashboard();
+    await insumo.populate("fornecedor", "nome");
+    event.reply("supply-moved", JSON.stringify(insumo));
+  } catch (error) {
+    console.log(error);
+    dialog.showMessageBox(janela, {
+      type: "warning",
+      title: "Atenção",
+      message: "Movimentação não registrada.",
+      detail: error.message,
+      buttons: ["OK"],
+    });
+  }
+});
+
+ipcComPermissao("delete-supply", "excluir", async (event, id) => {
+  try {
+    const result = await dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
+      type: "warning",
+      title: "Atenção!",
+      message: "Tem certeza que deseja excluir este insumo e todo o histórico de movimentações?",
+      detail: "Para tirar de uso sem perder o histórico, desmarque \"Ativo\" e salve.",
+      buttons: ["Cancelar", "Excluir"],
+    });
+    if (result.response === 1) {
+      await insumoModel.findByIdAndDelete(id);
+      avisarDashboard();
+      event.reply("reset-form");
+    }
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+// =============================
 // ========= USUÁRIOS ==========
 
 function enviarUsuarios(event) {
@@ -1442,6 +1564,11 @@ const template = [
         label: "Produto",
         permissao: "produtos",
         click: () => productRegistrationWindow(),
+      },
+      {
+        label: "Insumos (estoque)",
+        permissao: "estoque",
+        click: () => stockWindow(),
       },
       {
         label: "Fornecedor",

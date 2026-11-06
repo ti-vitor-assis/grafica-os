@@ -41,6 +41,15 @@ contextBridge.exposeInMainWorld("api", {
   deleteSupplier: (id) => ipcRenderer.send("delete-supplier", id),
   receiveSuppliers: (args) => ipcRenderer.on("supplier-result", args),
 
+  // Insumos (estoque)
+  searchSupply: (termo) => ipcRenderer.send("search-supply", termo),
+  createSupply: (i) => ipcRenderer.send("create-supply", i),
+  updateSupply: (i) => ipcRenderer.send("update-supply", i),
+  moveSupply: (mov) => ipcRenderer.send("move-supply", mov),
+  deleteSupply: (id) => ipcRenderer.send("delete-supply", id),
+  receiveSupplies: (args) => ipcRenderer.on("supply-result", args),
+  supplyMoved: (args) => ipcRenderer.on("supply-moved", args),
+
   // Usuários (administrador)
   listUsers: () => ipcRenderer.send("list-users"),
   receiveUsers: (args) => ipcRenderer.on("users-list", args),

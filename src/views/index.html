@@ -75,6 +75,23 @@
                 </div>
             </button>
 
+            <button id="btnEstoque" data-permissao="estoque" onclick="api.openWindow('estoque')" class="text-white px-4 py-2 rounded hover:bg-purple-700 transition btn-sm btnStyle mt-1">
+                <div class="row">
+                    <div class="col imageColumn">
+                        <!-- Ícone de estoque (pilha de folhas), no estilo de linha branca -->
+                        <svg class="soIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"
+                            stroke-linecap="round" stroke-linejoin="round" aria-label="Stock Icon">
+                            <path d="M12 3 3 7.5 12 12l9-4.5z" />
+                            <path d="M3 12l9 4.5 9-4.5" />
+                            <path d="M3 16.5 12 21l9-4.5" />
+                        </svg>
+                    </div>
+                    <div class="col">
+                        <p class="menuLabels">Estoque</p>
+                    </div>
+                </div>
+            </button>
+
             <button id="btnRelatorios" data-permissao="relatorios" onclick="api.openWindow('relatorios')" class="text-white px-4 py-2 rounded hover:bg-purple-700 transition btn-sm btnStyle mt-1">
                 <div class="row">
                     <div class="col imageColumn">
