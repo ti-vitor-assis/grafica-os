@@ -464,7 +464,6 @@ function trocarUsuario() {
 // ================ CRUD CREATE ==================
 
 ipcComPermissao("create-cliente", "clientes", async (event, cliente) => {
-  console.log(cliente);
 
   try {
     const novoCliente = clienteModel({
@@ -539,16 +538,13 @@ ipcOn("validate-search", () => {
 });
 
 ipcOn("search-name", async (event, cliName) => {
-  // Teste recebimento nome do cliente (passo 2)
-  console.log(cliName);
   try {
     // Passos 3 e 4 (Busca dos dados do cliente pelo nome)
     const client = await clienteModel.find({
-      // RegExp (Expressão Regular 'i' -> insensitive(ignorar letras maiúsculas e minúsculas))
-      nome: new RegExp(cliName, "i"),
+      // RegExp (Expressão Regular 'i' -> insensitive(ignorar letras maiúsculas e minúsculas)).
+      // O texto é escapado: sem isso, buscar por "(" ou "+" gerava erro
+      nome: new RegExp(escapeRegex(cliName), "i"),
     });
-    // Teste da busca do cliente pelo nome (Passos 3 e 4)
-    console.log(client);
 
     // Melhoria da experiencia do usuário (se não existir um cliente cadastrado enviar uma mensagem ao usuário questionando se ele deseja cadastrar este novo cliente)
     // Se o vetor estiver vazio
@@ -582,16 +578,12 @@ ipcOn("search-name", async (event, cliName) => {
 });
 
 ipcOn("search-cpf", async (event, cpfCli) => {
-  // Teste recebimento nome do cliente (passo 2)
-  console.log(cpfCli);
   try {
-    // Passos 3 e 4 (Busca dos dados do cliente pelo nome)
+    // Passos 3 e 4 (Busca dos dados do cliente pelo CPF)
     const client = await clienteModel.find({
-      // RegExp (Expressão Regular 'i' -> insensitive(ignorar letras maiúsculas e minúsculas))
-      cpf: new RegExp(cpfCli, "i"),
+      // Compara só os dígitos: "529.982.247-25" encontra "52998224725" e vice-versa
+      cpf: regexDigitos(cpfCli),
     });
-    // Teste da busca do cliente pelo nome (Passos 3 e 4)
-    console.log(client);
 
     // Melhoria da experiencia do usuário (se não existir um cliente cadastrado enviar uma mensagem ao usuário questionando se ele deseja cadastrar este novo cliente)
     // Se o vetor estiver vazio
@@ -723,6 +715,14 @@ ipcComPermissao("delete-client", "excluir", async (event, id) => {
 // (sem isso, buscar por "(" ou "+" gera erro)
 function escapeRegex(texto) {
   return String(texto).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Busca por documento (CPF/CNPJ) comparando só os dígitos, com ou sem
+// pontuação dos dois lados: "529.982.247-25" -> /5\D*2\D*9.../
+function regexDigitos(texto) {
+  const digitos = String(texto || "").replace(/\D/g, "");
+  if (!digitos) return /^$/; // nada digitado: não encontra ninguém
+  return new RegExp(digitos.split("").join("\\D*"));
 }
 
 // Converte os dados vindos da tela para o formato do schema

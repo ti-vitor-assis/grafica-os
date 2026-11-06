@@ -19,15 +19,21 @@ module.exports = {
         ctx.igual(await Cli.countDocuments(), 1, "cliente gravado");
         await ctx.espera(1500);
 
-        await js(`searchClientsInput.value='52998224725'; frmSearchClient.requestSubmit()`);
+        await js(`searchClientsInput.value='529.982.247-25'; frmSearchClient.requestSubmit()`);
         await ctx.aguardar(() => js("inputIdClient.value !== ''"));
-        ctx.igual(await js("inputNome.value"), "Maria Souza", "busca por CPF carrega o cliente");
+        ctx.igual(await js("inputNome.value"), "Maria Souza", "busca por CPF com pontuação acha o CPF gravado só com números");
         ctx.igual(await js("inputDataNasc.value"), "1990-05-10", "data de nascimento não volta um dia");
         ctx.igual(await botoesVisiveis(), ["Excluir", "Novo cliente", "Salvar alterações"], "modo edição mostra Excluir e Salvar");
 
         await js(`inputTelefone2.value='(11) 3000-0000'; frmCli.requestSubmit()`);
         await ctx.aguardar(async () => (await Cli.findOne()).telefone2 === "(11) 3000-0000");
         ctx.ok(true, "edição gravada");
+        await ctx.espera(1500);
+
+        const antes = ctx.dialogos.length;
+        await js(`searchClientsInput.value='(maria+'; frmSearchClient.requestSubmit()`);
+        await ctx.aguardar(() => ctx.dialogos.length > antes);
+        ctx.ok(ctx.ultimoDialogo().includes("Cliente não cadastrado"), "busca com '(' e '+' não quebra (responde que não achou)");
         await ctx.espera(1500);
 
         await js(`inputNome.value='Outra'; inputCPF.value='52998224725'; inputSexo.value='fem'; inputDataNasc.value='2000-01-01';
