@@ -1,7 +1,7 @@
 {
   "name": "grafica-os",
   "version": "1.0.0",
-  "description": "Um aplicativo simples para cadastrar clientes e ordens de serviços para uma gráfica.",
+  "description": "Sistema para gestão de uma gráfica: orçamentos, ordens de serviço, pagamentos, estoque e relatórios.",
   "main": "main.js",
   "scripts": {
     "dev": "echo Nenhum dev configurado",
@@ -12,7 +12,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vitorapassos/grafica-os.git"
+    "url": "git+https://github.com/ti-vitor-assis/grafica-os.git"
   },
   "keywords": [
     "GRAFICA",
@@ -25,9 +25,9 @@
   "author": "Vitor de Assis Passos",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/vitorapassos/grafica-os/issues"
+    "url": "https://github.com/ti-vitor-assis/grafica-os/issues"
   },
-  "homepage": "https://github.com/vitorapassos/grafica-os#readme",
+  "homepage": "https://github.com/ti-vitor-assis/grafica-os#readme",
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "dotenv": "^18.0.9",
