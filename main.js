@@ -29,6 +29,7 @@ const { htmlOS } = require('./src/print/osTemplate.js')
 const { htmlOrcamento } = require('./src/print/quoteTemplate.js')
 const { htmlRelatorio } = require('./src/print/reportTemplate.js')
 const relatorios = require('./src/reports/relatorios.js')
+const { limparEntrada } = require('./src/seguranca/entrada.js')
 
 let win
 
@@ -61,10 +62,16 @@ function avisoSemPermissao(event) {
 // É aqui que as permissões valem de verdade: esconder botões na tela é só
 // conveniência, porque a tela pode ser alterada (ex.: pelo DevTools).
 function ipcComPermissao(canal, permissao, handler) {
-  ipcMain.on(canal, (event, ...args) => {
+  ipcOn(canal, (event, ...args) => {
     if (!pode(permissao)) return avisoSemPermissao(event)
     return handler(event, ...args)
   })
+}
+
+// Todo handler IPC do app é registrado por aqui: os argumentos que chegam
+// das telas passam por limparEntrada() (sem operadores "$" nem __proto__)
+function ipcOn(canal, handler) {
+  ipcMain.on(canal, (event, ...args) => handler(event, ...args.map((arg) => limparEntrada(arg))))
 }
 
 // =============================
@@ -90,11 +97,11 @@ function aplicarTema(tema) {
 }
 
 // O preload pergunta o tema de forma síncrona, antes de a tela aparecer
-ipcMain.on("get-theme", (event) => {
+ipcOn("get-theme", (event) => {
   event.returnValue = temaAtual()
 })
 
-ipcMain.on("toggle-theme", () => {
+ipcOn("toggle-theme", () => {
   aplicarTema(temaAtual() === "escuro" ? "claro" : "escuro")
 })
 
@@ -224,7 +231,7 @@ const janelasPorNome = {
 };
 // Janelas cujo nome não é igual à permissão
 const permissaoDaJanela = { fornecedores: "estoque" };
-ipcMain.on("open-window", (event, nome) => {
+ipcOn("open-window", (event, nome) => {
   const abrir = janelasPorNome[nome];
   if (!abrir) return;
   if (!pode(permissaoDaJanela[nome] || nome)) return avisoSemPermissao(event);
@@ -289,12 +296,12 @@ function podeConfigurarBanco() {
   return !estaConectado()
 }
 
-ipcMain.on("open-db-config", (event) => {
+ipcOn("open-db-config", (event) => {
   if (!podeConfigurarBanco()) return avisoSemPermissao(event)
   dbConfigWindow()
 })
 
-ipcMain.on("db-config-info", (event) => {
+ipcOn("db-config-info", (event) => {
   const salva = configuracao.lerUrlBanco()
   event.reply("db-config-info", {
     origemAmbiente: urlDoAmbiente,
@@ -303,12 +310,12 @@ ipcMain.on("db-config-info", (event) => {
   })
 })
 
-ipcMain.on("db-config-test", async (event, url) => {
+ipcOn("db-config-test", async (event, url) => {
   if (!podeConfigurarBanco()) return avisoSemPermissao(event)
   event.reply("db-config-result", await testarConexao(String(url || "").trim()))
 })
 
-ipcMain.on("db-config-save", async (event, url) => {
+ipcOn("db-config-save", async (event, url) => {
   if (!podeConfigurarBanco()) return avisoSemPermissao(event)
   if (urlDoAmbiente) return
   url = String(url || "").trim()
@@ -352,7 +359,7 @@ app.whenReady().then(() => {
 
   // Cada janela pede a conexão ao carregar (preload.js) e recebe o status
   // para atualizar o ícone do rodapé
-  ipcMain.on("db-connect", async (event) => {
+  ipcOn("db-connect", async (event) => {
     const ok = await conectar();
     setTimeout(() => {
       event.reply("db-status", ok ? "conectado" : "desconectado")
@@ -380,7 +387,7 @@ app.on("before-quit", async () => {
 
 // Ao abrir, a tela de login pergunta se já existe algum usuário.
 // Se não existir (primeiro acesso), ela mostra o cadastro do administrador.
-ipcMain.on("login-info", async (event) => {
+ipcOn("login-info", async (event) => {
   try {
     const total = await usuarioModel.countDocuments();
     event.reply("login-info", { primeiroAcesso: total === 0 });
@@ -397,7 +404,7 @@ function entrar(usuario) {
   if (janelaLogin) janelaLogin.close();
 }
 
-ipcMain.on("login", async (event, dados) => {
+ipcOn("login", async (event, dados) => {
   try {
     const usuario = await usuarioModel.findOne({ login: String(dados.login || "").trim().toLowerCase() });
     // Mesma mensagem para login inexistente e senha errada (não revela quais logins existem)
@@ -413,7 +420,7 @@ ipcMain.on("login", async (event, dados) => {
 });
 
 // Primeiro acesso: cria o administrador (só funciona se ainda não houver usuários)
-ipcMain.on("create-first-admin", async (event, dados) => {
+ipcOn("create-first-admin", async (event, dados) => {
   try {
     if ((await usuarioModel.countDocuments()) > 0) {
       event.reply("login-error", "O administrador já foi criado. Faça login.");
@@ -431,7 +438,7 @@ ipcMain.on("create-first-admin", async (event, dados) => {
 });
 
 // Qualquer tela pode perguntar quem está logado (rodapé, permissões)
-ipcMain.on("get-session", (event) => {
+ipcOn("get-session", (event) => {
   event.reply("session", usuarioLogado && {
     ...usuarioLogado,
     permissoes: PERMISSOES[usuarioLogado.perfil] || [],
@@ -522,7 +529,7 @@ ipcComPermissao("create-cliente", "clientes", async (event, cliente) => {
 // ================= CRUD READ ===================
 
 // validação da busca
-ipcMain.on("validate-search", () => {
+ipcOn("validate-search", () => {
   dialog.showMessageBox({
     type: "warning",
     title: "Atenção",
@@ -531,7 +538,7 @@ ipcMain.on("validate-search", () => {
   });
 });
 
-ipcMain.on("search-name", async (event, cliName) => {
+ipcOn("search-name", async (event, cliName) => {
   // Teste recebimento nome do cliente (passo 2)
   console.log(cliName);
   try {
@@ -574,7 +581,7 @@ ipcMain.on("search-name", async (event, cliName) => {
   }
 });
 
-ipcMain.on("search-cpf", async (event, cpfCli) => {
+ipcOn("search-cpf", async (event, cpfCli) => {
   // Teste recebimento nome do cliente (passo 2)
   console.log(cpfCli);
   try {
@@ -769,7 +776,7 @@ ipcComPermissao("create-product", "produtos", async (event, produto) => {
 
 // ======== READ =========
 // Busca por nome ou categoria. Devolve um vetor (pode ter vários resultados)
-ipcMain.on("search-product", async (event, termo) => {
+ipcOn("search-product", async (event, termo) => {
   try {
     const regex = new RegExp(escapeRegex(termo), "i");
     const produtos = await productModel
@@ -856,7 +863,7 @@ ipcComPermissao("delete-product", "excluir", async (event, id) => {
 // ====== SERVICE ORDER ========
 
 // Aviso genérico pedido pela tela (ex.: validação do formulário de OS)
-ipcMain.on("show-warning", (event, mensagem) => {
+ipcOn("show-warning", (event, mensagem) => {
   dialog.showMessageBox(BrowserWindow.fromWebContents(event.sender), {
     type: "warning",
     title: "Atenção",
@@ -866,7 +873,7 @@ ipcMain.on("show-warning", (event, mensagem) => {
 });
 
 // Produtos ativos, para o campo de seleção de itens da OS
-ipcMain.on("list-products", async (event) => {
+ipcOn("list-products", async (event) => {
   try {
     const produtos = await productModel.find({ ativo: { $ne: false } }).sort({ nome: 1 });
     event.reply("products-list", JSON.stringify(produtos));
@@ -942,7 +949,7 @@ ipcComPermissao("create-order", "os", async (event, order) => {
 
 // ======= READ =======
 // filtro: { numero } para abrir uma OS, ou { clienteId } para listar as OS do cliente
-ipcMain.on("search-order", async (event, filtro) => {
+ipcOn("search-order", async (event, filtro) => {
   try {
     const porNumero = filtro.numero != null;
     const ordens = await serviceOrderModel
@@ -991,7 +998,7 @@ ipcComPermissao("update-order", "os", async (event, order) => {
 // Status que contam como "em andamento" (ainda precisam ser entregues)
 const emAndamento = { status: { $nin: ["entregue", "cancelada"] } };
 
-ipcMain.on("dashboard-data", async (event) => {
+ipcOn("dashboard-data", async (event) => {
   try {
     const inicioHoje = new Date();
     inicioHoje.setHours(0, 0, 0, 0);
@@ -1096,7 +1103,7 @@ async function imprimirOS(id, janela) {
   }
 }
 
-ipcMain.on("print-order", (event, id) => {
+ipcOn("print-order", (event, id) => {
   imprimirOS(id, BrowserWindow.fromWebContents(event.sender));
 });
 
@@ -1457,7 +1464,7 @@ ipcComPermissao("create-quote", "orcamentos", async (event, q) => {
 
 // ======= READ =======
 // filtro: { numero } para abrir um orçamento, ou { clienteId } para listar os do cliente
-ipcMain.on("search-quote", async (event, filtro) => {
+ipcOn("search-quote", async (event, filtro) => {
   try {
     const porNumero = filtro.numero != null;
     const lista = await quoteModel
@@ -1525,7 +1532,7 @@ async function imprimirOrcamento(id, janela) {
   }
 }
 
-ipcMain.on("print-quote", (event, id) => {
+ipcOn("print-quote", (event, id) => {
   imprimirOrcamento(id, BrowserWindow.fromWebContents(event.sender));
 });
 

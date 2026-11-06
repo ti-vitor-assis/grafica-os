@@ -18,6 +18,10 @@ if (fs.existsSync(arquivoEnv)) {
 
 const mongoose = require('mongoose')
 
+// Campos que não existem no modelo são ignorados nos filtros de busca
+// (uma consulta com campo inventado não vira "traga tudo")
+mongoose.set('strictQuery', true)
+
 // Se a URL veio do ambiente/.env, a tela de configuração não pode trocá-la
 const urlDoAmbiente = !!process.env.MONGO_URL
 let url = process.env.MONGO_URL || null

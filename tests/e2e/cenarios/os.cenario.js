@@ -36,6 +36,11 @@ module.exports = {
         ctx.igual(new Date(criada.prazoFinal).getHours(), 12, "prazo gravado ao meio-dia (não muda de dia)");
         await ctx.espera(1500);
 
+        // Tentativa de NoSQL injection pela tela: pedir as OS de "qualquer cliente"
+        await js(`api.searchOrder({ clienteId: { "$ne": null } })`);
+        await ctx.espera(1500);
+        ctx.igual(await js("listaResultados.children.length"), 0, "injeção { $ne: null } não devolve as OS de todos");
+
         await js(`searchOrderInput.value='1'; frmSearchOrder.requestSubmit()`);
         await ctx.aguardar(() => js("inputIdOS.value !== ''"));
         ctx.igual(await js("tabelaItens.rows.length"), 2, "OS aberta pelo número com os itens");
