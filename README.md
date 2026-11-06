@@ -44,7 +44,7 @@ Sistema para gestão de uma gráfica: orçamentos, ordens de serviço, pagamento
 - **Tema claro e escuro**
 
 ## Autor
-Vitor de Assis Passos
+Vitor de Assis Passos · [@ti-vitor-assis](https://github.com/ti-vitor-assis)
 
 ## Pré-requisitos de instalação:
 - Windows 10 ou superior
@@ -124,3 +124,18 @@ src/reports/       Consultas dos relatórios
 
 ## Licença
 [MIT](LICENSE)
+
+<hr>
+
+### ☕ Gostou do projeto? Me paga um café!
+Desenvolver e compartilhar projetos gratuitos leva tempo, dedicação e, claro, bastante café! Se o Gráfica OS te ajudou e você quiser apoiar, qualquer "cafezinho" faz diferença. <br>Sua contribuição me motiva a continuar criando e melhorando projetos como este!
+
+#### Chave PIX❖:
+~~~txt
+em breve
+~~~
+*( em nome de Vitor de Assis Passos )*
+
+E se não puder contribuir agora, deixar uma estrela ⭐, seguir o repositório e compartilhar já ajuda demais!
+
+😃 Obrigado pelo apoio!
