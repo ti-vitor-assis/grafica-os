@@ -130,9 +130,9 @@ src/reports/       Consultas dos relatórios
 ### ☕ Feito com muito café
 O Gráfica OS levou semanas de trabalho, muitas delas noite adentro, sempre com uma xícara de café por perto. Ele é gratuito e vai continuar sendo. <br>Se o projeto foi útil para você e quiser colaborar com o próximo café, fique à vontade. Toda ajuda é muito bem-vinda!
 
-#### Chave PIX❖:
+#### Chave PIX❖ (aleatória):
 ~~~txt
-em breve
+0502c518-2027-44f0-91d0-23b152da3684
 ~~~
 *( em nome de Vitor de Assis Passos )*
 
